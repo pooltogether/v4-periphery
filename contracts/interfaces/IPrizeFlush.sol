@@ -2,14 +2,13 @@
 
 pragma solidity 0.8.6;
 
-import "./IReserve.sol";
-import "./IStrategy.sol";
+import "@pooltogether/v4-core/contracts/interfaces/IReserve.sol";
+import "@pooltogether/v4-core/contracts/interfaces/IStrategy.sol";
 
 interface IPrizeFlush {
-  
   /**
-    * @notice Emit when the flush function has executed. 
-    * @param destination Address receiving funds 
+    * @notice Emit when the flush function has executed.
+    * @param destination Address receiving funds
     * @param amount      Amount of tokens transfered.
    */
   event Flushed(address indexed destination, uint256 amount);
@@ -23,13 +22,13 @@ interface IPrizeFlush {
   /**
     * @notice Emit when strategy is set.
     * @param strategy Strategy address
-   */  
+   */
   event StrategySet(IStrategy strategy);
 
   /**
     * @notice Emit when reserve is set.
     * @param reserve Reserve address
-   */  
+   */
   event ReserveSet(IReserve reserve);
 
   /// @notice Read global destination variable.

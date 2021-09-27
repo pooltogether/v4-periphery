@@ -4,6 +4,7 @@ import 'hardhat-abi-exporter';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
+import 'hardhat-dependency-compiler';
 import 'solidity-coverage';
 
 import { HardhatUserConfig } from 'hardhat/config';
@@ -37,16 +38,43 @@ const config: HardhatUserConfig = {
     },
   },
   networks,
+  dependencyCompiler: {
+    paths: [
+      '@openzeppelin/contracts/token/ERC20/IERC20.sol',
+      "@pooltogether/v4-core/contracts/test/ERC20Mintable.sol"
+    ],
+  },
+  external: {
+    contracts: [
+      // {
+      //   // artifacts: "node_modules/@pooltogether/v4-core",
+      // },
+    ]
+  },
   solidity: {
-    version: '0.6.12',
-    settings: {
-      optimizer: {
-        enabled: optimizerEnabled,
-        runs: 200,
+    compilers: [
+      {
+        version: '0.8.6',
+        settings: {
+          optimizer: {
+            enabled: optimizerEnabled,
+            runs: 2000,
+          },
+          evmVersion: 'berlin',
+        },
       },
-      evmVersion: 'istanbul',
-    },
-  }
+      {
+        version: '0.7.6',
+        settings: {
+          optimizer: {
+            enabled: optimizerEnabled,
+            runs: 2000,
+          },
+          evmVersion: 'berlin',
+        },
+      },
+    ],
+  },
 };
 
 

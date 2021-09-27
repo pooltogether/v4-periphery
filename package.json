@@ -1,7 +1,7 @@
 {
-  "name": "@pooltogether/pooltogether-contracts-template",
+  "name": "@pooltogether/v4-periphery",
   "version": "1.0.0-beta.1",
-  "description": "PoolTogether REPO-NAME",
+  "description": "PoolTogether V4 Periphery",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -22,7 +22,11 @@
     "run-fork": "yarn impersonate-accounts && yarn distribute-ether && yarn create-prize-pool",
     "test": "yarn clean && HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@pooltogether/v4-core": "github://pooltogether/v4-core",
+    "@pooltogether/v4-oracle-timelocks": "github://pooltogether/v4-timelocks"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "2.0.2",
     "@nomiclabs/hardhat-etherscan": "2.1.3",
@@ -34,15 +38,17 @@
     "@types/mocha": "8.2.1",
     "@types/node": "14.14.32",
     "chai": "4.3.4",
-    "chalk": "4.1.0",
+    "chalk": "^4.1.2",
     "debug": "4.3.1",
     "ethereum-waffle": "3.3.0",
     "ethers": "5.0.32",
-    "hardhat": "2.4.0",
+    "hardhat": "2.6.2",
     "hardhat-abi-exporter": "2.1.2",
+    "hardhat-dependency-compiler": "1.1.1",
     "hardhat-deploy": "0.7.0-beta.47",
-    "hardhat-deploy-ethers": "0.3.0-beta.7",
+    "hardhat-deploy-ethers": "0.3.0-beta.10",
     "hardhat-gas-reporter": "1.0.4",
+    "hardhat-log-remover": "2.0.2",
     "prettier": "2.2.1",
     "solhint": "3.3.3",
     "solidity-coverage": "0.7.16",

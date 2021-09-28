@@ -21,11 +21,16 @@ https://docs.pooltogether.com
 # Overview
 - [PrizeFlush](/contracts/PrizeFlush.sol)
 
-Core and timelock contracts:
+The PrizeFlush smart contract wraps multiple draw completition steps: capturing/distributing interest, and automically transfering the captured interest to DrawPrizes. The contract is **simple in nature** and is expeced to evolve with the V4 rollout and governance requirements.
+
+As the draw and prize distribution params are optimized with continual hypothesis and testing, the PoolTogether Community and Governance process can "codify" the rules for an optimal interest distribution.
+
+**Core and Timelock contracts:**
 
 - https://github.com/pooltogether/v4-core
 - https://github.com/pooltogether/v4-timelocks
 
+The timelock smart contracts are included in the initial roll-out of V4 to mitigate authority of a centralized power during the progressive decentralization. 
 
 # Getting Started
 

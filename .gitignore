@@ -16,6 +16,9 @@ cache
 node_modules
 types
 
+# OSX
+.DS_Store
+
 # Solidity Coverage
 coverage
 coverage.json

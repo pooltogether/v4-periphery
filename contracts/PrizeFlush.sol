@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0
+
 pragma solidity 0.8.6;
+
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./interfaces/IPrizeFlush.sol";
 
 /**
   * @title  PoolTogether V4 PrizeFlush
   * @author PoolTogether Inc Team
-  * @notice The PrizeFlush is a helper library to facilate interest distribution. 
+  * @notice The PrizeFlush is a helper library to facilate interest distribution.
 */
 contract PrizeFlush is IPrizeFlush, Manageable {
 
   /// @notice Static destination for captured interest
   address   internal destination;
-  
-  /// @notice IReserve address 
+
+  /// @notice IReserve address
   IReserve  internal reserve;
-  
-  /// @notice IStrategy address 
+
+  /// @notice IStrategy address
   IStrategy internal strategy;
 
   /* ============ Events ============ */
@@ -26,11 +29,11 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     * @notice Emit when contract deployed.
     * @param reserve IReserve
     * @param strategy IStrategy
-    * 
+    *
    */
   event Deployed(address destination, IReserve reserve, IStrategy strategy);
 
-  /* ============ Constructor ============ */    
+  /* ============ Constructor ============ */
 
   /**
     * @notice Set owner, reserve and strategy when deployed.
@@ -38,14 +41,14 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     * @param _destination address
     * @param _strategy    IStrategy
     * @param _reserve     IReserve
-    * 
+    *
    */
   constructor(address _owner, address _destination, IStrategy _strategy, IReserve _reserve) Ownable(_owner) {
     destination  = _destination;
     strategy     = _strategy;
     reserve      = _reserve;
 
-    // Emit Deploy State 
+    // Emit Deploy State
     emit Deployed(_destination, _reserve, _strategy);
   }
 
@@ -55,7 +58,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
   function getDestination() external view override returns (address) {
     return destination;
   }
-  
+
   /// @inheritdoc IPrizeFlush
   function getReserve() external view override returns (IReserve) {
     return reserve;
@@ -73,7 +76,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     emit DestinationSet(_destination);
     return _destination;
   }
-  
+
   /// @inheritdoc IPrizeFlush
   function setReserve(IReserve _reserve) external override onlyOwner returns (IReserve) {
     require(address(_reserve) != address(0), "Flush/reserve-not-zero-address");
@@ -89,7 +92,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     emit StrategySet(_strategy);
     return _strategy;
   }
-  
+
   /// @inheritdoc IPrizeFlush
   function flush() external override onlyManagerOrOwner returns (bool) {
     strategy.distribute();
@@ -100,12 +103,14 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     IERC20 _token     = _reserve.getToken();
     uint256 _amount   = _token.balanceOf(address(_reserve));
 
-    if(_amount > 0) {
+    if (_amount > 0) {
       // Create checkpoint and transfers new total balance to DrawPrizes
       _reserve.withdrawTo(destination, _token.balanceOf(address(_reserve)));
 
       emit Flushed(destination, _amount);
     }
+
+    return true;
   }
 
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
 import "@pooltogether/v4-core/contracts/interfaces/IControlledToken.sol";
-
 interface IStrategy {
 
   /**

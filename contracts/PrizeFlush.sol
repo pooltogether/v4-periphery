@@ -10,12 +10,15 @@ import "./interfaces/IPrizeFlush.sol";
 /**
  * @title  PoolTogether V4 PrizeFlush
  * @author PoolTogether Inc Team
- * @notice The PrizeFlush is a helper library to facilate interest distribution.
+ * @notice The PrizeFlush contract helps capture interest from the PrizePool and move collected funds
+           to a designated PrizeDistributor contract. When deployed, the destination, reserve and strategy
+           addresses are set and used as static parameters during every "flush" execution. The parameters can be
+           reset by the Owner if necessary.
  */
 contract PrizeFlush is IPrizeFlush, Manageable {
     /**
      * @notice Destination address for captured interest.
-     * @dev Should be set to the DrawPrize address.
+     * @dev Should be set to the PrizeDistributor address.
      */
     address internal destination;
 
@@ -29,9 +32,9 @@ contract PrizeFlush is IPrizeFlush, Manageable {
 
     /**
      * @notice Emitted when contract has been deployed.
-     * @param destination Destination address.
-     * @param reserve Strategy address.
-     * @param strategy Reserve address.
+     * @param destination Destination address
+     * @param reserve Strategy address
+     * @param strategy Reserve address
      *
      */
     event Deployed(
@@ -44,10 +47,10 @@ contract PrizeFlush is IPrizeFlush, Manageable {
 
     /**
      * @notice Deploy Prize Flush.
-     * @param _owner Prize Flush owner address.
-     * @param _destination Destination address.
-     * @param _strategy Strategy address.
-     * @param _reserve Reserve address.
+     * @param _owner Prize Flush owner address
+     * @param _destination Destination address
+     * @param _strategy Strategy address
+     * @param _reserve Reserve address
      *
      */
     constructor(
@@ -103,18 +106,19 @@ contract PrizeFlush is IPrizeFlush, Manageable {
 
     /// @inheritdoc IPrizeFlush
     function flush() external override onlyManagerOrOwner returns (bool) {
+        // Captures interest from PrizePool and distributes funds using a PrizeSplitStrategy.
         strategy.distribute();
 
-        // After captured interest transferred to Strategy.PrizeSplits[]: [Reserve, Other]
-        // transfer the Reserve balance directly to the DrawPrize (destination) address.
+        // After funds are distributed using PrizeSplitStrategy we EXPECT funds to be located in the Reserve.
         IReserve _reserve = reserve;
         IERC20 _token = _reserve.getToken();
         uint256 _amount = _token.balanceOf(address(_reserve));
 
+        // IF the tokens were succesfully moved to the Reserve, now move them to the destination (PrizeDistributor) address.
         if (_amount > 0) {
             address _destination = destination;
 
-            // Create checkpoint and transfers new total balance to DrawPrizes
+            // Create checkpoint and transfers new total balance to PrizeDistributor
             _reserve.withdrawTo(_destination, _amount);
 
             emit Flushed(_destination, _amount);
@@ -129,7 +133,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     /**
      * @notice Set global destination variable.
      * @dev `_destination` cannot be the zero address.
-     * @param _destination Destination address.
+     * @param _destination Destination address
      */
     function _setDestination(address _destination) internal {
         require(_destination != address(0), "Flush/destination-not-zero-address");
@@ -139,7 +143,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     /**
      * @notice Set global reserve variable.
      * @dev `_reserve` cannot be the zero address.
-     * @param _reserve Reserve address.
+     * @param _reserve Reserve address
      */
     function _setReserve(IReserve _reserve) internal {
         require(address(_reserve) != address(0), "Flush/reserve-not-zero-address");
@@ -149,7 +153,7 @@ contract PrizeFlush is IPrizeFlush, Manageable {
     /**
      * @notice Set global strategy variable.
      * @dev `_strategy` cannot be the zero address.
-     * @param _strategy Strategy address.
+     * @param _strategy Strategy address
      */
     function _setStrategy(IStrategy _strategy) internal {
         require(address(_strategy) != address(0), "Flush/strategy-not-zero-address");

@@ -12,7 +12,7 @@
     "verify": "hardhat etherscan-verify --license MIT --solc-input --network",
     "etherscan-verify": "hardhat etherscan:verify --network",
     "etherscan-verify-polygon": "hardhat --config hardhat.config.polygon.js run ./scripts/verify.js --network",
-    "format": "prettier --config .prettierrc --write **/*.*.{ts,js} \"contracts/**/*.sol\"",
+    "format": "prettier --config .prettierrc --write \"**/*.{ts,js}\" \"contracts/**/*.sol\"",
     "format:file": "prettier --config .prettierrc --write",
     "hint": "solhint \"contracts/**/*.sol\"",
     "start-fork": "FORK_ENABLED=true hardhat node --no-reset --no-deploy",

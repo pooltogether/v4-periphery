@@ -9,7 +9,7 @@ interface IPrizeFlush {
     /**
      * @notice Emit when the flush function has executed.
      * @param destination Address receiving funds
-     * @param amount      Amount of tokens transfered.
+     * @param amount      Amount of tokens transferred
      */
     event Flushed(address indexed destination, uint256 amount);
 

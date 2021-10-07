@@ -21,7 +21,7 @@ https://docs.pooltogether.com
 # Overview
 - [PrizeFlush](/contracts/PrizeFlush.sol)
 
-The `PrizeFlush` contract wraps multiple draw completition steps: capturing/distributing interest, and automically transfering the captured interest to DrawPrizes. The contract is **simple in nature** and is expeced to evolve with the V4 rollout and governance requirements.
+The `PrizeFlush` contract wraps multiple draw completion steps: capturing/distributing interest, and automatically transferring the captured interest to PrizeDistributor. The contract is **simple in nature** and is expeced to evolve with the V4 rollout and governance requirements.
 
 As the draw and prize distribution params are optimized with continual hypothesis and testing, the PoolTogether Community and Governance process can "codify" the rules for an optimal interest distribution - adding intermediary steps to fine-tuning prize models and optimal interes allocation.
 

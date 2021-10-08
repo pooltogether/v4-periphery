@@ -2,6 +2,7 @@
 pragma solidity 0.8.6;
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "./interfaces/IPrizeTierHistory.sol";
+
 /**
   * @title  PoolTogether V4 IPrizeTierHistory
   * @author PoolTogether Inc Team
@@ -21,7 +22,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /**
       * @notice Default PrizeTiers
      */
-    PrizeTierDefaults internal defaults;
+    // PrizeTierDefaults internal defaults;
     
     /**
       * @notice History of PrizeTier updates
@@ -31,85 +32,84 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ Constructor ============ */
 
     constructor(
-      address _owner,
-      PrizeTierDefaults memory _defaults
+      address _owner
     ) Ownable(_owner) {
       // SSTORE update defaults with initial parameters
-      defaults = _defaults;
+      // defaults = _defaults;
     }
     
     /* ============ External Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    function push(DrawPrizeDistribution calldata _drawPrizeDistribution) external override onlyManagerOrOwner returns (uint32) {
-      PrizeTierDefaults memory _defaults = defaults;
-
-      // CREATE new PrizeTier using default parameters and incoming DrawPrizeDistribution parameters.
-      PrizeTier memory _nextPrizeTier = PrizeTier({
-        bitRangeSize:     _defaults.bitRangeSize,
-        drawId:           _drawPrizeDistribution.drawId,
-        maxPicksPerUser:  _defaults.maxPicksPerUser,
-        tiers:       _defaults.tiers,
-        validityDuration: _drawPrizeDistribution.drawStart + _defaults.prizeExpirationSeconds, // Sets prize claim expiration date/timestamp`
-        prize:            _drawPrizeDistribution.prize
-      });
-      
+    function push(PrizeTier calldata _nextPrizeTier) external override onlyManagerOrOwner returns (uint32) {
       PrizeTier[] memory _history = history;
+
       if(_history.length > 0) {
         // READ the newest PrizeTier struct
-        PrizeTier memory _newPrizeTier = history[history.length - 1];
-
+        PrizeTier memory _newestPrizeTier = history[history.length - 1];
         // New PrizeTier ID must only be 1 greater than the last PrizeTier ID.
-        require(_nextPrizeTier.drawId == _newPrizeTier.drawId + 1, "PrizeTierHistory/non-sequential-prize-tier");
-      } else {
-        startDrawId = _drawPrizeDistribution.drawId;
+        require(_nextPrizeTier.drawId >_newestPrizeTier.drawId, "PrizeTierHistory/non-sequential-prize-tier");
       }
 
       history.push(_nextPrizeTier);
 
-      emit PrizeTierPushed(_drawPrizeDistribution.drawId, _nextPrizeTier);
-    }
-
-    /* ============ Getter Functions ============ */
-
-    function getDefaults() external view override returns (PrizeTierDefaults memory) {
-      return defaults;
-    }
-    
-    function getStartingDrawId() external view override returns (uint32) {
-      return startDrawId;
-    }
-
-    // @inheritdoc IPrizeTierHistory
-    function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory) {
-      require(_drawId < startDrawId + history.length, "PrizeTierHistory/prize-tier-unavailable");
-      return history[_drawId - startDrawId];
-    }
-    
-    // @inheritdoc IPrizeTierHistory
-    function getPrizeTierList(uint32[] calldata _drawIds) external view override returns (PrizeTier[] memory) {
-      PrizeTier[] memory _data = new PrizeTier[](_drawIds.length) ;
-      uint32 _startDrawId = startDrawId;
-      for (uint256 index = 0; index < _drawIds.length; index++) {
-        _data[index] = history[_drawIds[index] - _startDrawId]; // SLOAD each struct instead of the whole array before the FOR loop.
-      }
-      return _data;
+      emit PrizeTierPushed(_nextPrizeTier.drawId, _nextPrizeTier);
     }
 
     /* ============ Setter Functions ============ */
     
     // @inheritdoc IPrizeTierHistory
-    function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
-      require(startDrawId > 0, "PrizeTierHistory/history-empty");
-      uint32 _idx = _prizeTier.drawId - startDrawId;
-      history[_idx] = _prizeTier;
-      emit PrizeTierSet(_idx, _prizeTier.drawId, _prizeTier);
+    // function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
+    //   require(startDrawId > 0, "PrizeTierHistory/history-empty");
+    //   uint32 _idx = _prizeTier.drawId - startDrawId;
+    //   history[_idx] = _prizeTier;
+    //   emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
+    // }
+
+    /* ============ Getter Functions ============ */
+    // @inheritdoc IPrizeTierHistory
+    function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory) {
+      uint256 leftSide;
+      uint256 rightSide;
+      uint256 cardinality = history.length;
+
+      leftSide = 0;
+      rightSide = cardinality - 1;
+      while(true) {
+        uint256 center = (leftSide + rightSide) / 2;
+
+        // [ 1, 5, 12, 32, 65]
+        uint32 centerPrizeTierID = history[center].drawId;
+
+        if (centerPrizeTierID > _drawId) {
+          rightSide = center;
+        } else if (centerPrizeTierID < _drawId) {
+          leftSide = center;
+        } 
+
+        if(leftSide == rightSide) return history[centerPrizeTierID];
+
+      }
     }
 
     // @inheritdoc IPrizeTierHistory
-    function setDefaults(PrizeTierDefaults calldata _defaults) external override onlyOwner {
-      defaults = _defaults;
-      emit PrizeTierDefaultsSet(_defaults);
+    function getOldestDrawId() external view override returns (uint32) {
+      return history[0].drawId;
+    }
+    
+    // @inheritdoc IPrizeTierHistory
+    function getNewestDrawId() external view override returns (uint32) {
+      return history[history.length - 1].drawId;
+    }
+    
+    // @inheritdoc IPrizeTierHistory
+    function getPrizeTierList(uint32[] calldata _drawIds) external view override returns (PrizeTier[] memory) {
+      // PrizeTier[] memory _data = new PrizeTier[](_drawIds.length) ;
+      // uint32 _startDrawId = startDrawId;
+      // for (uint256 index = 0; index < _drawIds.length; index++) {
+      //   _data[index] = history[_drawIds[index] - _startDrawId]; // SLOAD each struct instead of the whole array before the FOR loop.
+      // }
+      // return _data;
     }
 
 }

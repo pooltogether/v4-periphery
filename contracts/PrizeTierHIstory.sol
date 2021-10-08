@@ -19,7 +19,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     uint32 internal startDrawId;
 
     /**
-      * @notice History of PrizeTier updates
+      * @notice Default PrizeTiers
      */
     PrizeTierDefaults internal defaults;
     

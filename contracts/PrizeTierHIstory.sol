@@ -66,17 +66,19 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ Setter Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    // function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
-    //   require(startDrawId > 0, "PrizeTierHistory/history-empty");
-    //   uint32 _idx = _prizeTier.drawId - startDrawId;
-    //   history[_idx] = _prizeTier;
-    //   emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
-    // }
+    function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
+      require(history.length > 0, "PrizeTierHistory/history-empty");
+      uint32 _idx = _prizeTier.drawId - history[0].drawId;
+      history[_idx] = _prizeTier;
+      emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
+    }
 
     /* ============ Getter Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
     function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory) {
+        require(_drawId > 0, "PrizeTierHistory/draw-id-not-zero");
+        
         uint256 cardinality = history.length;
         uint256 leftSide = 0;
         uint256 rightSide = cardinality - 1;
@@ -84,12 +86,10 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         uint32 oldestDrawId = history[leftSide].drawId;
         uint32 newestDrawId = history[rightSide].drawId;
 
-        require(_drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
-
-        if (_drawId >= newestDrawId) {
-            // TODO: optimistic return or revert?
-            return history[rightSide];
-        }
+        require(_drawId >= oldestDrawId && _drawId <= newestDrawId, "PrizeTierHistory/draw-id-out-of-range");
+        
+        if (_drawId == newestDrawId) return history[rightSide];
+        if (_drawId == oldestDrawId) return history[leftSide];
 
         while (true) {
             uint256 center = leftSide + (rightSide - leftSide) / 2;

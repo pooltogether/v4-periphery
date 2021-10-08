@@ -32,17 +32,8 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
 
     constructor(
       address _owner,
-      uint8 _bitRangeSize,
-      uint32 _maxPicksPerUser,
-      uint32[16] memory _tiers
+      PrizeTierDefaults memory _defaults
     ) Ownable(_owner) {
-      PrizeTierDefaults memory _defaults = defaults;
-
-      // UPDATE PrizeTier default parameters
-      _defaults.bitRangeSize = _bitRangeSize;
-      _defaults.maxPicksPerUser = _maxPicksPerUser;
-      _defaults.tiers = _tiers;
-
       // SSTORE update defaults with initial parameters
       defaults = _defaults;
     }
@@ -50,7 +41,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ External Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    function push(DrawPrizeDistribution calldata _drawPrizeDistribution) external override onlyManager returns (uint32 drawId) {
+    function push(DrawPrizeDistribution calldata _drawPrizeDistribution) external override onlyManagerOrOwner returns (uint32) {
       PrizeTierDefaults memory _defaults = defaults;
 
       // CREATE new PrizeTier using default parameters and incoming DrawPrizeDistribution parameters.
@@ -75,27 +66,41 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
       }
 
       history.push(_nextPrizeTier);
+
+      emit PrizeTierPushed(_drawPrizeDistribution.drawId, _nextPrizeTier);
+    }
+
+    /* ============ Getter Functions ============ */
+
+    function getDefaults() external view override returns (PrizeTierDefaults memory) {
+      return defaults;
     }
     
+    function getStartingDrawId() external view override returns (uint32) {
+      return startDrawId;
+    }
 
     // @inheritdoc IPrizeTierHistory
-    function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory prizeTier) {
+    function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory) {
+      require(_drawId < startDrawId + history.length, "PrizeTierHistory/prize-tier-unavailable");
       return history[_drawId - startDrawId];
     }
     
     // @inheritdoc IPrizeTierHistory
-    function getPrizeTierList(uint32[] calldata _drawIds) external view override returns (PrizeTier[] memory prizeTier) {
+    function getPrizeTierList(uint32[] calldata _drawIds) external view override returns (PrizeTier[] memory) {
       PrizeTier[] memory _data = new PrizeTier[](_drawIds.length) ;
-      PrizeTier[] memory _history = history;
       uint32 _startDrawId = startDrawId;
       for (uint256 index = 0; index < _drawIds.length; index++) {
         _data[index] = history[_drawIds[index] - _startDrawId]; // SLOAD each struct instead of the whole array before the FOR loop.
       }
       return _data;
     }
+
+    /* ============ Setter Functions ============ */
     
     // @inheritdoc IPrizeTierHistory
-    function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32 drawId) {
+    function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
+      require(startDrawId > 0, "PrizeTierHistory/history-empty");
       uint32 _idx = _prizeTier.drawId - startDrawId;
       history[_idx] = _prizeTier;
       emit PrizeTierSet(_idx, _prizeTier.drawId, _prizeTier);

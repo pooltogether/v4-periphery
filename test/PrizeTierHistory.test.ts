@@ -1,14 +1,11 @@
 import { expect } from 'chai';
-import { ethers, artifacts } from 'hardhat';
-import { deployMockContract, MockContract } from 'ethereum-waffle';
+import { ethers } from 'hardhat';
 import { Signer } from '@ethersproject/abstract-signer';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Contract, ContractFactory } from 'ethers';
-
 import { range } from './utils/range';
 
-const { constants, getSigners, utils } = ethers;
-const { AddressZero } = constants;
+const { getSigners, utils } = ethers;
 const { parseEther: toWei } = utils;
 
 describe('PrizeTierHistory', () => {
@@ -55,20 +52,23 @@ describe('PrizeTierHistory', () => {
 
   before(async () => {
     [wallet1, wallet2, wallet3, wallet4] = await getSigners();
-
     prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory');
   });
 
   beforeEach(async () => {
     prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address);
-
-    // await prizeTierHistory.setManager(wallet2.address);
   });
-
-  describe('Core', () => { });
 
   describe('Getters', () => {
     it('should succeed to get prize tiers from history', async () => {
+      await pushPrizeTiers();
+      const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 9]);
+      expect(prizeTierFromHistory[0].drawId).to.equal(1);
+      expect(prizeTierFromHistory[1].drawId).to.equal(6);
+      expect(prizeTierFromHistory[2].drawId).to.equal(9);
+    });
+
+    it('should succeed to get prize tier from history', async () => {
       await pushPrizeTiers();
 
       prizeTiers.map(async (prizeTier) => {
@@ -130,7 +130,6 @@ describe('PrizeTierHistory', () => {
     describe('.set()', () => {
       it('should succeed to set existing PrizeTier in history from Owner wallet.', async () => {
         await prizeTierHistory.push(prizeTiers[0]);
-
         const prizeTier = {
           ...prizeTiers[0],
           bitRangeSize: 16,
@@ -142,34 +141,14 @@ describe('PrizeTierHistory', () => {
       });
 
       it('should fail to set existing PrizeTier due to empty history', async () => {
-        const tiers = range(16, 0).map((i) => 0);
-        const prizeTier = {
-          bitRangeSize: 10,
-          drawId: 1,
-          maxPicksPerUser: 10,
-          validityDuration: 90000,
-          tiers: tiers,
-          prize: 500000,
-        };
-
-        expect(prizeTierHistory.setPrizeTier(prizeTier)).to.revertedWith(
+        expect(prizeTierHistory.setPrizeTier(prizeTiers[0])).to.revertedWith(
           'PrizeTierHistory/history-empty',
         );
       });
 
       it('should fail to set existing PrizeTier in history from Manager wallet', async () => {
-        const tiers = range(16, 0).map((i) => 0);
-        const prizeTier = {
-          bitRangeSize: 10,
-          drawId: 1,
-          maxPicksPerUser: 10,
-          validityDuration: 90000,
-          tiers: tiers,
-          prize: 500000,
-        };
-
         expect(
-          prizeTierHistory.connect(wallet2 as unknown as Signer).setPrizeTier(prizeTier),
+          prizeTierHistory.connect(wallet2 as unknown as Signer).setPrizeTier(prizeTiers[0]),
         ).to.revertedWith('Ownable/caller-not-owner');
       });
     });

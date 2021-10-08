@@ -1,8 +1,9 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers, artifacts } from 'hardhat';
-import { Contract, ContractFactory } from 'ethers';
 import { deployMockContract, MockContract } from 'ethereum-waffle';
+import { Signer } from '@ethersproject/abstract-signer';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { Contract, ContractFactory } from 'ethers';
 
 const { constants, getSigners, utils } = ethers;
 const { AddressZero } = constants;
@@ -34,7 +35,7 @@ describe('PrizeFlush', () => {
         prizeSplitStrategyFactory = await ethers.getContractFactory('PrizeSplitStrategy');
 
         let PrizeSplitStrategy = await artifacts.readArtifact('PrizeSplitStrategy');
-        strategy = await deployMockContract(wallet1, PrizeSplitStrategy.abi);
+        strategy = await deployMockContract(wallet1 as unknown as Signer, PrizeSplitStrategy.abi);
     });
 
     beforeEach(async () => {
@@ -64,7 +65,7 @@ describe('PrizeFlush', () => {
     describe('Setters', () => {
         it('should fail to set the destination address if not called by owner', async () => {
             await expect(
-                prizeFlush.connect(wallet3).setDestination(wallet3.address),
+                prizeFlush.connect(wallet3 as unknown as Signer).setDestination(wallet3.address),
             ).to.revertedWith('Ownable/caller-not-owner');
         });
 
@@ -82,7 +83,7 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the strategy address', async () => {
-            await expect(prizeFlush.connect(wallet3).setStrategy(wallet3.address)).to.revertedWith(
+            await expect(prizeFlush.connect(wallet3 as unknown as Signer).setStrategy(wallet3.address)).to.revertedWith(
                 'Ownable/caller-not-owner',
             );
         });
@@ -101,7 +102,7 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the reserve address', async () => {
-            await expect(prizeFlush.connect(wallet3).setReserve(wallet3.address)).to.revertedWith(
+            await expect(prizeFlush.connect(wallet3 as unknown as Signer).setReserve(wallet3.address)).to.revertedWith(
                 'Ownable/caller-not-owner',
             );
         });

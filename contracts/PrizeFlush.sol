@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity 0.8.6;
-
-import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import "./interfaces/IPrizeFlush.sol";
 
@@ -27,8 +26,6 @@ contract PrizeFlush is IPrizeFlush, Manageable {
 
     /// @notice Strategy address.
     IStrategy internal strategy;
-
-    /* ============ Events ============ */
 
     /**
      * @notice Emitted when contract has been deployed.

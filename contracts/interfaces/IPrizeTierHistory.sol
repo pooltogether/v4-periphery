@@ -73,5 +73,5 @@ interface IPrizeTierHistory {
      * @param prizeTier Updated PrizeTierHistory struct
      * @return drawId Draw ID linked to PrizeTierHistory
      */
-    function setPrizeTier(PrizeTier calldata prizeTier) external returns (uint32 drawId);
+    function popAndPush(PrizeTier calldata prizeTier) external returns (uint32 drawId);
 }

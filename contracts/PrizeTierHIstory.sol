@@ -48,11 +48,14 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ Setter Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    function setPrizeTier(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
+    function popAndPush(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
       require(history.length > 0, "PrizeTierHistory/history-empty");
-      uint32 _idx = _prizeTier.drawId - history[0].drawId;
-      history[_idx] = _prizeTier;
+      PrizeTier memory _newestPrizeTier = history[history.length - 1];
+      require(_prizeTier.drawId == _newestPrizeTier.drawId, "PrizeTierHistory/invalid-draw-id");
+      history[history.length - 1] = _prizeTier;
       emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
+
+      return _prizeTier.drawId;
     }
 
     /* ============ Getter Functions ============ */
@@ -93,9 +96,8 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
       uint32 oldestDrawId = history[leftSide].drawId;
       uint32 newestDrawId = history[rightSide].drawId;
       
-      require(_drawId >= oldestDrawId && _drawId <= newestDrawId, "PrizeTierHistory/draw-id-out-of-range");
-
-      if (_drawId == newestDrawId) return history[rightSide];
+      require(_drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
+      if (_drawId >= newestDrawId) return history[rightSide];
       if (_drawId == oldestDrawId) return history[leftSide];
 
       return _binarySearch(_drawId, leftSide, rightSide, history);

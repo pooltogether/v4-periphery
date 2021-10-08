@@ -70,7 +70,6 @@ describe('PrizeTierHistory', () => {
 
     it('should succeed to get prize tier from history', async () => {
       await pushPrizeTiers();
-
       prizeTiers.map(async (prizeTier) => {
         const prizeTierFromHistory = await prizeTierHistory.getPrizeTier(prizeTier.drawId);
         expect(prizeTierFromHistory.drawId).to.equal(prizeTier.drawId);
@@ -79,22 +78,20 @@ describe('PrizeTierHistory', () => {
 
     it('should return prize tier before our searched draw id', async () => {
       await pushPrizeTiers();
-
       const prizeTierFromHistory = await prizeTierHistory.getPrizeTier(4);
       expect(prizeTierFromHistory.drawId).to.equal(prizeTiers[0].drawId);
     });
 
     it('should fail to get a PrizeTier before history range', async () => {
       await pushPrizeTiers();
-
-      expect(prizeTierHistory.getPrizeTier(0)).to.revertedWith(
+      await expect(prizeTierHistory.getPrizeTier(0)).to.revertedWith(
         'PrizeTierHistory/draw-id-not-zero',
       );
     });
 
     it('should fail to get a PrizeTer after history range', async () => {
-      await pushPrizeTiers();
-      expect(prizeTierHistory.getPrizeTier(10)).to.revertedWith(
+      await prizeTierHistory.push(prizeTiers[2])
+      await expect(prizeTierHistory.getPrizeTier(4)).to.be.revertedWith(
         'PrizeTierHistory/draw-id-out-of-range',
       );
     });
@@ -102,11 +99,10 @@ describe('PrizeTierHistory', () => {
 
   describe('Setters', () => {
     describe('.push()', () => {
+
       it('should succeed push PrizeTier into history from Owner wallet.', async () => {
-        expect(prizeTierHistory.push(prizeTiers[0])).to.emit(
-          prizeTierHistory,
-          'PrizeTierPushed',
-        );
+        await expect(prizeTierHistory.push(prizeTiers[0]))
+          .to.emit(prizeTierHistory, 'PrizeTierPushed');
       });
 
       it('should succeed to push PrizeTier into history from Manager wallet', async () => {
@@ -114,15 +110,14 @@ describe('PrizeTierHistory', () => {
         await expect(
           prizeTierHistory
             .connect(wallet2 as unknown as Signer)
-            .push(prizeTiers[0]),
+            .push(prizeTiers[0])
         ).to.emit(prizeTierHistory, 'PrizeTierPushed');
       });
 
       it('should fail to push PrizeTier into history from Unauthorized wallet', async () => {
-        await expect(
-          prizeTierHistory
-            .connect(wallet4 as unknown as Signer)
-            .push(prizeTiers[0]),
+        await expect(prizeTierHistory
+          .connect(wallet4 as unknown as Signer)
+          .push(prizeTiers[0])
         ).to.be.revertedWith('Manageable/caller-not-manager-or-owner');
       });
     });
@@ -134,23 +129,38 @@ describe('PrizeTierHistory', () => {
           ...prizeTiers[0],
           bitRangeSize: 16,
         };
-        await expect(prizeTierHistory.setPrizeTier(prizeTier)).to.emit(
-          prizeTierHistory,
-          'PrizeTierSet',
-        );
+
+        await expect(prizeTierHistory.popAndPush(prizeTier))
+          .to.emit(
+            prizeTierHistory,
+            'PrizeTierSet',
+          );
+      });
+
+      it('should fail to set existing PrizeTier in history due to invalid draw id`.', async () => {
+        await prizeTierHistory.push(prizeTiers[0]);
+        const prizeTier = {
+          ...prizeTiers[0],
+          drawId: 99,
+          bitRangeSize: 16,
+        };
+        await expect(prizeTierHistory.popAndPush(prizeTier))
+          .to.revertedWith('PrizeTierHistory/invalid-draw-id')
       });
 
       it('should fail to set existing PrizeTier due to empty history', async () => {
-        expect(prizeTierHistory.setPrizeTier(prizeTiers[0])).to.revertedWith(
-          'PrizeTierHistory/history-empty',
-        );
+        await expect(prizeTierHistory.popAndPush(prizeTiers[0]))
+          .to.revertedWith(
+            'PrizeTierHistory/history-empty',
+          );
       });
 
       it('should fail to set existing PrizeTier in history from Manager wallet', async () => {
-        expect(
-          prizeTierHistory.connect(wallet2 as unknown as Signer).setPrizeTier(prizeTiers[0]),
+        await expect(
+          (await prizeTierHistory.connect(wallet2 as unknown as Signer)).popAndPush(prizeTiers[0]),
         ).to.revertedWith('Ownable/caller-not-owner');
       });
+
     });
   });
 });

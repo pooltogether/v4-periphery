@@ -64,7 +64,7 @@ describe('PrizeFlush', () => {
     describe('Setters', () => {
         it('should fail to set the destination address if not called by owner', async () => {
             await expect(
-                prizeFlush.connect(wallet3).setDestination(wallet3.address),
+                prizeFlush.connect(wallet3 as Signer).setDestination(wallet3.address),
             ).to.revertedWith('Ownable/caller-not-owner');
         });
 
@@ -82,7 +82,7 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the strategy address', async () => {
-            await expect(prizeFlush.connect(wallet3).setStrategy(wallet3.address)).to.revertedWith(
+            await expect(prizeFlush.connect(wallet3 as Signer).setStrategy(wallet3.address)).to.revertedWith(
                 'Ownable/caller-not-owner',
             );
         });
@@ -101,7 +101,7 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the reserve address', async () => {
-            await expect(prizeFlush.connect(wallet3).setReserve(wallet3.address)).to.revertedWith(
+            await expect(prizeFlush.connect(wallet3 as Signer).setReserve(wallet3.address)).to.revertedWith(
                 'Ownable/caller-not-owner',
             );
         });

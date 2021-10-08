@@ -67,7 +67,7 @@ interface IPrizeTierHistory {
     function getStartingDrawId() external view returns (uint32);
     
     /**
-      * @notice Read PrizeTierHistory struct from history array.
+      * @notice Read PrizeTierHistory List from history array.
       * @param drawIds Draw ID array
       * @return prizeTierList
     */

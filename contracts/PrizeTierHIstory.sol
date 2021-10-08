@@ -13,7 +13,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /**
       * @notice The Draw ID used to initialize the history. 
       * @dev    Start Draw ID is SSTOREd is used as reference a reference for searches/lookups
-                The start Draw ID can be used calculate the relative position of any PrizeTier 
+                The start Draw ID can be used to calculate the relative position of any PrizeTier 
                 using a Draw ID if the starting Draw ID is known.
      */
     uint32 internal startDrawId;

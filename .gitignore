@@ -22,3 +22,5 @@ types
 # Solidity Coverage
 coverage
 coverage.json
+
+.history

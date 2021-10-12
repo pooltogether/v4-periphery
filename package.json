@@ -1,6 +1,6 @@
 {
     "name": "@pooltogether/v4-periphery",
-    "version": "1.0.0-beta.2",
+    "version": "1.0.0-beta.3",
     "description": "PoolTogether V4 Periphery",
     "main": "index.js",
     "license": "MIT",
@@ -20,7 +20,8 @@
         "distribute-ether": "hardhat --network localhost fork:distribute-ether-from-binance",
         "create-prize-pool": "hardhat --network localhost fork:create-aave-prize-pool",
         "run-fork": "yarn impersonate-accounts && yarn distribute-ether && yarn create-prize-pool",
-        "test": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat test"
+        "test": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat test",
+        "prepack": "yarn compile"
     },
     "dependencies": {
         "@openzeppelin/contracts": "4.3.2",

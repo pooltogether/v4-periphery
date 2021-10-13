@@ -135,4 +135,8 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
             }
         }
     }
+
+    function count() external override view returns (uint256) {
+        return history.length;
+    }
 }

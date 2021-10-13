@@ -18,6 +18,7 @@ interface IPrizeTierHistory {
         uint256 prize;
         uint32[16] tiers;
         uint32 validityDuration;
+        uint32 endTimestampOffset;
     }
 
     /**

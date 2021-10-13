@@ -25,6 +25,7 @@ describe('PrizeTierHistory', () => {
       tiers: range(16, 0).map((i) => 0),
       validityDuration: 10000,
       prize: toWei('10000'),
+      endTimestampOffset: 3000
     },
     {
       bitRangeSize: 5,
@@ -33,6 +34,7 @@ describe('PrizeTierHistory', () => {
       tiers: range(16, 0).map((i) => 0),
       validityDuration: 10000,
       prize: toWei('10000'),
+      endTimestampOffset: 3000
     },
     {
       bitRangeSize: 5,
@@ -41,6 +43,7 @@ describe('PrizeTierHistory', () => {
       tiers: range(16, 0).map((i) => 0),
       validityDuration: 10000,
       prize: toWei('10000'),
+      endTimestampOffset: 3000
     },
   ];
 

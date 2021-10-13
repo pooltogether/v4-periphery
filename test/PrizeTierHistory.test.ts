@@ -59,6 +59,17 @@ describe('PrizeTierHistory', () => {
     prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address);
   });
 
+  describe('count()', () => {
+    it('should return zero when empty', async () => {
+      expect(await prizeTierHistory.count()).to.equal(0)
+    })
+
+    it('should return correct when pushed', async () => {
+      await pushPrizeTiers()
+      expect(await prizeTierHistory.count()).to.equal(3)
+    })
+  })
+
   describe('Getters', () => {
     it('should succeed to get prize tiers from history', async () => {
       await pushPrizeTiers();

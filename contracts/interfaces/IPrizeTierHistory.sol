@@ -74,4 +74,10 @@ interface IPrizeTierHistory {
      * @return drawId Draw ID linked to PrizeTierHistory
      */
     function popAndPush(PrizeTier calldata prizeTier) external returns (uint32 drawId);
+
+    /**
+     * @notice Returns the number of Prize Tier structs pushed
+     * @return The number of prize tiers that have been pushed
+     */
+    function count() external view returns (uint256);
 }

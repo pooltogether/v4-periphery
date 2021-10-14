@@ -23,7 +23,7 @@ describe('PrizeTierHistory', () => {
       drawId: 1,
       maxPicksPerUser: 10,
       tiers: range(16, 0).map((i) => 0),
-      validityDuration: 10000,
+      expiryDuration: 10000,
       prize: toWei('10000'),
       endTimestampOffset: 3000
     },
@@ -32,7 +32,7 @@ describe('PrizeTierHistory', () => {
       drawId: 6,
       maxPicksPerUser: 10,
       tiers: range(16, 0).map((i) => 0),
-      validityDuration: 10000,
+      expiryDuration: 10000,
       prize: toWei('10000'),
       endTimestampOffset: 3000
     },
@@ -41,7 +41,7 @@ describe('PrizeTierHistory', () => {
       drawId: 9,
       maxPicksPerUser: 10,
       tiers: range(16, 0).map((i) => 0),
-      validityDuration: 10000,
+      expiryDuration: 10000,
       prize: toWei('10000'),
       endTimestampOffset: 3000
     },

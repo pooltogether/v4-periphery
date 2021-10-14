@@ -15,7 +15,7 @@ interface IPrizeTierHistory {
         uint8 bitRangeSize;
         uint32 drawId;
         uint32 maxPicksPerUser;
-        uint32 validityDuration;
+        uint32 expiryDuration;
         uint32 endTimestampOffset;
         uint256 prize;
         uint32[16] tiers;

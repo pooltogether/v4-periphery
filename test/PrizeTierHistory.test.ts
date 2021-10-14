@@ -138,9 +138,9 @@ describe('PrizeTierHistory', () => {
 
     describe('.set()', () => {
       it('should succeed to set existing PrizeTier in history from Owner wallet.', async () => {
-        await prizeTierHistory.push(prizeTiers[0]);
+        await pushPrizeTiers()
         const prizeTier = {
-          ...prizeTiers[0],
+          ...prizeTiers[2],
           bitRangeSize: 16,
         };
 
@@ -151,11 +151,26 @@ describe('PrizeTierHistory', () => {
           );
       });
 
+      it('should succeed to set newest PrizeTier in history from Owner wallet.', async () => {
+        await pushPrizeTiers()
+        const prizeTier = {
+          ...prizeTiers[2],
+          drawId: 10,
+          bitRangeSize: 16
+        };
+
+        await expect(prizeTierHistory.popAndPush(prizeTier))
+          .to.emit(
+            prizeTierHistory,
+            'PrizeTierSet',
+          );
+      });
+
       it('should fail to set existing PrizeTier in history due to invalid draw id`.', async () => {
-        await prizeTierHistory.push(prizeTiers[0]);
+        await pushPrizeTiers()
         const prizeTier = {
           ...prizeTiers[0],
-          drawId: 99,
+          drawId: 8,
           bitRangeSize: 16,
         };
         await expect(prizeTierHistory.popAndPush(prizeTier))
@@ -177,4 +192,34 @@ describe('PrizeTierHistory', () => {
 
     });
   });
+
+  describe('replace()', async () => {
+    it('should replace a tier', async () => {
+      const prizeTier = {
+        ...prizeTiers[1],
+        bitRangeSize: 12,
+      };
+
+      await pushPrizeTiers()
+
+      await expect(prizeTierHistory.replace(prizeTier))
+        .to.emit(prizeTierHistory, 'PrizeTierSet')
+
+      const prizeTierVal = await prizeTierHistory.getPrizeTier(prizeTier.drawId)
+
+      expect(prizeTierVal.bitRangeSize).to.equal(12)
+    })
+
+    it('should not allow replacing a prize tier with a different draw id', async () => {
+      const prizeTier = {
+        ...prizeTiers[1],
+        drawId: 4,
+        bitRangeSize: 12,
+      };
+
+      await pushPrizeTiers()
+
+      await expect(prizeTierHistory.replace(prizeTier)).to.be.revertedWith('PrizeTierHistory/draw-id-must-match')
+    })
+  })
 });

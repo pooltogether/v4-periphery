@@ -43,6 +43,8 @@ interface IPrizeTierHistory {
      */
     function push(PrizeTier calldata drawPrizeDistribution) external returns (uint32 drawId);
 
+    function replace(PrizeTier calldata _prizeTier) external returns (uint256);
+
     /**
      * @notice Read PrizeTierHistory struct from history array.
      * @param drawId Draw ID
@@ -75,6 +77,8 @@ interface IPrizeTierHistory {
      * @return drawId Draw ID linked to PrizeTierHistory
      */
     function popAndPush(PrizeTier calldata prizeTier) external returns (uint32 drawId);
+
+    function getPrizeTierAtIndex(uint256 index) external view returns (PrizeTier memory);
 
     /**
      * @notice Returns the number of Prize Tier structs pushed

@@ -41,10 +41,12 @@ const config: HardhatUserConfig = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/IERC20.sol',
+            '@pooltogether/v4-core/contracts/Ticket.sol',
             '@pooltogether/v4-core/contracts/prize-strategy/PrizeSplitStrategy.sol',
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',
             '@pooltogether/v4-core/contracts/interfaces/IStrategy.sol',
             '@pooltogether/v4-core/contracts/test/ERC20Mintable.sol',
+            '@pooltogether/v4-core/contracts/test/PrizePoolHarness.sol',
             '@pooltogether/v4-core/contracts/test/ReserveHarness.sol',
         ],
     },

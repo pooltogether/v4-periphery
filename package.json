@@ -8,6 +8,7 @@
         "clean": "rm -rf cache/ artifacts/",
         "compile": "mkdir -p abis && hardhat --show-stack-traces --max-memory 8192 compile",
         "coverage": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat coverage",
+        "coverage:file": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat coverage --testfiles",
         "deploy": "hardhat deploy --write true --network",
         "docs": "solidity-docgen --solc-module solc -i contracts -o docs -t templates",
         "verify": "hardhat etherscan-verify --license MIT --solc-input --network",

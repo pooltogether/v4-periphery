@@ -9,7 +9,7 @@ contract TwabRewardsHarness is TwabRewards {
         emit Deployed(_owner);
     }
 
-    function requireTicket(ITicket _ticket) external {
+    function requireTicket(address _ticket) external view {
         return _requireTicket(_ticket);
     }
 }

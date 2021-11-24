@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.6;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import "./interfaces/ITwabRewards.sol";
@@ -12,6 +13,8 @@ import "./interfaces/ITwabRewards.sol";
  * @notice Contract to distribute rewards to depositors in a pool.
  */
 contract TwabRewards is ITwabRewards, Manageable {
+    /* ============ Global Variables ============ */
+
     /// @notice Settings of each promotion.
     mapping(uint32 => Promotion) internal _promotions;
 
@@ -20,6 +23,8 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /// @notice Current epoch number.
     uint32 internal _currentEpochId;
+
+    /* ============ Events ============ */
 
     /**
         @notice Emitted when contract has been deployed.
@@ -33,12 +38,22 @@ contract TwabRewards is ITwabRewards, Manageable {
     */
     event PromotionCreated(Promotion promotion);
 
+    /* ============ Constructor ============ */
+
     /**
         @notice Deploy TwabRewards contract.
         @param _owner Contract owner address
     */
     constructor(address _owner) Ownable(_owner) {
         emit Deployed(_owner);
+    }
+
+    /* ============ Modifiers ============ */
+
+    /// @dev Ensure that the caller is the creator of the currently active promotion.
+    modifier onlyPromotionCreator() {
+        require(msg.sender == _getCurrentPromotion().creator, "TwabRewards/only-promotion-creator");
+        _;
     }
 
     /* ============ External Functions ============ */
@@ -56,20 +71,45 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint32 _nextPromotionId = _currentPromotionId + 1;
         _currentPromotionId = _nextPromotionId;
 
+        address _token = _promotionParameters.token;
+        uint256 _tokensPerEpoch = _promotionParameters.tokensPerEpoch;
+        uint256 _numberOfEpochs = _promotionParameters.numberOfEpochs;
+
+        IERC20(_token).safeTransfer(address(this), _tokensPerEpoch * _numberOfEpochs);
+
         Promotion memory _nextPromotion = Promotion(
             _nextPromotionId,
             msg.sender,
             _ticket,
-            _promotionParameters.token,
-            _promotionParameters.tokensPerEpoch,
+            _token,
+            _tokensPerEpoch,
             _promotionParameters.startTimestamp,
             _promotionParameters.epochDuration,
-            _promotionParameters.numberOfEpochs
+            _numberOfEpochs
         );
 
         _promotions[_nextPromotionId] = _nextPromotion;
 
         emit PromotionCreated(_nextPromotion);
+
+        return true;
+    }
+
+    /// @inheritdoc ITwabRewards
+    function cancelPromotion(address _to) external override onlyPromotionCreator returns (bool) {
+        require(_isPromotionActive() == true, "TwabRewards/no-active-promotion");
+        require(_to != address(0), "TwabRewards/recipient-not-zero-address");
+
+        Promotion memory _currentPromotion = _getCurrentPromotion();
+
+        uint256 _token = IERC20(_currentPromotion.token);
+        uint256 _remainingRewards = _getRemainingRewards(_token);
+
+        if (_remainingRewards > 0) {
+            _token.safeTransfer(_to, _remainingRewards);
+        }
+
+        _promotions[_currentPromotion.id].cancelled = true;
 
         return true;
     }
@@ -82,6 +122,11 @@ contract TwabRewards is ITwabRewards, Manageable {
     /// @inheritdoc ITwabRewards
     function getPromotion(uint32 _promotionId) external view override returns (Promotion memory) {
         return _promotions[_promotionId];
+    }
+
+    /// @inheritdoc ITwabRewards
+    function getRemainingRewards() external view override returns (uint256) {
+        return _getRemainingRewards(IERC20(_getCurrentPromotion().token));
     }
 
     /* ============ Internal Functions ============ */
@@ -116,6 +161,15 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
+        @notice Get the total amount of tokens left to be rewarded.
+        @param _token Address of the token distributed as reward
+        @return Amount of tokens left to be rewarded
+     */
+    function _getRemainingRewards(IERC20 _token) internal view returns (uint256) {
+        return _token.balanceOf(address(this));
+    }
+
+    /**
         @notice Determine if current promotion is active.
         @dev When no
         @return True if promotion is active, false otherwise
@@ -126,6 +180,9 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
             (_currentPromotion.epochDuration * _currentPromotion.numberOfEpochs);
 
-        return _promotionEndTimestamp > 0 && _promotionEndTimestamp >= block.timestamp;
+        return
+            !_currentPromotion.cancelled &&
+            _promotionEndTimestamp > 0 &&
+            _promotionEndTimestamp >= block.timestamp;
     }
 }

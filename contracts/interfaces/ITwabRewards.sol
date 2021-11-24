@@ -86,7 +86,7 @@ interface ITwabRewards {
         @param _numberOfEpochs Number of epochs to add
         @return true if the operation was successful
      */
-    // function extendPromotion(uint256 _numberOfEpochs) external returns (bool);
+    function extendPromotion(uint256 _numberOfEpochs) external returns (bool);
 
     /**
         @notice Claim rewards for a given epoch.

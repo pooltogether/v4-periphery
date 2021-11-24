@@ -3,6 +3,7 @@
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import "./interfaces/ITwabRewards.sol";
@@ -13,6 +14,8 @@ import "./interfaces/ITwabRewards.sol";
  * @notice Contract to distribute rewards to depositors in a pool.
  */
 contract TwabRewards is ITwabRewards, Manageable {
+    using SafeERC20 for IERC20;
+
     /* ============ Global Variables ============ */
 
     /// @notice Settings of each promotion.
@@ -79,6 +82,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         Promotion memory _nextPromotion = Promotion(
             _nextPromotionId,
+            false,
             msg.sender,
             _ticket,
             _token,
@@ -102,7 +106,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         Promotion memory _currentPromotion = _getCurrentPromotion();
 
-        uint256 _token = IERC20(_currentPromotion.token);
+        IERC20 _token = IERC20(_currentPromotion.token);
         uint256 _remainingRewards = _getRemainingRewards(_token);
 
         if (_remainingRewards > 0) {
@@ -110,6 +114,20 @@ contract TwabRewards is ITwabRewards, Manageable {
         }
 
         _promotions[_currentPromotion.id].cancelled = true;
+
+        return true;
+    }
+
+    /// @inheritdoc ITwabRewards
+    function extendPromotion(uint256 _numberOfEpochs) external override returns (bool) {
+        require(_isPromotionActive() == true, "TwabRewards/no-active-promotion");
+
+        Promotion memory _currentPromotion = _getCurrentPromotion();
+
+        IERC20(_currentPromotion.token).safeTransfer(
+            address(this),
+            _numberOfEpochs * _currentPromotion.tokensPerEpoch
+        );
 
         return true;
     }

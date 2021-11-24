@@ -89,13 +89,21 @@ interface ITwabRewards {
     function extendPromotion(uint256 _numberOfEpochs) external returns (bool);
 
     /**
-        @notice Claim rewards for a given epoch.
-        @dev Rewards can be claimed on behalf of a user
+        @notice Claim rewards for a given promotion and epoch.
+        @dev Rewards can be claimed on behalf of a user.
+        @dev Caller may want to claim full or partial `amount` of rewards.
         @param _user Address of the user to claim rewards for
+        @param _promotionId Promotion id to claim rewards for
         @param _epochId Epoch id to claim rewards for
+        @param _amount Amount of tokens to claim
         @return Amount of rewards claimed
      */
-    // function claimReward(address _user, uint32 _epochId) external returns (uint256);
+    function claimRewards(
+        address _user,
+        uint256 _promotionId,
+        uint256 _epochId,
+        uint256 _amount
+    ) external returns (uint256);
 
     /**
         @notice Claim rewards from all epochs for a user.
@@ -104,14 +112,6 @@ interface ITwabRewards {
         @return Amount of rewards claimed
      */
     // function claimAllRewards(address _user) external returns (uint256);
-
-    /**
-        @notice Check if a user has claimed rewards for a given epoch.
-        @param _user Address of the user to check claim for
-        @param _epochId Epoch id to check claim for
-        @return true if the user has claimed rewards for the given epoch
-     */
-    // function isClaimed(address _user, uint32 _epochId) external view returns (bool);
 
     /**
         @notice Get current promotion settings.
@@ -149,15 +149,16 @@ interface ITwabRewards {
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.
-        @param _user Address of the user to get information about a reward for
-        @param _epochId Epoch id to get information for
+        @dev Will be 0 if user has already claimed rewards for the epoch.
+        @param _user Address of the user to get amount of rewards for
         @param _promotionId Id of the promotion from which the epoch is
+        @param _epochId Epoch id to get information for
         @return Amount of tokens to be rewarded
      */
     function getRewardAmount(
         address _user,
-        uint256 _epochId,
-        uint256 _promotionId
+        uint256 _promotionId,
+        uint256 _epochId
     ) external view returns (uint256);
 
     /**
@@ -165,5 +166,5 @@ interface ITwabRewards {
         @param _user Address of the user to get information about rewards for
         @return Amount of tokens to be rewarded
      */
-    // function getAllRewardsInfo(address _user) external view returns (uint256);
+    // function getAllRewardsAmount(address _user) external view returns (uint256);
 }

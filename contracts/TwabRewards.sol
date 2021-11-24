@@ -25,6 +25,10 @@ contract TwabRewards is ITwabRewards, Manageable {
     /// @notice Current promotion id.
     uint256 internal _currentPromotionId;
 
+    /// @notice Keeps track of claimed rewards per user.
+    /// @dev _claimedRewards[promotionId][epochId][user] => uint256
+    mapping(uint256 => mapping(uint256 => mapping(address => uint256))) internal _claimedRewards;
+
     /* ============ Events ============ */
 
     /**
@@ -165,13 +169,26 @@ contract TwabRewards is ITwabRewards, Manageable {
     /// @inheritdoc ITwabRewards
     function getRewardAmount(
         address _user,
-        uint256 _epochId,
-        uint256 _promotionId
+        uint256 _promotionId,
+        uint256 _epochId
     ) external view override returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-        Epoch memory _epoch = _getEpoch(_epochId, _promotion);
+        return _getRewardAmount(_user, _promotionId, _epochId);
+    }
 
-        return _calculateRewardAmount(_user, _epoch, _promotion);
+    /// @inheritdoc ITwabRewards
+    function claimRewards(
+        address _user,
+        uint256 _promotionId,
+        uint256 _epochId,
+        uint256 _amount
+    ) external override returns (uint256) {
+        uint256 _rewardAmount = _getRewardAmount(_user, _promotionId, _epochId);
+
+        require(_amount <= _rewardAmount, "TwabRewards/rewards-claim-too-high");
+
+        IERC20(_getPromotion(_promotionId).token).safeTransferFrom(address(this), _user, _amount);
+
+        return _amount;
     }
 
     /* ============ Internal Functions ============ */
@@ -254,15 +271,18 @@ contract TwabRewards is ITwabRewards, Manageable {
         @notice Get reward amount for a specific user.
         @dev Rewards can only be claimed once the epoch is over.
         @param _user User to get reward amount for
-        @param _epoch Epoch to get reward amount for
-        @param _promotion Promotion from which the epoch is
+        @param _promotionId Promotion id from which the epoch is
+        @param _epochId Epoch id to get reward amount for
         @return Reward amount
      */
     function _calculateRewardAmount(
         address _user,
-        Epoch memory _epoch,
-        Promotion memory _promotion
+        uint256 _promotionId,
+        uint256 _epochId
     ) internal view returns (uint256) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        Epoch memory _epoch = _getEpoch(_epochId, _promotion);
+
         uint256 _epochDuration = _epoch.duration;
         uint256 _epochStartTimestamp = _epoch.startTimestamp;
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
@@ -293,7 +313,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         uint256 _averageTotalSupply = _averageTotalSupplies[0];
 
-        /// User share of tickets expressed in percentage
+        /// User's share of tickets expressed in percentage
         uint256 shareOfTickets = (_averageBalance * 100) / _averageTotalSupply;
 
         return (_promotion.tokensPerEpoch * shareOfTickets) / 100;
@@ -306,6 +326,39 @@ contract TwabRewards is ITwabRewards, Manageable {
      */
     function _getRemainingRewards(IERC20 _token) internal view returns (uint256) {
         return _token.balanceOf(address(this));
+    }
+
+    /**
+        @notice Get the amount of rewards already claimed by the user for a given promotion and epoch.
+        @param _user Address of the user to check claimed rewards for
+        @param _promotionId Epoch id to check claimed rewards for
+        @param _epochId Epoch id to check claimed rewards for
+        @return Amount of tokens already claimed by the user
+     */
+    function _getClaimedRewards(
+        address _user,
+        uint256 _promotionId,
+        uint256 _epochId
+    ) internal view returns (uint256) {
+        return _claimedRewards[_promotionId][_epochId][_user];
+    }
+
+    /**
+        @notice Get amount of tokens to be rewarded for a given epoch.
+        @dev Will be 0 if user has already claimed rewards for the epoch.
+        @param _user Address of the user to get amount of rewards for
+        @param _promotionId Promotion id from which the epoch is
+        @param _epochId Epoch id to get amount of rewards for
+        @return Amount of tokens to be rewarded
+     */
+    function _getRewardAmount(
+        address _user,
+        uint256 _promotionId,
+        uint256 _epochId
+    ) internal view returns (uint256) {
+        return
+            _calculateRewardAmount(_user, _promotionId, _epochId) -
+            _getClaimedRewards(_user, _promotionId, _epochId);
     }
 
     /**

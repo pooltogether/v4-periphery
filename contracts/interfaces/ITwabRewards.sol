@@ -92,7 +92,7 @@ interface ITwabRewards {
         @notice Claim rewards for a given epoch.
         @dev Rewards can be claimed on behalf of a user
         @param _user Address of the user to claim rewards for
-        @param _epochId Epoch number to claim rewards for
+        @param _epochId Epoch id to claim rewards for
         @return Amount of rewards claimed
      */
     // function claimReward(address _user, uint32 _epochId) external returns (uint256);
@@ -108,22 +108,10 @@ interface ITwabRewards {
     /**
         @notice Check if a user has claimed rewards for a given epoch.
         @param _user Address of the user to check claim for
-        @param _epochId Epoch number to check claim for
+        @param _epochId Epoch id to check claim for
         @return true if the user has claimed rewards for the given epoch
      */
     // function isClaimed(address _user, uint32 _epochId) external view returns (bool);
-
-    /**
-        @notice Get the total amount of tokens left to be rewarded.
-        @return Amount of tokens left to be rewarded
-     */
-    function getRemainingRewards() external view returns (uint256);
-
-    /**
-        @notice Get duration of an epoch in seconds.
-        @return Duration of an epoch in seconds
-     */
-    // function getEpochDuration() external view returns (uint32);
 
     /**
         @notice Get current promotion settings.
@@ -134,28 +122,35 @@ interface ITwabRewards {
 
     /**
         @notice Get settings for a specific promotion.
-        @param _promotionId Promotion number to get settings for
+        @param _promotionId Promotion id to get settings for
         @return Promotion settings
      */
     function getPromotion(uint32 _promotionId) external view returns (Promotion memory);
 
     /**
+        @notice Get the total amount of tokens left to be rewarded.
+        @return Amount of tokens left to be rewarded
+     */
+    function getRemainingRewards() external view returns (uint256);
+
+    /**
         @notice Get the current epoch settings.
         @return Epoch settings
      */
-    // function getCurrentEpoch() external view returns (Epoch calldata);
+    function getCurrentEpoch() external view returns (Epoch memory);
 
     /**
         @notice Get settings for a specific epoch.
-        @param _epochId Epoch number to get settings for
+        @param _epochId Epoch id to get settings for
+        @param _promotionId Promotion id that has epoch id within
         @return Epoch settings
      */
-    // function getEpoch(uint32 _epochId) external view returns (Epoch calldata);
+    function getEpoch(uint256 _epochId, uint256 _promotionId) external view returns (Epoch memory);
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.
         @param _user Address of the user to get information about a reward for
-        @param _epochId Epoch number to get information for
+        @param _epochId Epoch id to get information for
         @return Amount of tokens to be rewarded
      */
     // function getRewardInfo(address _user, uint32 _epochId) external view returns (uint256);

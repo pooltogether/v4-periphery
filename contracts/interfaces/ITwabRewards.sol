@@ -14,12 +14,12 @@ interface ITwabRewards {
         @notice Struct to keep track of each epoch's settings.
         @param id Epoch id to keep track of each epoch
         @param startTimestamp Timestamp at which the epoch starts
-        @param epochDuration Duration of one epoch in seconds
+        @param duration Duration of one epoch in seconds
      */
     struct Epoch {
         uint32 id;
         uint32 startTimestamp;
-        uint32 epochDuration;
+        uint32 duration;
     }
 
     /**
@@ -142,7 +142,7 @@ interface ITwabRewards {
     /**
         @notice Get settings for a specific epoch.
         @param _epochId Epoch id to get settings for
-        @param _promotionId Promotion id that has epoch id within
+        @param _promotionId Id of the promotion from which the epoch is
         @return Epoch settings
      */
     function getEpoch(uint256 _epochId, uint256 _promotionId) external view returns (Epoch memory);
@@ -151,9 +151,14 @@ interface ITwabRewards {
         @notice Get amount of tokens to be rewarded for a given epoch.
         @param _user Address of the user to get information about a reward for
         @param _epochId Epoch id to get information for
+        @param _promotionId Id of the promotion from which the epoch is
         @return Amount of tokens to be rewarded
      */
-    // function getRewardInfo(address _user, uint32 _epochId) external view returns (uint256);
+    function getRewardAmount(
+        address _user,
+        uint256 _epochId,
+        uint256 _promotionId
+    ) external view returns (uint256);
 
     /**
         @notice Get amount of tokens to be rewarded for all past epochs.

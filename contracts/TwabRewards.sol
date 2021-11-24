@@ -4,6 +4,7 @@ pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import "./interfaces/ITwabRewards.sol";
@@ -161,6 +162,18 @@ contract TwabRewards is ITwabRewards, Manageable {
         return _getEpoch(_epochId, _promotion);
     }
 
+    /// @inheritdoc ITwabRewards
+    function getRewardAmount(
+        address _user,
+        uint256 _epochId,
+        uint256 _promotionId
+    ) external view override returns (uint256) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        Epoch memory _epoch = _getEpoch(_epochId, _promotion);
+
+        return _calculateRewardAmount(_user, _epoch, _promotion);
+    }
+
     /* ============ Internal Functions ============ */
 
     /**
@@ -202,21 +215,6 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
-        @notice Get current epoch settings.
-        @return Epoch settings
-     */
-    function _getCurrentEpoch() internal view returns (Epoch memory) {
-        Promotion memory _currentPromotion = _getCurrentPromotion();
-        uint256 _numberOfEpochs = _currentPromotion.numberOfEpochs;
-
-        uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
-            (_currentPromotion.epochDuration * _numberOfEpochs);
-        uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
-
-        return _getEpoch(_currentEpochId, _currentPromotion);
-    }
-
-    /**
         @notice Get settings for a specific epoch.
         @param _epochId Epoch id to get settings for
         @param _promotion Promotion settings
@@ -233,8 +231,72 @@ contract TwabRewards is ITwabRewards, Manageable {
             Epoch({
                 id: uint32(_epochId),
                 startTimestamp: uint32(_promotion.startTimestamp + (_epochDuration * _epochId)),
-                epochDuration: uint32(_epochDuration)
+                duration: uint32(_epochDuration)
             });
+    }
+
+    /**
+        @notice Get current epoch settings.
+        @return Epoch settings
+     */
+    function _getCurrentEpoch() internal view returns (Epoch memory) {
+        Promotion memory _currentPromotion = _getCurrentPromotion();
+        uint256 _numberOfEpochs = _currentPromotion.numberOfEpochs;
+
+        uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
+            (_currentPromotion.epochDuration * _numberOfEpochs);
+        uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
+
+        return _getEpoch(_currentEpochId, _currentPromotion);
+    }
+
+    /**
+        @notice Get reward amount for a specific user.
+        @dev Rewards can only be claimed once the epoch is over.
+        @param _user User to get reward amount for
+        @param _epoch Epoch to get reward amount for
+        @param _promotion Promotion from which the epoch is
+        @return Reward amount
+     */
+    function _calculateRewardAmount(
+        address _user,
+        Epoch memory _epoch,
+        Promotion memory _promotion
+    ) internal view returns (uint256) {
+        uint256 _epochDuration = _epoch.duration;
+        uint256 _epochStartTimestamp = _epoch.startTimestamp;
+        uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
+
+        require(
+            block.timestamp >= _epochStartTimestamp && block.timestamp <= _epochEndTimestamp,
+            "TwabRewards/epoch-not-over"
+        );
+
+        ITicket _ticket = ITicket(_promotion.ticket);
+
+        uint256 _averageBalance = _ticket.getAverageBalanceBetween(
+            _user,
+            uint64(_epochStartTimestamp),
+            uint64(_epochEndTimestamp)
+        );
+
+        uint64[] memory _epochStartTimestamps = new uint64[](1);
+        _epochStartTimestamps[0] = uint64(_epochStartTimestamp);
+
+        uint64[] memory _epochEndTimestamps = new uint64[](1);
+        _epochEndTimestamps[0] = uint64(_epochEndTimestamp);
+
+        uint256[] memory _averageTotalSupplies = _ticket.getAverageTotalSuppliesBetween(
+            _epochStartTimestamps,
+            _epochEndTimestamps
+        );
+
+        uint256 _averageTotalSupply = _averageTotalSupplies[0];
+
+        /// User share of tickets expressed in percentage
+        uint256 shareOfTickets = (_averageBalance * 100) / _averageTotalSupply;
+
+        return (_promotion.tokensPerEpoch * shareOfTickets) / 100;
     }
 
     /**

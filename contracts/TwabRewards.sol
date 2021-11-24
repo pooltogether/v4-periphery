@@ -19,13 +19,10 @@ contract TwabRewards is ITwabRewards, Manageable {
     /* ============ Global Variables ============ */
 
     /// @notice Settings of each promotion.
-    mapping(uint32 => Promotion) internal _promotions;
+    mapping(uint256 => Promotion) internal _promotions;
 
-    /// @notice Current promotion number.
-    uint32 internal _currentPromotionId;
-
-    /// @notice Current epoch number.
-    uint32 internal _currentEpochId;
+    /// @notice Current promotion id.
+    uint256 internal _currentPromotionId;
 
     /* ============ Events ============ */
 
@@ -71,7 +68,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         _requireTicket(_ticket);
 
-        uint32 _nextPromotionId = _currentPromotionId + 1;
+        uint256 _nextPromotionId = _currentPromotionId + 1;
         _currentPromotionId = _nextPromotionId;
 
         address _token = _promotionParameters.token;
@@ -81,7 +78,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         IERC20(_token).safeTransfer(address(this), _tokensPerEpoch * _numberOfEpochs);
 
         Promotion memory _nextPromotion = Promotion(
-            _nextPromotionId,
+            uint32(_nextPromotionId),
             false,
             msg.sender,
             _ticket,
@@ -147,6 +144,23 @@ contract TwabRewards is ITwabRewards, Manageable {
         return _getRemainingRewards(IERC20(_getCurrentPromotion().token));
     }
 
+    /// @inheritdoc ITwabRewards
+    function getCurrentEpoch() external view override returns (Epoch memory) {
+        return _getCurrentEpoch();
+    }
+
+    /// @inheritdoc ITwabRewards
+    function getEpoch(uint256 _epochId, uint256 _promotionId)
+        external
+        view
+        override
+        returns (Epoch memory)
+    {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+
+        return _getEpoch(_epochId, _promotion);
+    }
+
     /* ============ Internal Functions ============ */
 
     /**
@@ -170,12 +184,57 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
+        @notice Get settings for a specific promotion.
+        @param _promotionId Promotion id to get settings for
+        @return Promotion settings
+     */
+    function _getPromotion(uint256 _promotionId) internal view returns (Promotion memory) {
+        return _promotions[_promotionId];
+    }
+
+    /**
         @notice Get current promotion settings.
         @dev This promotion can be inactive if the promotion period is over.
         @return Promotion settings
      */
     function _getCurrentPromotion() internal view returns (Promotion memory) {
-        return _promotions[_currentPromotionId];
+        return _getPromotion(_currentPromotionId);
+    }
+
+    /**
+        @notice Get current epoch settings.
+        @return Epoch settings
+     */
+    function _getCurrentEpoch() internal view returns (Epoch memory) {
+        Promotion memory _currentPromotion = _getCurrentPromotion();
+        uint256 _numberOfEpochs = _currentPromotion.numberOfEpochs;
+
+        uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
+            (_currentPromotion.epochDuration * _numberOfEpochs);
+        uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
+
+        return _getEpoch(_currentEpochId, _currentPromotion);
+    }
+
+    /**
+        @notice Get settings for a specific epoch.
+        @param _epochId Epoch id to get settings for
+        @param _promotion Promotion settings
+        @return Epoch settings
+     */
+    function _getEpoch(uint256 _epochId, Promotion memory _promotion)
+        internal
+        pure
+        returns (Epoch memory)
+    {
+        uint256 _epochDuration = _promotion.epochDuration;
+
+        return
+            Epoch({
+                id: uint32(_epochId),
+                startTimestamp: uint32(_promotion.startTimestamp + (_epochDuration * _epochId)),
+                epochDuration: uint32(_epochDuration)
+            });
     }
 
     /**
@@ -189,7 +248,6 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Determine if current promotion is active.
-        @dev When no
         @return True if promotion is active, false otherwise
     */
     function _isPromotionActive() internal view returns (bool) {

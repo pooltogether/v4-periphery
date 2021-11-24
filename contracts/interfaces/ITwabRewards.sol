@@ -25,9 +25,10 @@ interface ITwabRewards {
     /**
         @notice Struct to keep track of each promotion's settings.
         @param id Promotion id to keep track of each promotion
+        @param cancelled Whether the promotion has been cancelled or not
         @param creator Addresss of the promotion creator
         @param ticket Prize Pool ticket address for which the promotion has been created
-        @param token Address of the token to be distributed
+        @param token Address of the token to be distributed as reward
         @param tokensPerEpoch Number of tokens to be distributed per epoch
         @param startTimestamp Timestamp at which the promotion starts
         @param epochDuration Duration of one epoch in seconds
@@ -35,6 +36,7 @@ interface ITwabRewards {
      */
     struct Promotion {
         uint32 id;
+        bool cancelled;
         address creator;
         address ticket;
         address token;
@@ -74,9 +76,10 @@ interface ITwabRewards {
 
     /**
         @notice Cancel currently active promotion and send promotion tokens back to the creator.
+        @param _to Address that will receive the remaining tokens if there are any left.
         @return true if cancelation was successful
      */
-    // function cancelPromotion() external returns (bool);
+    function cancelPromotion(address _to) external returns (bool);
 
     /**
         @notice Extend promotion by adding more epochs.
@@ -114,7 +117,7 @@ interface ITwabRewards {
         @notice Get the total amount of tokens left to be rewarded.
         @return Amount of tokens left to be rewarded
      */
-    // function getRemainingBalance() external view returns (uint256);
+    function getRemainingRewards() external view returns (uint256);
 
     /**
         @notice Get duration of an epoch in seconds.

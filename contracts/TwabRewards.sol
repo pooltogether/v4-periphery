@@ -121,7 +121,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function extendPromotion(uint256 _numberOfEpochs) external override returns (bool) {
+    function extendPromotion(uint256 _numberOfEpochs) external override onlyPromotionCreator returns (bool) {
         require(_isPromotionActive() == true, "TwabRewards/no-active-promotion");
 
         Promotion memory _currentPromotion = _getCurrentPromotion();

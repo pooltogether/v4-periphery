@@ -10,7 +10,6 @@ import "./interfaces/IPrizeTierHistory.sol";
  * @notice IPrizeTierHistory is the base contract for PrizeTierHistory
  */
 contract PrizeTierHistory is IPrizeTierHistory, Manageable {
-    
     /* ============ Global Variables ============ */
     /**
      * @notice History of PrizeTier updates
@@ -70,14 +69,19 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ Setter Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    function popAndPush(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint32) {
-      require(history.length > 0, "PrizeTierHistory/history-empty");
-      PrizeTier memory _newestPrizeTier = history[history.length - 1];
-      require(_prizeTier.drawId >= _newestPrizeTier.drawId, "PrizeTierHistory/invalid-draw-id");
-      history[history.length - 1] = _prizeTier;
-      emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
+    function popAndPush(PrizeTier calldata _prizeTier)
+        external
+        override
+        onlyOwner
+        returns (uint32)
+    {
+        require(history.length > 0, "PrizeTierHistory/history-empty");
+        PrizeTier memory _newestPrizeTier = history[history.length - 1];
+        require(_prizeTier.drawId >= _newestPrizeTier.drawId, "PrizeTierHistory/invalid-draw-id");
+        history[history.length - 1] = _prizeTier;
+        emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
 
-      return _prizeTier.drawId;
+        return _prizeTier.drawId;
     }
 
     /* ============ Getter Functions ============ */
@@ -87,6 +91,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         require(_drawId > 0, "PrizeTierHistory/draw-id-not-zero");
         return _getPrizeTier(_drawId);
     }
+
     // @inheritdoc IPrizeTierHistory
     function getOldestDrawId() external view override returns (uint32) {
         return history[0].drawId;
@@ -106,46 +111,46 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     {
         PrizeTier[] memory _data = new PrizeTier[](_drawIds.length);
         for (uint256 index = 0; index < _drawIds.length; index++) {
-          _data[index] = _getPrizeTier(_drawIds[index]); // SLOAD each struct instead of the whole array before the FOR loop.
+            _data[index] = _getPrizeTier(_drawIds[index]); // SLOAD each struct instead of the whole array before the FOR loop.
         }
         return _data;
     }
 
     function _getPrizeTier(uint32 _drawId) internal view returns (PrizeTier memory) {
-      uint256 cardinality = history.length;
-      require(cardinality > 0, "PrizeTierHistory/no-prize-tiers");
+        uint256 cardinality = history.length;
+        require(cardinality > 0, "PrizeTierHistory/no-prize-tiers");
 
-      uint256 leftSide = 0;
-      uint256 rightSide = cardinality - 1;
-      uint32 oldestDrawId = history[leftSide].drawId;
-      uint32 newestDrawId = history[rightSide].drawId;
+        uint256 leftSide = 0;
+        uint256 rightSide = cardinality - 1;
+        uint32 oldestDrawId = history[leftSide].drawId;
+        uint32 newestDrawId = history[rightSide].drawId;
 
-      require(_drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
-      if (_drawId >= newestDrawId) return history[rightSide];
-      if (_drawId == oldestDrawId) return history[leftSide];
+        require(_drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
+        if (_drawId >= newestDrawId) return history[rightSide];
+        if (_drawId == oldestDrawId) return history[leftSide];
 
-      return _binarySearch(_drawId, leftSide, rightSide, history);
+        return _binarySearch(_drawId, leftSide, rightSide, history);
     }
 
     function _binarySearch(
-      uint32 _drawId,
-      uint256 leftSide,
-      uint256 rightSide,
-      PrizeTier[] storage _history
+        uint32 _drawId,
+        uint256 leftSide,
+        uint256 rightSide,
+        PrizeTier[] storage _history
     ) internal view returns (PrizeTier memory) {
         return _history[_binarySearchIndex(_drawId, leftSide, rightSide, _history)];
     }
 
     function _binarySearchIndex(
-      uint32 _drawId,
-      uint256 _leftSide,
-      uint256 _rightSide,
-      PrizeTier[] storage _history
+        uint32 _drawId,
+        uint256 _leftSide,
+        uint256 _rightSide,
+        PrizeTier[] storage _history
     ) internal view returns (uint256) {
-      uint256 index;
-      uint256 leftSide = _leftSide;
-      uint256 rightSide = _rightSide;
-      while (true) {
+        uint256 index;
+        uint256 leftSide = _leftSide;
+        uint256 rightSide = _rightSide;
+        while (true) {
             uint256 center = leftSide + (rightSide - leftSide) / 2;
             uint32 centerPrizeTierID = _history[center].drawId;
 
@@ -173,11 +178,11 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         return index;
     }
 
-    function getPrizeTierAtIndex(uint256 index) external override view returns (PrizeTier memory) {
+    function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
         return history[index];
     }
 
-    function count() external override view returns (uint256) {
+    function count() external view override returns (uint256) {
         return history.length;
     }
 }

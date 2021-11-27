@@ -83,9 +83,9 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the strategy address', async () => {
-            await expect(prizeFlush.connect(wallet3 as unknown as Signer).setStrategy(wallet3.address)).to.revertedWith(
-                'Ownable/caller-not-owner',
-            );
+            await expect(
+                prizeFlush.connect(wallet3 as unknown as Signer).setStrategy(wallet3.address),
+            ).to.revertedWith('Ownable/caller-not-owner');
         });
 
         it('should fail to set the strategy address if address zero is passed', async () => {
@@ -102,9 +102,9 @@ describe('PrizeFlush', () => {
         });
 
         it('should fail to set the reserve address', async () => {
-            await expect(prizeFlush.connect(wallet3 as unknown as Signer).setReserve(wallet3.address)).to.revertedWith(
-                'Ownable/caller-not-owner',
-            );
+            await expect(
+                prizeFlush.connect(wallet3 as unknown as Signer).setReserve(wallet3.address),
+            ).to.revertedWith('Ownable/caller-not-owner');
         });
 
         it('should fail to set the reserve address if address zero is passed', async () => {

@@ -6,7 +6,7 @@ import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
-import "../interfaces/IPrizeTierHistory.sol";
+import "./interfaces/IPrizeTierHistory.sol";
 
 /**
  * @title Prize Distribution Factory

@@ -39,9 +39,9 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Emmited when a promotion is created.
-        @param promotion Pomotion settings
+        @param id Id of the newly created promotion
     */
-    event PromotionCreated(Promotion promotion);
+    event PromotionCreated(uint256 id);
 
     /* ============ Constructor ============ */
 
@@ -67,7 +67,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     function createPromotion(address _ticket, PromotionParameters calldata _promotionParameters)
         external
         override
-        returns (bool)
+        returns (uint256)
     {
         require(_isPromotionActive() == false, "TwabRewards/promotion-already-active");
 
@@ -96,9 +96,9 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         _promotions[_nextPromotionId] = _nextPromotion;
 
-        emit PromotionCreated(_nextPromotion);
+        emit PromotionCreated(_nextPromotionId);
 
-        return true;
+        return _nextPromotionId;
     }
 
     /// @inheritdoc ITwabRewards

@@ -68,11 +68,11 @@ interface ITwabRewards {
         @dev For sake of simplicity, `msg.sender` will be the creator of the promotion.
         @param _ticket Prize Pool ticket address for which the promotion is created
         @param _promotionParameters Parameters needed to create a promotion
-        @return true if the creation was successful
+        @return Id of the newly created promotion
     */
     function createPromotion(address _ticket, PromotionParameters calldata _promotionParameters)
         external
-        returns (bool);
+        returns (uint256);
 
     /**
         @notice Cancel currently active promotion and send promotion tokens back to the creator.

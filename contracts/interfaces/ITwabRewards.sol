@@ -76,17 +76,19 @@ interface ITwabRewards {
 
     /**
         @notice Cancel currently active promotion and send promotion tokens back to the creator.
-        @param _to Address that will receive the remaining tokens if there are any left.
+        @param _promotionId Promotion id to cancel
+        @param _to Address that will receive the remaining tokens if there are any left
         @return true if cancelation was successful
      */
-    function cancelPromotion(address _to) external returns (bool);
+    function cancelPromotion(uint256 _promotionId, address _to) external returns (bool);
 
     /**
         @notice Extend promotion by adding more epochs.
+        @param _promotionId Promotion id to extend
         @param _numberOfEpochs Number of epochs to add
         @return true if the operation was successful
      */
-    function extendPromotion(uint256 _numberOfEpochs) external returns (bool);
+    function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs) external returns (bool);
 
     /**
         @notice Claim rewards for a given promotion and epoch.
@@ -114,35 +116,30 @@ interface ITwabRewards {
     // function claimAllRewards(address _user) external returns (uint256);
 
     /**
-        @notice Get current promotion settings.
-        @dev This promotion can be inactive if the promotion period is over.
-        @return Promotion settings
-     */
-    function getCurrentPromotion() external view returns (Promotion memory);
-
-    /**
         @notice Get settings for a specific promotion.
         @param _promotionId Promotion id to get settings for
         @return Promotion settings
      */
-    function getPromotion(uint32 _promotionId) external view returns (Promotion memory);
+    function getPromotion(uint256 _promotionId) external view returns (Promotion memory);
 
     /**
         @notice Get the total amount of tokens left to be rewarded.
+        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
         @return Amount of tokens left to be rewarded
      */
-    function getRemainingRewards() external view returns (uint256);
+    function getRemainingRewards(uint256 _promotionId) external view returns (uint256);
 
     /**
         @notice Get the current epoch settings.
+        @param _promotionId Promotion id to get current epoch for
         @return Epoch settings
      */
-    function getCurrentEpoch() external view returns (Epoch memory);
+    function getCurrentEpoch(uint256 _promotionId) external view returns (Epoch memory);
 
     /**
         @notice Get settings for a specific epoch.
         @param _epochId Epoch id to get settings for
-        @param _promotionId Id of the promotion from which the epoch is
+        @param _promotionId Promotion id from which the epoch is
         @return Epoch settings
      */
     function getEpoch(uint256 _epochId, uint256 _promotionId) external view returns (Epoch memory);
@@ -151,7 +148,7 @@ interface ITwabRewards {
         @notice Get amount of tokens to be rewarded for a given epoch.
         @dev Will be 0 if user has already claimed rewards for the epoch.
         @param _user Address of the user to get amount of rewards for
-        @param _promotionId Id of the promotion from which the epoch is
+        @param _promotionId Promotion id from which the epoch is
         @param _epochId Epoch id to get information for
         @return Amount of tokens to be rewarded
      */

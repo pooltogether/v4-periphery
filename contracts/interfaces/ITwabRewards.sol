@@ -91,6 +91,7 @@ interface ITwabRewards {
     /**
         @notice Claim rewards for a given promotion and epoch.
         @dev Rewards can be claimed on behalf of a user.
+        @dev Rewards can only be claimed for a past epoch.
         @dev Caller may want to claim full or partial `amount` of rewards.
         @param _user Address of the user to claim rewards for
         @param _promotionId Promotion id to claim rewards for

@@ -25,7 +25,6 @@ interface ITwabRewards {
     /**
         @notice Struct to keep track of each promotion's settings.
         @param id Promotion id to keep track of each promotion
-        @param cancelled Whether the promotion has been cancelled or not
         @param creator Addresss of the promotion creator
         @param ticket Prize Pool ticket address for which the promotion has been created
         @param token Address of the token to be distributed as reward
@@ -36,7 +35,6 @@ interface ITwabRewards {
      */
     struct Promotion {
         uint32 id;
-        bool cancelled;
         address creator;
         address ticket;
         address token;

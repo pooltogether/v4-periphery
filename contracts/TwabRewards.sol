@@ -43,6 +43,13 @@ contract TwabRewards is ITwabRewards, Manageable {
     */
     event PromotionCreated(uint256 id);
 
+    /**
+        @notice Emmited when a promotion is extended.
+        @param token Address of the token used in the promotion
+        @param amount Amount of tokens transferred to the rewards contract
+    */
+    event PromotionExtended(IERC20 token, uint256 amount);
+
     /* ============ Constructor ============ */
 
     /**
@@ -58,7 +65,10 @@ contract TwabRewards is ITwabRewards, Manageable {
     /// @dev Ensure that the caller is the creator of the currently active promotion.
     /// @param _promotionId Id of the promotion to check
     modifier onlyPromotionCreator(uint256 _promotionId) {
-        require(msg.sender == _getPromotion(_promotionId).creator, "TwabRewards/only-promotion-creator");
+        require(
+            msg.sender == _getPromotion(_promotionId).creator,
+            "TwabRewards/only-promotion-creator"
+        );
         _;
     }
 
@@ -101,7 +111,12 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function cancelPromotion(uint256 _promotionId, address _to) external override onlyPromotionCreator(_promotionId) returns (bool) {
+    function cancelPromotion(uint256 _promotionId, address _to)
+        external
+        override
+        onlyPromotionCreator(_promotionId)
+        returns (bool)
+    {
         require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
 
@@ -120,15 +135,21 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs) external override onlyPromotionCreator(_promotionId) returns (bool) {
+    function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs)
+        external
+        override
+        onlyPromotionCreator(_promotionId)
+        returns (bool)
+    {
         require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
+        IERC20 _token = IERC20(_promotion.token);
+        uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
 
-        IERC20(_promotion.token).safeTransfer(
-            address(this),
-            _numberOfEpochs * _promotion.tokensPerEpoch
-        );
+        _token.safeTransfer(address(this), _amount);
+
+        emit PromotionExtended(_token, _amount);
 
         return true;
     }

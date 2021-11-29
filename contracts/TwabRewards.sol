@@ -329,10 +329,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         uint256 _averageTotalSupply = _averageTotalSupplies[0];
 
-        /// User's share of tickets expressed in percentage
-        uint256 shareOfTickets = (_averageBalance * 100) / _averageTotalSupply;
-
-        return (_promotion.tokensPerEpoch * shareOfTickets) / 100;
+        return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupply;
     }
 
     /**

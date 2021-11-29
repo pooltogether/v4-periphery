@@ -48,6 +48,13 @@ contract TwabRewards is ITwabRewards, Manageable {
         @param token Address of the token used in the promotion
         @param amount Amount of tokens transferred to the rewards contract
     */
+    event PromotionCancelled(IERC20 token, uint256 amount);
+
+    /**
+        @notice Emmited when a promotion is extended.
+        @param token Address of the token used in the promotion
+        @param amount Amount of tokens transferred to the recipient address
+    */
     event PromotionExtended(IERC20 token, uint256 amount);
 
     /* ============ Constructor ============ */
@@ -130,6 +137,8 @@ contract TwabRewards is ITwabRewards, Manageable {
         }
 
         _promotions[_promotion.id].cancelled = true;
+
+        emit PromotionCancelled(_token, _remainingRewards);
 
         return true;
     }

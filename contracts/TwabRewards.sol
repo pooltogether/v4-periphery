@@ -22,7 +22,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     /// @notice Settings of each promotion.
     mapping(uint256 => Promotion) internal _promotions;
 
-    /// @notice Current promotion id.
+    /// @notice Latest promotion id.
     uint256 internal _latestPromotionId;
 
     /// @notice Keeps track of claimed rewards per user.
@@ -205,6 +205,8 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _epochId,
         uint256 _amount
     ) external override returns (uint256) {
+        require(_epochId < _getCurrentEpoch(_promotionId).id, "TwabRewards/epoch-not-over");
+
         uint256 _rewardAmount = _getRewardAmount(_user, _promotionId, _epochId);
 
         require(_amount <= _rewardAmount, "TwabRewards/rewards-claim-too-high");

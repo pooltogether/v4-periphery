@@ -23,7 +23,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     mapping(uint256 => Promotion) internal _promotions;
 
     /// @notice Current promotion id.
-    uint256 internal _currentPromotionId;
+    uint256 internal _latestPromotionId;
 
     /// @notice Keeps track of claimed rewards per user.
     /// @dev _claimedRewards[promotionId][epochId][user] => uint256
@@ -56,8 +56,9 @@ contract TwabRewards is ITwabRewards, Manageable {
     /* ============ Modifiers ============ */
 
     /// @dev Ensure that the caller is the creator of the currently active promotion.
-    modifier onlyPromotionCreator() {
-        require(msg.sender == _getCurrentPromotion().creator, "TwabRewards/only-promotion-creator");
+    /// @param _promotionId Id of the promotion to check
+    modifier onlyPromotionCreator(uint256 _promotionId) {
+        require(msg.sender == _getPromotion(_promotionId).creator, "TwabRewards/only-promotion-creator");
         _;
     }
 
@@ -69,12 +70,10 @@ contract TwabRewards is ITwabRewards, Manageable {
         override
         returns (uint256)
     {
-        require(_isPromotionActive() == false, "TwabRewards/promotion-already-active");
-
         _requireTicket(_ticket);
 
-        uint256 _nextPromotionId = _currentPromotionId + 1;
-        _currentPromotionId = _nextPromotionId;
+        uint256 _nextPromotionId = _latestPromotionId + 1;
+        _latestPromotionId = _nextPromotionId;
 
         address _token = _promotionParameters.token;
         uint256 _tokensPerEpoch = _promotionParameters.tokensPerEpoch;
@@ -102,56 +101,51 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function cancelPromotion(address _to) external override onlyPromotionCreator returns (bool) {
-        require(_isPromotionActive() == true, "TwabRewards/no-active-promotion");
+    function cancelPromotion(uint256 _promotionId, address _to) external override onlyPromotionCreator(_promotionId) returns (bool) {
+        require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
 
-        Promotion memory _currentPromotion = _getCurrentPromotion();
+        Promotion memory _promotion = _getPromotion(_promotionId);
 
-        IERC20 _token = IERC20(_currentPromotion.token);
-        uint256 _remainingRewards = _getRemainingRewards(_token);
+        IERC20 _token = IERC20(_promotion.token);
+        uint256 _remainingRewards = _getRemainingRewards(_promotionId);
 
         if (_remainingRewards > 0) {
             _token.safeTransfer(_to, _remainingRewards);
         }
 
-        _promotions[_currentPromotion.id].cancelled = true;
+        _promotions[_promotion.id].cancelled = true;
 
         return true;
     }
 
     /// @inheritdoc ITwabRewards
-    function extendPromotion(uint256 _numberOfEpochs) external override onlyPromotionCreator returns (bool) {
-        require(_isPromotionActive() == true, "TwabRewards/no-active-promotion");
+    function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs) external override onlyPromotionCreator(_promotionId) returns (bool) {
+        require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
 
-        Promotion memory _currentPromotion = _getCurrentPromotion();
+        Promotion memory _promotion = _getPromotion(_promotionId);
 
-        IERC20(_currentPromotion.token).safeTransfer(
+        IERC20(_promotion.token).safeTransfer(
             address(this),
-            _numberOfEpochs * _currentPromotion.tokensPerEpoch
+            _numberOfEpochs * _promotion.tokensPerEpoch
         );
 
         return true;
     }
 
     /// @inheritdoc ITwabRewards
-    function getCurrentPromotion() external view override returns (Promotion memory) {
-        return _getCurrentPromotion();
+    function getPromotion(uint256 _promotionId) external view override returns (Promotion memory) {
+        return _getPromotion(_promotionId);
     }
 
     /// @inheritdoc ITwabRewards
-    function getPromotion(uint32 _promotionId) external view override returns (Promotion memory) {
-        return _promotions[_promotionId];
+    function getRemainingRewards(uint256 _promotionId) external view override returns (uint256) {
+        return _getRemainingRewards(_promotionId);
     }
 
     /// @inheritdoc ITwabRewards
-    function getRemainingRewards() external view override returns (uint256) {
-        return _getRemainingRewards(IERC20(_getCurrentPromotion().token));
-    }
-
-    /// @inheritdoc ITwabRewards
-    function getCurrentEpoch() external view override returns (Epoch memory) {
-        return _getCurrentEpoch();
+    function getCurrentEpoch(uint256 _promotionId) external view override returns (Epoch memory) {
+        return _getCurrentEpoch(_promotionId);
     }
 
     /// @inheritdoc ITwabRewards
@@ -223,15 +217,6 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
-        @notice Get current promotion settings.
-        @dev This promotion can be inactive if the promotion period is over.
-        @return Promotion settings
-     */
-    function _getCurrentPromotion() internal view returns (Promotion memory) {
-        return _getPromotion(_currentPromotionId);
-    }
-
-    /**
         @notice Get settings for a specific epoch.
         @param _epochId Epoch id to get settings for
         @param _promotion Promotion settings
@@ -254,17 +239,18 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Get current epoch settings.
+        @param _promotionId Id of the promotion to get current epoch for
         @return Epoch settings
      */
-    function _getCurrentEpoch() internal view returns (Epoch memory) {
-        Promotion memory _currentPromotion = _getCurrentPromotion();
-        uint256 _numberOfEpochs = _currentPromotion.numberOfEpochs;
+    function _getCurrentEpoch(uint256 _promotionId) internal view returns (Epoch memory) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        uint256 _numberOfEpochs = _promotion.numberOfEpochs;
 
-        uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
-            (_currentPromotion.epochDuration * _numberOfEpochs);
+        uint256 _promotionEndTimestamp = _promotion.startTimestamp +
+            (_promotion.epochDuration * _numberOfEpochs);
         uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
 
-        return _getEpoch(_currentEpochId, _currentPromotion);
+        return _getEpoch(_currentEpochId, _promotion);
     }
 
     /**
@@ -321,11 +307,11 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Get the total amount of tokens left to be rewarded.
-        @param _token Address of the token distributed as reward
+        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
         @return Amount of tokens left to be rewarded
      */
-    function _getRemainingRewards(IERC20 _token) internal view returns (uint256) {
-        return _token.balanceOf(address(this));
+    function _getRemainingRewards(uint256 _promotionId) internal view returns (uint256) {
+        return IERC20(_getPromotion(_promotionId).token).balanceOf(address(this));
     }
 
     /**
@@ -363,16 +349,17 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Determine if current promotion is active.
+        @param _promotionId Id of the promotion to check
         @return True if promotion is active, false otherwise
     */
-    function _isPromotionActive() internal view returns (bool) {
-        Promotion memory _currentPromotion = _getCurrentPromotion();
+    function _isPromotionActive(uint256 _promotionId) internal view returns (bool) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
 
-        uint256 _promotionEndTimestamp = _currentPromotion.startTimestamp +
-            (_currentPromotion.epochDuration * _currentPromotion.numberOfEpochs);
+        uint256 _promotionEndTimestamp = _promotion.startTimestamp +
+            (_promotion.epochDuration * _promotion.numberOfEpochs);
 
         return
-            !_currentPromotion.cancelled &&
+            !_promotion.cancelled &&
             _promotionEndTimestamp > 0 &&
             _promotionEndTimestamp >= block.timestamp;
     }

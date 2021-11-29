@@ -100,7 +100,6 @@ contract TwabRewards is ITwabRewards, Manageable {
 
         Promotion memory _nextPromotion = Promotion(
             uint32(_nextPromotionId),
-            false,
             msg.sender,
             _ticket,
             _token,
@@ -136,7 +135,7 @@ contract TwabRewards is ITwabRewards, Manageable {
             _token.safeTransfer(_to, _remainingRewards);
         }
 
-        _promotions[_promotion.id].cancelled = true;
+        delete _promotions[_promotion.id];
 
         emit PromotionCancelled(_token, _remainingRewards);
 
@@ -239,6 +238,7 @@ contract TwabRewards is ITwabRewards, Manageable {
 
     /**
         @notice Get settings for a specific promotion.
+        @dev Will revert if the promotion does not exist.
         @param _promotionId Promotion id to get settings for
         @return Promotion settings
      */
@@ -388,9 +388,6 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _promotionEndTimestamp = _promotion.startTimestamp +
             (_promotion.epochDuration * _promotion.numberOfEpochs);
 
-        return
-            !_promotion.cancelled &&
-            _promotionEndTimestamp > 0 &&
-            _promotionEndTimestamp >= block.timestamp;
+        return _promotionEndTimestamp > 0 && _promotionEndTimestamp >= block.timestamp;
     }
 }

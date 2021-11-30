@@ -185,20 +185,8 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function getCurrentEpoch(uint256 _promotionId) external view override returns (Epoch memory) {
-        return _getCurrentEpoch(_promotionId);
-    }
-
-    /// @inheritdoc ITwabRewards
-    function getEpoch(uint256 _promotionId, uint256 _epochId)
-        external
-        view
-        override
-        returns (Epoch memory)
-    {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
-        return _getEpoch(_promotion, _epochId);
+    function getCurrentEpochId(uint256 _promotionId) external view override returns (uint256) {
+        return _getCurrentEpochId(_promotionId);
     }
 
     /// @inheritdoc ITwabRewards
@@ -216,7 +204,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _promotionId,
         uint256 _epochId
     ) external override returns (uint256) {
-        require(_epochId < _getCurrentEpoch(_promotionId).id, "TwabRewards/epoch-not-over");
+        require(_epochId < _getCurrentEpochId(_promotionId), "TwabRewards/epoch-not-over");
         require(
             !_isClaimedEpoch(_user, _promotionId, _epochId),
             "TwabRewards/rewards-already-claimed"
@@ -275,32 +263,11 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
-        @notice Get settings for a specific epoch.
-        @param _epochId Epoch id to get settings for
-        @param _promotion Promotion settings
-        @return Epoch settings
-     */
-    function _getEpoch(Promotion memory _promotion, uint256 _epochId)
-        internal
-        pure
-        returns (Epoch memory)
-    {
-        uint256 _epochDuration = _promotion.epochDuration;
-
-        return
-            Epoch({
-                id: uint32(_epochId),
-                startTimestamp: uint32(_promotion.startTimestamp + (_epochDuration * _epochId)),
-                duration: uint32(_epochDuration)
-            });
-    }
-
-    /**
-        @notice Get current epoch settings.
+        @notice Get the current epoch id of a promotion.
         @param _promotionId Id of the promotion to get current epoch for
-        @return Epoch settings
+        @return Epoch id
      */
-    function _getCurrentEpoch(uint256 _promotionId) internal view returns (Epoch memory) {
+    function _getCurrentEpochId(uint256 _promotionId) internal view returns (uint256) {
         Promotion memory _promotion = _getPromotion(_promotionId);
         uint256 _numberOfEpochs = _promotion.numberOfEpochs;
 
@@ -308,7 +275,7 @@ contract TwabRewards is ITwabRewards, Manageable {
             (_promotion.epochDuration * _numberOfEpochs);
         uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
 
-        return _getEpoch(_promotion, _currentEpochId);
+        return _currentEpochId;
     }
 
     /**
@@ -325,10 +292,9 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _epochId
     ) internal view returns (uint256) {
         Promotion memory _promotion = _getPromotion(_promotionId);
-        Epoch memory _epoch = _getEpoch(_promotion, _epochId);
 
-        uint256 _epochDuration = _epoch.duration;
-        uint256 _epochStartTimestamp = _epoch.startTimestamp;
+        uint256 _epochDuration = _promotion.epochDuration;
+        uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
         require(

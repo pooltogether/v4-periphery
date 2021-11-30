@@ -11,18 +11,6 @@ import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
  */
 interface ITwabRewards {
     /**
-        @notice Struct to keep track of each epoch's settings.
-        @param id Epoch id to keep track of each epoch
-        @param startTimestamp Timestamp at which the epoch starts
-        @param duration Duration of one epoch in seconds
-     */
-    struct Epoch {
-        uint32 id;
-        uint32 startTimestamp;
-        uint32 duration;
-    }
-
-    /**
         @notice Struct to keep track of each promotion's settings.
         @param creator Addresss of the promotion creator
         @param ticket Prize Pool ticket address for which the promotion has been created
@@ -118,19 +106,11 @@ interface ITwabRewards {
     function getRemainingRewards(uint256 _promotionId) external view returns (uint256);
 
     /**
-        @notice Get the current epoch settings.
+        @notice Get the current epoch id of a promotion.
         @param _promotionId Promotion id to get current epoch for
-        @return Epoch settings
+        @return Epoch id
      */
-    function getCurrentEpoch(uint256 _promotionId) external view returns (Epoch memory);
-
-    /**
-        @notice Get settings for a specific epoch.
-        @param _promotionId Promotion id from which the epoch is
-        @param _epochId Epoch id to get settings for
-        @return Epoch settings
-     */
-    function getEpoch(uint256 _promotionId, uint256 _epochId) external view returns (Epoch memory);
+    function getCurrentEpochId(uint256 _promotionId) external view returns (uint256);
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.

@@ -26,8 +26,9 @@ contract TwabRewards is ITwabRewards, Manageable {
     uint256 internal _latestPromotionId;
 
     /// @notice Keeps track of claimed rewards per user.
-    /// @dev _claimedRewards[promotionId][epochId][user] => uint256
-    mapping(uint256 => mapping(uint256 => mapping(address => uint256))) internal _claimedRewards;
+    /// @dev _claimedEpochs[promotionId][user] => claimedEpochs
+    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
+    mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */
 
@@ -54,8 +55,16 @@ contract TwabRewards is ITwabRewards, Manageable {
         @notice Emmited when a promotion is extended.
         @param token Address of the token used in the promotion
         @param amount Amount of tokens transferred to the recipient address
+        @param numberOfEpochs New number of epochs after extending the promotion
     */
-    event PromotionExtended(IERC20 token, uint256 amount);
+    event PromotionExtended(IERC20 token, uint256 amount, uint256 numberOfEpochs);
+
+    /**
+        @notice Emmited when rewards have been claimed.
+        @param token Address of the token used in the promotion
+        @param amount Amount of tokens transferred to the recipient address
+    */
+    event RewardsClaimed(IERC20 token, uint256 amount);
 
     /* ============ Constructor ============ */
 
@@ -89,12 +98,14 @@ contract TwabRewards is ITwabRewards, Manageable {
     {
         _requireTicket(_ticket);
 
+        uint256 _numberOfEpochs = _promotionParameters.numberOfEpochs;
+        _requireEpochLimit(_numberOfEpochs);
+
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
         address _token = _promotionParameters.token;
         uint256 _tokensPerEpoch = _promotionParameters.tokensPerEpoch;
-        uint256 _numberOfEpochs = _promotionParameters.numberOfEpochs;
 
         IERC20(_token).safeTransfer(address(this), _tokensPerEpoch * _numberOfEpochs);
 
@@ -152,12 +163,17 @@ contract TwabRewards is ITwabRewards, Manageable {
         require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
+        uint256 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
+
+        _requireEpochLimit(_extendedNumberOfEpochs);
+
         IERC20 _token = IERC20(_promotion.token);
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
 
         _token.safeTransfer(address(this), _amount);
+        _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
-        emit PromotionExtended(_token, _amount);
+        emit PromotionExtended(_token, _amount, _extendedNumberOfEpochs);
 
         return true;
     }
@@ -195,25 +211,31 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _promotionId,
         uint256 _epochId
     ) external view override returns (uint256) {
-        return _getRewardAmount(_user, _promotionId, _epochId);
+        return _calculateRewardAmount(_user, _promotionId, _epochId);
     }
 
     /// @inheritdoc ITwabRewards
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId,
-        uint256 _amount
+        uint256 _epochId
     ) external override returns (uint256) {
         require(_epochId < _getCurrentEpoch(_promotionId).id, "TwabRewards/epoch-not-over");
+        require(
+            !_isClaimedEpoch(_user, _promotionId, _epochId),
+            "TwabRewards/rewards-already-claimed"
+        );
 
-        uint256 _rewardAmount = _getRewardAmount(_user, _promotionId, _epochId);
+        uint256 _rewardAmount = _calculateRewardAmount(_user, _promotionId, _epochId);
 
-        require(_amount <= _rewardAmount, "TwabRewards/rewards-claim-too-high");
+        IERC20 _token = IERC20(_getPromotion(_promotionId).token);
+        _token.safeTransferFrom(address(this), _user, _rewardAmount);
 
-        IERC20(_getPromotion(_promotionId).token).safeTransferFrom(address(this), _user, _amount);
+        _setClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId, true);
 
-        return _amount;
+        emit RewardsClaimed(_token, _rewardAmount);
+
+        return _rewardAmount;
     }
 
     /* ============ Internal Functions ============ */
@@ -236,6 +258,14 @@ contract TwabRewards is ITwabRewards, Manageable {
         }
 
         require(succeeded && controllerAddress != address(0), "TwabRewards/invalid-ticket");
+    }
+
+    /**
+        @notice Determine if the number of epochs passed exceeds the maximum number of epochs.
+        @param _numberOfEpochs Number of epochs to check
+    */
+    function _requireEpochLimit(uint256 _numberOfEpochs) internal pure {
+        require(_numberOfEpochs < 256, "TwabRewards/exceeds-256-epochs-limit");
     }
 
     /**
@@ -344,36 +374,65 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /**
-        @notice Get the amount of rewards already claimed by the user for a given promotion and epoch.
-        @param _user Address of the user to check claimed rewards for
-        @param _promotionId Epoch id to check claimed rewards for
-        @param _epochId Epoch id to check claimed rewards for
-        @return Amount of tokens already claimed by the user
-     */
-    function _getClaimedRewards(
-        address _user,
-        uint256 _promotionId,
-        uint256 _epochId
-    ) internal view returns (uint256) {
-        return _claimedRewards[_promotionId][_epochId][_user];
+        @notice Set boolean value for a specific epoch.
+        @dev Bits are stored in a uint256 from right to left.
+        Let's take the example of the following 8 bits word. 0110 0111
+        To set the boolean value to 0 for the epoch id 2, we need to create a mask by shifting 1 to the left by 2 bits.
+        We get: 0000 0001 << 2 = 0000 0100
+        We then OR the mask with the word to set the value.
+        We get: 0110 0111 | 0000 0100 = 0110 0111
+        To set the boolean value to 0 for the epoch id 2, we need to create a mask by shifting 1 to the left by 2 bits and then inverting it.
+        We get: 0000 0001 << 2 = ~(0000 0100) = 1111 1011
+        We then AND the mask with the word to clear the value.
+        We get: 0110 0111 & 1111 1011 = 0110 0011
+        @param _epochs Tightly packed epoch ids with their boolean values
+        @param _epochId Id of the epoch to set the boolean for
+        @param _value Boolean value to set
+        @return Tightly packed epoch ids with the newly boolean value set
+    */
+    function _setClaimedEpoch(
+        uint256 _epochs,
+        uint256 _epochId,
+        bool _value
+    ) public pure returns (uint256) {
+        if (_value) {
+            return _epochs | (uint256(1) << _epochId);
+        } else {
+            return _epochs & ~(uint256(1) << _epochId);
+        }
     }
 
     /**
-        @notice Get amount of tokens to be rewarded for a given epoch.
-        @dev Will be 0 if user has already claimed rewards for the epoch.
-        @param _user Address of the user to get amount of rewards for
-        @param _promotionId Promotion id from which the epoch is
-        @param _epochId Epoch id to get amount of rewards for
-        @return Amount of tokens to be rewarded
+        @notice Get boolean for a specific epoch id.
+        @dev Bits are stored in a uint256 from right to left.
+        Let's take the example of the following 8 bits word. 0110 0111
+        To retrieve the boolean value for the epoch id 2, we need to shift the word to the right by 2 bits.
+        We get: 0110 0111 >> 2 = 0001 1001
+        We then get the value of the last bit by masking with 1.
+        We get: 0001 1001 & 0000 0001 = 0000 0001 = 1
+        We then return the boolean value true since the last bit is 1.
+        @param _epochs Tightly packed epoch ids with their boolean values
+        @param _epochId Id of the epoch to get the boolean for
+        @return true if the epoch has been claimed, false otherwise
+    */
+    function _getClaimedEpoch(uint256 _epochs, uint256 _epochId) internal pure returns (bool) {
+        uint256 flag = (_epochs >> _epochId) & uint256(1);
+        return (flag == 1 ? true : false);
+    }
+
+    /**
+        @notice Check if rewards of an epoch for a given promotion have already been claimed by the user.
+        @param _user Address of the user to check
+        @param _promotionId Promotion id to check
+        @param _epochId Epoch id to check
+        @return true if the rewards have already been claimed for the given epoch, false otherwise
      */
-    function _getRewardAmount(
+    function _isClaimedEpoch(
         address _user,
         uint256 _promotionId,
         uint256 _epochId
-    ) internal view returns (uint256) {
-        return
-            _calculateRewardAmount(_user, _promotionId, _epochId) -
-            _getClaimedRewards(_user, _promotionId, _epochId);
+    ) internal view returns (bool) {
+        return _getClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId);
     }
 
     /**

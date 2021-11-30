@@ -96,14 +96,12 @@ interface ITwabRewards {
         @param _user Address of the user to claim rewards for
         @param _promotionId Promotion id to claim rewards for
         @param _epochId Epoch id to claim rewards for
-        @param _amount Amount of tokens to claim
         @return Amount of rewards claimed
      */
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId,
-        uint256 _amount
+        uint256 _epochId
     ) external returns (uint256);
 
     /**

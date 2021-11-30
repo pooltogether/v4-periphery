@@ -91,32 +91,29 @@ contract TwabRewards is ITwabRewards, Manageable {
     /* ============ External Functions ============ */
 
     /// @inheritdoc ITwabRewards
-    function createPromotion(address _ticket, PromotionParameters calldata _promotionParameters)
-        external
-        override
-        returns (uint256)
-    {
+    function createPromotion(
+        address _ticket,
+        address _token,
+        uint216 _tokensPerEpoch,
+        uint32 _startTimestamp,
+        uint32 _epochDuration,
+        uint8 _numberOfEpochs
+    ) external override returns (uint256) {
         _requireTicket(_ticket);
-
-        uint256 _numberOfEpochs = _promotionParameters.numberOfEpochs;
         _requireEpochLimit(_numberOfEpochs);
 
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
-        address _token = _promotionParameters.token;
-        uint256 _tokensPerEpoch = _promotionParameters.tokensPerEpoch;
-
         IERC20(_token).safeTransfer(address(this), _tokensPerEpoch * _numberOfEpochs);
 
         Promotion memory _nextPromotion = Promotion(
-            uint32(_nextPromotionId),
             msg.sender,
             _ticket,
             _token,
             _tokensPerEpoch,
-            _promotionParameters.startTimestamp,
-            _promotionParameters.epochDuration,
+            _startTimestamp,
+            _epochDuration,
             _numberOfEpochs
         );
 
@@ -146,7 +143,7 @@ contract TwabRewards is ITwabRewards, Manageable {
             _token.safeTransfer(_to, _remainingRewards);
         }
 
-        delete _promotions[_promotion.id];
+        delete _promotions[_promotionId];
 
         emit PromotionCancelled(_token, _remainingRewards);
 
@@ -154,7 +151,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs)
+    function extendPromotion(uint256 _promotionId, uint8 _numberOfEpochs)
         external
         override
         returns (bool)
@@ -162,7 +159,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
-        uint256 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
+        uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
 
         _requireEpochLimit(_extendedNumberOfEpochs);
 

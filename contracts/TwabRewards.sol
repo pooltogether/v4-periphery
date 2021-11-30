@@ -249,7 +249,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         @param _numberOfEpochs Number of epochs to check
     */
     function _requireEpochLimit(uint256 _numberOfEpochs) internal pure {
-        require(_numberOfEpochs < 256, "TwabRewards/exceeds-256-epochs-limit");
+        require(_numberOfEpochs < type(uint8).max, "TwabRewards/exceeds-256-epochs-limit");
     }
 
     /**

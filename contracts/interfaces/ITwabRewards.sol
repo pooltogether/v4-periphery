@@ -135,11 +135,11 @@ interface ITwabRewards {
 
     /**
         @notice Get settings for a specific epoch.
-        @param _epochId Epoch id to get settings for
         @param _promotionId Promotion id from which the epoch is
+        @param _epochId Epoch id to get settings for
         @return Epoch settings
      */
-    function getEpoch(uint256 _epochId, uint256 _promotionId) external view returns (Epoch memory);
+    function getEpoch(uint256 _promotionId, uint256 _epochId) external view returns (Epoch memory);
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.

@@ -157,7 +157,6 @@ contract TwabRewards is ITwabRewards, Manageable {
     function extendPromotion(uint256 _promotionId, uint256 _numberOfEpochs)
         external
         override
-        onlyPromotionCreator(_promotionId)
         returns (bool)
     {
         require(_isPromotionActive(_promotionId) == true, "TwabRewards/promotion-not-active");
@@ -194,7 +193,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     }
 
     /// @inheritdoc ITwabRewards
-    function getEpoch(uint256 _epochId, uint256 _promotionId)
+    function getEpoch(uint256 _promotionId, uint256 _epochId)
         external
         view
         override
@@ -202,7 +201,7 @@ contract TwabRewards is ITwabRewards, Manageable {
     {
         Promotion memory _promotion = _getPromotion(_promotionId);
 
-        return _getEpoch(_epochId, _promotion);
+        return _getEpoch(_promotion, _epochId);
     }
 
     /// @inheritdoc ITwabRewards
@@ -284,7 +283,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         @param _promotion Promotion settings
         @return Epoch settings
      */
-    function _getEpoch(uint256 _epochId, Promotion memory _promotion)
+    function _getEpoch(Promotion memory _promotion, uint256 _epochId)
         internal
         pure
         returns (Epoch memory)
@@ -312,7 +311,7 @@ contract TwabRewards is ITwabRewards, Manageable {
             (_promotion.epochDuration * _numberOfEpochs);
         uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
 
-        return _getEpoch(_currentEpochId, _promotion);
+        return _getEpoch(_promotion, _currentEpochId);
     }
 
     /**
@@ -329,7 +328,7 @@ contract TwabRewards is ITwabRewards, Manageable {
         uint256 _epochId
     ) internal view returns (uint256) {
         Promotion memory _promotion = _getPromotion(_promotionId);
-        Epoch memory _epoch = _getEpoch(_epochId, _promotion);
+        Epoch memory _epoch = _getEpoch(_promotion, _epochId);
 
         uint256 _epochDuration = _epoch.duration;
         uint256 _epochStartTimestamp = _epoch.startTimestamp;
@@ -359,9 +358,7 @@ contract TwabRewards is ITwabRewards, Manageable {
             _epochEndTimestamps
         );
 
-        uint256 _averageTotalSupply = _averageTotalSupplies[0];
-
-        return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupply;
+        return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupplies[0];
     }
 
     /**

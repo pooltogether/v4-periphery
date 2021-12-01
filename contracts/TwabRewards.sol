@@ -33,31 +33,32 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Emmited when a promotion is created.
-        @param id Id of the newly created promotion
+        @param promotionId Id of the newly created promotion
     */
-    event PromotionCreated(uint256 id);
+    event PromotionCreated(uint256 indexed promotionId);
+
+    /**
+        @notice Emmited when a promotion is cancelled.
+        @param promotionId Id of the promotion being cancelled
+        @param amount Amount of tokens transferred to the promotion creator
+    */
+    event PromotionCancelled(uint256 indexed promotionId, uint256 amount);
 
     /**
         @notice Emmited when a promotion is extended.
-        @param token Address of the token used in the promotion
-        @param amount Amount of tokens transferred to the rewards contract
-    */
-    event PromotionCancelled(IERC20 token, uint256 amount);
-
-    /**
-        @notice Emmited when a promotion is extended.
-        @param token Address of the token used in the promotion
+        @param promotionId Id of the promotion being extended
         @param amount Amount of tokens transferred to the recipient address
         @param numberOfEpochs New number of epochs after extending the promotion
     */
-    event PromotionExtended(IERC20 token, uint256 amount, uint256 numberOfEpochs);
+    event PromotionExtended(uint256 indexed promotionId, uint256 amount, uint256 numberOfEpochs);
 
     /**
         @notice Emmited when rewards have been claimed.
-        @param token Address of the token used in the promotion
+        @param promotionId Id of the promotion in which epoch rewards were claimed
+        @param epochId Id of the epoch being claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(IERC20 token, uint256 amount);
+    event RewardsClaimed(uint256 indexed promotionId, uint256 indexed epochId, uint256 amount);
 
     /* ============ Modifiers ============ */
 
@@ -128,7 +129,7 @@ contract TwabRewards is ITwabRewards {
 
         delete _promotions[_promotionId];
 
-        emit PromotionCancelled(_token, _remainingRewards);
+        emit PromotionCancelled(_promotionId, _remainingRewards);
 
         return true;
     }
@@ -152,7 +153,7 @@ contract TwabRewards is ITwabRewards {
         _token.safeTransfer(address(this), _amount);
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
-        emit PromotionExtended(_token, _amount, _extendedNumberOfEpochs);
+        emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
 
         return true;
     }
@@ -200,7 +201,7 @@ contract TwabRewards is ITwabRewards {
 
         _setClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId, true);
 
-        emit RewardsClaimed(_token, _rewardAmount);
+        emit RewardsClaimed(_promotionId, _epochId, _rewardAmount);
 
         return _rewardAmount;
     }

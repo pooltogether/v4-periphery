@@ -248,6 +248,7 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Get the current epoch id of a promotion.
+        @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
         @param _promotionId Id of the promotion to get current epoch for
         @return Epoch id
      */
@@ -255,11 +256,10 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         uint256 _numberOfEpochs = _promotion.numberOfEpochs;
 
-        uint256 _promotionEndTimestamp = _promotion.startTimestamp +
-            (_promotion.epochDuration * _numberOfEpochs);
-        uint256 _currentEpochId = (_numberOfEpochs / block.timestamp) * _promotionEndTimestamp;
-
-        return _currentEpochId;
+        // (_numberOfEpochs * block.timestamp) / promotionEndTimestamp
+        return
+            (_numberOfEpochs * block.timestamp) /
+            (_promotion.startTimestamp + (_promotion.epochDuration * _numberOfEpochs));
     }
 
     /**
@@ -314,7 +314,19 @@ contract TwabRewards is ITwabRewards {
         @return Amount of tokens left to be rewarded
      */
     function _getRemainingRewards(uint256 _promotionId) internal view returns (uint256) {
-        return IERC20(_getPromotion(_promotionId).token).balanceOf(address(this));
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        uint256 _numberOfEpochs = _promotion.numberOfEpochs;
+        uint256 _tokensPerEpoch = _promotion.tokensPerEpoch;
+        uint256 _currentEpochId = _getCurrentEpochId(_promotionId);
+
+        if (_currentEpochId == 0) {
+            return _tokensPerEpoch * _numberOfEpochs;
+        } else if (_numberOfEpochs <= _currentEpochId + 1) {
+            return 0;
+        } else {
+            // _tokensPerEpoch * _numberOfEpochsLeft
+            return _tokensPerEpoch * (_numberOfEpochs - (_currentEpochId + 1));
+        }
     }
 
     /**

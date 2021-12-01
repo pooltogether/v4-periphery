@@ -20,12 +20,12 @@ contract PrizeDistributionFactory is Manageable {
     /// @notice Emitted when a new Prize Distribution is pushed.
     /// @param drawId The draw id for which the prize dist was pushed
     /// @param totalNetworkTicketSupply The total network ticket supply that was used to compute the cardinality and portion of picks
-    event PushedPrizeDistribution(uint32 indexed drawId, uint256 totalNetworkTicketSupply);
+    event PrizeDistributionPushed(uint32 indexed drawId, uint256 totalNetworkTicketSupply);
 
     /// @notice Emitted when a Prize Distribution is set (overrides another)
     /// @param drawId The draw id for which the prize dist was set
     /// @param totalNetworkTicketSupply The total network ticket supply that was used to compute the cardinality and portion of picks
-    event SetPrizeDistribution(uint32 indexed drawId, uint256 totalNetworkTicketSupply);
+    event PrizeDistributionSet(uint32 indexed drawId, uint256 totalNetworkTicketSupply);
 
     /// @notice The prize tier history to pull tier information from
     IPrizeTierHistory public immutable prizeTierHistory;
@@ -50,7 +50,7 @@ contract PrizeDistributionFactory is Manageable {
         ITicket _ticket,
         uint256 _minPickCost
     ) Ownable(_owner) {
-        require(address(_owner) != address(0), "PDC/owner-zero");
+        require(_owner != address(0), "PDC/owner-zero");
         require(address(_prizeTierHistory) != address(0), "PDC/pth-zero");
         require(address(_drawBuffer) != address(0), "PDC/db-zero");
         require(address(_prizeDistributionBuffer) != address(0), "PDC/pdb-zero");
@@ -83,7 +83,7 @@ contract PrizeDistributionFactory is Manageable {
             );
         prizeDistributionBuffer.pushPrizeDistribution(_drawId, prizeDistribution);
 
-        emit PushedPrizeDistribution(_drawId, _totalNetworkTicketSupply);
+        emit PrizeDistributionPushed(_drawId, _totalNetworkTicketSupply);
 
         return prizeDistribution;
     }
@@ -107,7 +107,7 @@ contract PrizeDistributionFactory is Manageable {
             );
         prizeDistributionBuffer.setPrizeDistribution(_drawId, prizeDistribution);
 
-        emit SetPrizeDistribution(_drawId, _totalNetworkTicketSupply);
+        emit PrizeDistributionSet(_drawId, _totalNetworkTicketSupply);
 
         return prizeDistribution;
     }
@@ -116,6 +116,7 @@ contract PrizeDistributionFactory is Manageable {
      * @notice Calculates what the prize distribution will be, given a draw id and total network ticket supply.
      * @param _drawId The draw id to pull from the Draw Buffer and Prize Tier History
      * @param _totalNetworkTicketSupply The total of all ticket supplies across all prize pools in this network
+     * @return PrizeDistribution using info from the Draw for the given draw id, total network ticket supply, and PrizeTier for the draw.
      */
     function calculatePrizeDistribution(uint32 _drawId, uint256 _totalNetworkTicketSupply)
         public
@@ -130,6 +131,10 @@ contract PrizeDistributionFactory is Manageable {
     /**
      * @notice Calculates what the prize distribution will be, given a draw id and total network ticket supply.
      * @param _drawId The draw from which to use the Draw and 
+     * @param _totalNetworkTicketSupply The sum of all ticket supplies across all prize pools on the network
+     * @param _beaconPeriodSeconds The beacon period in seconds
+     * @param _drawTimestamp The timestamp at which the draw RNG request started.
+     * @return A PrizeDistribution based on the given params and PrizeTier for the passed draw id
      */
     function calculatePrizeDistributionWithDrawData(uint32 _drawId, uint256 _totalNetworkTicketSupply, uint32 _beaconPeriodSeconds, uint64 _drawTimestamp)
         public
@@ -174,6 +179,8 @@ contract PrizeDistributionFactory is Manageable {
     /**
      * @notice Gets the PrizeDistributionBuffer for a drawId
      * @param _drawId drawId
+     * @param _startTimestampOffset The start timestamp offset to use for the prize distribution
+     * @param _maxPicks The maximum picks that the distribution should allow.  The Prize Distribution's numberOfPicks will be less than or equal to this number.
      * @return prizeDistribution
      */
     function _calculatePrizeDistribution(

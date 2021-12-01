@@ -266,9 +266,14 @@ describe('PrizeDistributionFactory', () => {
             await setupMocks();
             await prizeDistributionBuffer.mock.pushPrizeDistribution.returns(true);
             await expect(prizeDistributionFactory.pushPrizeDistribution(1, toWei('1000')))
-                .to.emit(prizeDistributionFactory, 'PushedPrizeDistribution')
+                .to.emit(prizeDistributionFactory, 'PrizeDistributionPushed')
                 .withArgs(1, toWei('1000'));
         });
+
+        it('requires the manager or owner', async () => {
+            await expect(prizeDistributionFactory.connect(wallet3).pushPrizeDistribution(1, toWei('1000')))
+                .to.be.revertedWith('Manageable/caller-not-manager-or-owner')
+        })
     });
 
     describe('setPrizeDistribution()', () => {
@@ -276,8 +281,13 @@ describe('PrizeDistributionFactory', () => {
             await setupMocks();
             await prizeDistributionBuffer.mock.setPrizeDistribution.returns(1);
             await expect(prizeDistributionFactory.setPrizeDistribution(1, toWei('1000')))
-                .to.emit(prizeDistributionFactory, 'SetPrizeDistribution')
+                .to.emit(prizeDistributionFactory, 'PrizeDistributionSet')
                 .withArgs(1, toWei('1000'));
         });
+
+        it('requires the owner', async () => {
+            await expect(prizeDistributionFactory.connect(wallet3).setPrizeDistribution(1, toWei('1000')))
+                .to.be.revertedWith('Ownable/caller-not-owner')
+        })
     });
 });

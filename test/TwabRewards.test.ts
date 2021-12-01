@@ -43,7 +43,7 @@ describe('TwabRewards', () => {
     beforeEach(async () => {
         depositToken = await erc20MintableFactory.deploy('Token', 'TOKE');
         rewardToken = await erc20MintableFactory.deploy('Reward', 'REWA');
-        twabRewards = await twabRewardsFactory.deploy(wallet1.address);
+        twabRewards = await twabRewardsFactory.deploy();
         ticket = await erc20MintableFactory.deploy('Ticket', 'TICK');
 
         yieldSourceStub = await deployMockContract(wallet1 as Signer, YieldSourceStubInterface);
@@ -57,30 +57,27 @@ describe('TwabRewards', () => {
         latestBlockTimestamp = (await ethers.provider.getBlock('latest')).timestamp;
     });
 
-    describe('constructor()', () => {
-        it('should properly deploy', async () => {
-            expect(await twabRewards.owner()).to.equal(wallet1.address);
-            expect(twabRewards.deployTransaction)
-                .to.emit(twabRewards, 'Deployed')
-                .withArgs(wallet1.address);
-        });
-    });
-
     describe('createPromotion()', async () => {
         it('should create a new promotion', async () => {
             const token = rewardToken.address;
-            const tokensPerEpoch = 10000;
+            const tokensPerEpoch = toWei('10000');
             const startTimestamp = latestBlockTimestamp;
             const epochDuration = 604800; // 1 week in seconds
             const numberOfEpochs = 12; // 3 months since 1 epoch runs for 1 week
 
-            await twabRewards.createPromotion(ticket.address, {
+            await rewardToken.mint(
+                wallet1.address,
+                tokensPerEpoch.mul(numberOfEpochs),
+            );
+
+            await twabRewards.createPromotion(
+                ticket.address,
                 token,
                 tokensPerEpoch,
                 startTimestamp,
                 epochDuration,
                 numberOfEpochs,
-            });
+            );
 
             const currentPromotion = await twabRewards.callStatic.getCurrentPromotion();
 

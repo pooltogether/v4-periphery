@@ -5,7 +5,6 @@ pragma solidity 0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
-import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import "./interfaces/ITwabRewards.sol";
 
@@ -14,7 +13,7 @@ import "./interfaces/ITwabRewards.sol";
  * @author PoolTogether Inc Team
  * @notice Contract to distribute rewards to depositors in a pool.
  */
-contract TwabRewards is ITwabRewards, Manageable {
+contract TwabRewards is ITwabRewards {
     using SafeERC20 for IERC20;
 
     /* ============ Global Variables ============ */
@@ -31,12 +30,6 @@ contract TwabRewards is ITwabRewards, Manageable {
     mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */
-
-    /**
-        @notice Emitted when contract has been deployed.
-        @param owner Contract owner address
-   */
-    event Deployed(address owner);
 
     /**
         @notice Emmited when a promotion is created.
@@ -65,16 +58,6 @@ contract TwabRewards is ITwabRewards, Manageable {
         @param amount Amount of tokens transferred to the recipient address
     */
     event RewardsClaimed(IERC20 token, uint256 amount);
-
-    /* ============ Constructor ============ */
-
-    /**
-        @notice Deploy TwabRewards contract.
-        @param _owner Contract owner address
-    */
-    constructor(address _owner) Ownable(_owner) {
-        emit Deployed(_owner);
-    }
 
     /* ============ Modifiers ============ */
 

@@ -55,10 +55,10 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Emmited when rewards have been claimed.
         @param promotionId Id of the promotion in which epoch rewards were claimed
-        @param epochId Id of the epoch being claimed
+        @param epochIds Ids of the epochs being claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(uint256 indexed promotionId, uint256 indexed epochId, uint256 amount);
+    event RewardsClaimed(uint256 indexed promotionId, uint256[] indexed epochIds, uint256 amount);
 
     /* ============ Modifiers ============ */
 
@@ -177,31 +177,43 @@ contract TwabRewards is ITwabRewards {
     function getRewardAmount(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId
-    ) external view override returns (uint256) {
-        return _calculateRewardAmount(_user, _promotionId, _epochId);
+        uint256[] calldata _epochIds
+    ) external view override returns (uint256[] memory) {
+        uint256[] memory _rewardsAmount = new uint256[](_epochIds.length);
+
+        for (uint256 index = 0; index < _epochIds.length; index++) {
+            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotionId, _epochIds[index]);
+        }
+
+        return _rewardsAmount;
     }
 
     /// @inheritdoc ITwabRewards
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId
+        uint256[] calldata _epochIds
     ) external override returns (uint256) {
-        require(_epochId < _getCurrentEpochId(_promotionId), "TwabRewards/epoch-not-over");
-        require(
-            !_isClaimedEpoch(_user, _promotionId, _epochId),
-            "TwabRewards/rewards-already-claimed"
-        );
+        uint256 _rewardAmount;
 
-        uint256 _rewardAmount = _calculateRewardAmount(_user, _promotionId, _epochId);
+        for (uint256 index = 0; index < _epochIds.length; index++) {
+            uint256 _epochId = _epochIds[index];
+
+            require(_epochId < _getCurrentEpochId(_promotionId), "TwabRewards/epoch-not-over");
+
+            require(
+                !_isClaimedEpoch(_user, _promotionId, _epochId),
+                "TwabRewards/rewards-already-claimed"
+            );
+
+            _rewardAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
+            _setClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId, true);
+        }
 
         IERC20 _token = IERC20(_getPromotion(_promotionId).token);
         _token.safeTransferFrom(address(this), _user, _rewardAmount);
 
-        _setClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId, true);
-
-        emit RewardsClaimed(_promotionId, _epochId, _rewardAmount);
+        emit RewardsClaimed(_promotionId, _epochIds, _rewardAmount);
 
         return _rewardAmount;
     }

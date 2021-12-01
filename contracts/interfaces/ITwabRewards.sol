@@ -76,22 +76,14 @@ interface ITwabRewards {
         @dev Caller may want to claim full or partial `amount` of rewards.
         @param _user Address of the user to claim rewards for
         @param _promotionId Promotion id to claim rewards for
-        @param _epochId Epoch id to claim rewards for
+        @param _epochIds Epoch ids to claim rewards for
         @return Amount of rewards claimed
      */
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId
+        uint256[] calldata _epochIds
     ) external returns (uint256);
-
-    /**
-        @notice Claim rewards from all epochs for a user.
-        @dev Rewards can be claimed on behalf of a user
-        @param _user Address of the user to claim rewards for
-        @return Amount of rewards claimed
-     */
-    // function claimAllRewards(address _user) external returns (uint256);
 
     /**
         @notice Get settings for a specific promotion.
@@ -120,19 +112,12 @@ interface ITwabRewards {
         @dev Will be 0 if user has already claimed rewards for the epoch.
         @param _user Address of the user to get amount of rewards for
         @param _promotionId Promotion id from which the epoch is
-        @param _epochId Epoch id to get information for
+        @param _epochIds Epoch ids to get reward amount for
         @return Amount of tokens to be rewarded
      */
     function getRewardAmount(
         address _user,
         uint256 _promotionId,
-        uint256 _epochId
-    ) external view returns (uint256);
-
-    /**
-        @notice Get amount of tokens to be rewarded for all past epochs.
-        @param _user Address of the user to get information about rewards for
-        @return Amount of tokens to be rewarded
-     */
-    // function getAllRewardsAmount(address _user) external view returns (uint256);
+        uint256[] calldata _epochIds
+    ) external view returns (uint256[] memory);
 }

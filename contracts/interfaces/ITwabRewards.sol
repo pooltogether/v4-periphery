@@ -34,6 +34,8 @@ interface ITwabRewards {
         @notice Create a new promotion.
         @dev Will revert if a promotion is already active.
         @dev For sake of simplicity, `msg.sender` will be the creator of the promotion.
+        @dev `_latestPromotionId` starts at 0 and is incremented by 1 for each new promotion.
+        So the first promotion will have id 1, the second 2, etc.
         @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
         @param _tokensPerEpoch Number of tokens to be distributed per epoch
@@ -107,6 +109,7 @@ interface ITwabRewards {
 
     /**
         @notice Get the current epoch id of a promotion.
+        @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
         @param _promotionId Promotion id to get current epoch for
         @return Epoch id
      */

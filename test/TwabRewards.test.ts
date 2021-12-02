@@ -251,6 +251,22 @@ describe('TwabRewards', () => {
         });
     });
 
+    describe('getPromotion()', async () => {
+        it('should get promotion by id', async () => {
+            await createPromotion(ticket.address);
+
+            const promotion = await twabRewards.callStatic.getPromotion(1);
+
+            expect(promotion.creator).to.equal(wallet1.address);
+            expect(promotion.ticket).to.equal(ticket.address);
+            expect(promotion.token).to.equal(rewardToken.address);
+            expect(promotion.tokensPerEpoch).to.equal(tokensPerEpoch);
+            expect(promotion.startTimestamp).to.equal(latestBlockTimestamp);
+            expect(promotion.epochDuration).to.equal(epochDuration);
+            expect(promotion.numberOfEpochs).to.equal(numberOfEpochs);
+        });
+    });
+
     describe('_requireTicket()', () => {
         it('should revert if ticket address is address zero', async () => {
             await expect(twabRewards.requireTicket(AddressZero)).to.be.revertedWith(

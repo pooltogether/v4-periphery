@@ -26,7 +26,7 @@ contract TwabRewards is ITwabRewards {
 
     /// @notice Keeps track of claimed rewards per user.
     /// @dev _claimedEpochs[promotionId][user] => claimedEpochs
-    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
+    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 255 epochs.
     mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */
@@ -147,14 +147,11 @@ contract TwabRewards is ITwabRewards {
 
         Promotion memory _promotion = _getPromotion(_promotionId);
         uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
-
-        _requireEpochLimit(_extendedNumberOfEpochs);
+        _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
         IERC20 _token = IERC20(_promotion.token);
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
-
-        _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
-        _token.safeTransfer(address(this), _amount);
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
 
         emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
 
@@ -245,14 +242,6 @@ contract TwabRewards is ITwabRewards {
         }
 
         require(succeeded && controllerAddress != address(0), "TwabRewards/invalid-ticket");
-    }
-
-    /**
-        @notice Determine if the number of epochs passed exceeds the maximum number of epochs.
-        @param _numberOfEpochs Number of epochs to check
-    */
-    function _requireEpochLimit(uint256 _numberOfEpochs) internal pure {
-        require(_numberOfEpochs <= type(uint8).max, "TwabRewards/exceeds-255-epochs-limit");
     }
 
     /**

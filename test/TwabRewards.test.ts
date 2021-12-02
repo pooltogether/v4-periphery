@@ -11,7 +11,7 @@ import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
 const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
-const { parseEther: toWei } = utils;
+const { parseEther: toWei, formatEther } = utils;
 const { AddressZero } = constants;
 
 describe('TwabRewards', () => {
@@ -116,6 +116,10 @@ describe('TwabRewards', () => {
                 'TwabRewards/invalid-ticket',
             );
         });
+
+        it('should fail to create a new promotion if number of epochs exceeds limit', async () => {
+            await expect(createPromotion(ticket.address, 256)).to.be.reverted;
+        });
     });
 
     describe('cancelPromotion()', async () => {
@@ -193,6 +197,57 @@ describe('TwabRewards', () => {
             await expect(twabRewards.cancelPromotion(1, AddressZero)).to.be.revertedWith(
                 'TwabRewards/recipient-not-zero-address',
             );
+        });
+    });
+
+    describe('extendPromotion()', async () => {
+        it('should extend a promotion', async () => {
+            await createPromotion(ticket.address);
+
+            const numberOfEpochsAdded = 6;
+            const extendedPromotionAmount = tokensPerEpoch.mul(numberOfEpochsAdded);
+
+            await rewardToken.mint(wallet1.address, extendedPromotionAmount);
+            await rewardToken.approve(twabRewards.address, extendedPromotionAmount);
+
+            const promotionId = 1;
+            const extendTransaction = await twabRewards.extendPromotion(1, numberOfEpochsAdded);
+
+            expect(extendTransaction)
+                .to.emit(twabRewards, 'PromotionExtended')
+                .withArgs(
+                    promotionId,
+                    extendedPromotionAmount,
+                    numberOfEpochs + numberOfEpochsAdded,
+                );
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(0);
+            expect(await rewardToken.balanceOf(twabRewards.address)).to.equal(
+                promotionAmount.add(extendedPromotionAmount),
+            );
+        });
+
+        it('should fail to extend an inactive promotion', async () => {
+            await createPromotion(ticket.address);
+            await increaseTime(epochDuration * 13);
+
+            await expect(twabRewards.extendPromotion(1, 6)).to.be.revertedWith(
+                'TwabRewards/promotion-not-active',
+            );
+        });
+
+        it('should fail to extend an inexistent promotion', async () => {
+            await createPromotion(ticket.address);
+
+            await expect(twabRewards.extendPromotion(2, 6)).to.be.revertedWith(
+                'TwabRewards/promotion-not-active',
+            );
+        });
+
+        it('should fail to extend a promotion over the epochs limit', async () => {
+            await createPromotion(ticket.address);
+
+            await expect(twabRewards.extendPromotion(1, 244)).to.be.reverted;
         });
     });
 

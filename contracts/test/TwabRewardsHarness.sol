@@ -8,8 +8,4 @@ contract TwabRewardsHarness is TwabRewards {
     function requireTicket(address _ticket) external view {
         return _requireTicket(_ticket);
     }
-
-    function requireEpochLimit(uint256 _numberOfEpochs) external pure {
-        return _requireEpochLimit(_numberOfEpochs);
-    }
 }

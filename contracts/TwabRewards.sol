@@ -199,6 +199,8 @@ contract TwabRewards is ITwabRewards {
     ) external override returns (uint256) {
         uint256 _rewardAmount;
 
+        uint256 _userClaimedEpochs = _claimedEpochs[_promotionId][_user];
+
         for (uint256 index = 0; index < _epochIds.length; index++) {
             uint256 _epochId = _epochIds[index];
 
@@ -210,8 +212,10 @@ contract TwabRewards is ITwabRewards {
             );
 
             _rewardAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
-            _setClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId, true);
+            _userClaimedEpochs = _updateClaimedEpoch(_userClaimedEpochs, _epochId);
         }
+
+        _claimedEpochs[_promotionId][_user] = _userClaimedEpochs;
 
         IERC20 _token = IERC20(_getPromotion(_promotionId).token);
         _token.safeTransferFrom(address(this), _user, _rewardAmount);
@@ -358,19 +362,10 @@ contract TwabRewards is ITwabRewards {
         We get: 0110 0111 & 1111 1011 = 0110 0011
         @param _epochs Tightly packed epoch ids with their boolean values
         @param _epochId Id of the epoch to set the boolean for
-        @param _value Boolean value to set
         @return Tightly packed epoch ids with the newly boolean value set
     */
-    function _setClaimedEpoch(
-        uint256 _epochs,
-        uint256 _epochId,
-        bool _value
-    ) public pure returns (uint256) {
-        if (_value) {
-            return _epochs | (uint256(1) << _epochId);
-        } else {
-            return _epochs & ~(uint256(1) << _epochId);
-        }
+    function _updateClaimedEpoch(uint256 _epochs, uint256 _epochId) public pure returns (uint256) {
+        return _epochs | (uint256(1) << _epochId);
     }
 
     /**

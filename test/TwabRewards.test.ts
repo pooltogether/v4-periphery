@@ -58,37 +58,57 @@ describe('TwabRewards', () => {
     });
 
     describe('createPromotion()', async () => {
-        it('should create a new promotion', async () => {
-            const token = rewardToken.address;
-            const tokensPerEpoch = toWei('10000');
-            const startTimestamp = latestBlockTimestamp;
-            const epochDuration = 604800; // 1 week in seconds
-            const numberOfEpochs = 12; // 3 months since 1 epoch runs for 1 week
+        const tokensPerEpoch = toWei('10000');
+        const epochDuration = 604800; // 1 week in seconds
+        const numberOfEpochs = 12; // 3 months since 1 epoch runs for 1 week
+        const amount = tokensPerEpoch.mul(numberOfEpochs);
 
-            await rewardToken.mint(
-                wallet1.address,
-                tokensPerEpoch.mul(numberOfEpochs),
-            );
+        const createPromotion = async (
+            ticketAddress: string,
+            epochsNumber: number = numberOfEpochs,
+        ) => {
+            await rewardToken.mint(wallet1.address, amount);
+            await rewardToken.approve(twabRewards.address, amount);
 
-            await twabRewards.createPromotion(
-                ticket.address,
-                token,
+            return await twabRewards.createPromotion(
+                ticketAddress,
+                rewardToken.address,
                 tokensPerEpoch,
-                startTimestamp,
+                latestBlockTimestamp,
                 epochDuration,
-                numberOfEpochs,
+                epochsNumber,
             );
+        };
 
-            const currentPromotion = await twabRewards.callStatic.getCurrentPromotion();
+        it('should create a new promotion', async () => {
+            const transaction = await createPromotion(ticket.address);
+            const promotionId = 1;
 
-            expect(currentPromotion.id).to.equal(1);
-            expect(currentPromotion.creator).to.equal(wallet1.address);
-            expect(currentPromotion.ticket).to.equal(ticket.address);
-            expect(currentPromotion.token).to.equal(token);
-            expect(currentPromotion.tokensPerEpoch).to.equal(tokensPerEpoch);
-            expect(currentPromotion.startTimestamp).to.equal(startTimestamp);
-            expect(currentPromotion.epochDuration).to.equal(epochDuration);
-            expect(currentPromotion.numberOfEpochs).to.equal(numberOfEpochs);
+            expect(transaction).to.emit(twabRewards, 'PromotionCreated').withArgs(promotionId);
+
+            const promotion = await twabRewards.callStatic.getPromotion(promotionId);
+
+            expect(promotion.creator).to.equal(wallet1.address);
+            expect(promotion.ticket).to.equal(ticket.address);
+            expect(promotion.token).to.equal(rewardToken.address);
+            expect(promotion.tokensPerEpoch).to.equal(tokensPerEpoch);
+            expect(promotion.startTimestamp).to.equal(latestBlockTimestamp);
+            expect(promotion.epochDuration).to.equal(epochDuration);
+            expect(promotion.numberOfEpochs).to.equal(numberOfEpochs);
+        });
+
+        it('should fail to create a new promotion if ticket is address zero', async () => {
+            await expect(createPromotion(AddressZero)).to.be.revertedWith(
+                'TwabRewards/ticket-not-zero-address',
+            );
+        });
+
+        it('should fail to create a new promotion if ticket is not an actual ticket', async () => {
+            const randomWallet = Wallet.createRandom();
+
+            await expect(createPromotion(randomWallet.address)).to.be.revertedWith(
+                'TwabRewards/invalid-ticket',
+            );
         });
     });
 
@@ -112,6 +132,14 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.requireTicket(mockTicket.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
+            );
+        });
+    });
+
+    describe('_requireEpochLimit()', () => {
+        it('should revert if number of epochs exceeds limit', async () => {
+            await expect(twabRewards.requireEpochLimit(256)).to.be.revertedWith(
+                'TwabRewards/exceeds-256-epochs-limit',
             );
         });
     });

@@ -84,12 +84,15 @@ contract TwabRewards is ITwabRewards {
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
         _requireTicket(_ticket);
-        _requireEpochLimit(_numberOfEpochs);
 
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
-        IERC20(_token).safeTransfer(address(this), _tokensPerEpoch * _numberOfEpochs);
+        IERC20(_token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _tokensPerEpoch * _numberOfEpochs
+        );
 
         Promotion memory _nextPromotion = Promotion(
             msg.sender,
@@ -225,7 +228,7 @@ contract TwabRewards is ITwabRewards {
     @param _ticket Address to check
    */
     function _requireTicket(address _ticket) internal view {
-        require(address(_ticket) != address(0), "TwabRewards/ticket-not-zero-address");
+        require(_ticket != address(0), "TwabRewards/ticket-not-zero-address");
 
         (bool succeeded, bytes memory data) = address(_ticket).staticcall(
             abi.encodePacked(ITicket(_ticket).controller.selector)
@@ -245,7 +248,7 @@ contract TwabRewards is ITwabRewards {
         @param _numberOfEpochs Number of epochs to check
     */
     function _requireEpochLimit(uint256 _numberOfEpochs) internal pure {
-        require(_numberOfEpochs < type(uint8).max, "TwabRewards/exceeds-256-epochs-limit");
+        require(_numberOfEpochs <= type(uint8).max, "TwabRewards/exceeds-256-epochs-limit");
     }
 
     /**

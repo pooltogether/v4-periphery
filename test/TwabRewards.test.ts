@@ -11,7 +11,7 @@ import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
 const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
-const { parseEther: toWei, formatEther } = utils;
+const { parseEther: toWei } = utils;
 const { AddressZero } = constants;
 
 describe('TwabRewards', () => {
@@ -20,12 +20,10 @@ describe('TwabRewards', () => {
     let wallet3: SignerWithAddress;
 
     let erc20MintableFactory: ContractFactory;
-    let prizePoolFactory: ContractFactory;
     let ticketFactory: ContractFactory;
     let twabRewardsFactory: ContractFactory;
 
     let depositToken: Contract;
-    let prizePool: Contract;
     let rewardToken: Contract;
     let ticket: Contract;
     let twabRewards: Contract;
@@ -39,8 +37,7 @@ describe('TwabRewards', () => {
         [wallet1, wallet2, wallet3] = await getSigners();
 
         erc20MintableFactory = await getContractFactory('ERC20Mintable');
-        prizePoolFactory = await getContractFactory('PrizePoolHarness');
-        ticketFactory = await getContractFactory('Ticket');
+        ticketFactory = await getContractFactory('TicketHarness');
         twabRewardsFactory = await getContractFactory('TwabRewardsHarness');
     });
 
@@ -53,8 +50,7 @@ describe('TwabRewards', () => {
         yieldSourceStub = await deployMockContract(wallet1 as Signer, YieldSourceStubInterface);
         await yieldSourceStub.mock.depositToken.returns(depositToken.address);
 
-        prizePool = await prizePoolFactory.deploy(wallet1.address, yieldSourceStub.address);
-        ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, prizePool.address);
+        ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, wallet1.address);
 
         mockTicket = await deployMockContract(wallet1, TicketInterface);
 
@@ -267,6 +263,17 @@ describe('TwabRewards', () => {
         });
     });
 
+    describe('getCurrentEpochId()', async () => {
+        it('should get the current epoch id of a promotion', async () => {
+            await createPromotion(ticket.address);
+            await increaseTime(epochDuration * 3);
+
+            expect(
+                await twabRewards.callStatic.getCurrentEpochId(1),
+            ).to.equal(3);
+        });
+    });
+
     describe('_requireTicket()', () => {
         it('should revert if ticket address is address zero', async () => {
             await expect(twabRewards.requireTicket(AddressZero)).to.be.revertedWith(
@@ -287,14 +294,6 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.requireTicket(mockTicket.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
-            );
-        });
-    });
-
-    describe('_requireEpochLimit()', () => {
-        it('should revert if number of epochs exceeds limit', async () => {
-            await expect(twabRewards.requireEpochLimit(256)).to.be.revertedWith(
-                'TwabRewards/exceeds-255-epochs-limit',
             );
         });
     });

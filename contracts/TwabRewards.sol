@@ -262,12 +262,10 @@ contract TwabRewards is ITwabRewards {
      */
     function _getCurrentEpochId(uint256 _promotionId) internal view returns (uint256) {
         Promotion memory _promotion = _getPromotion(_promotionId);
-        uint256 _numberOfEpochs = _promotion.numberOfEpochs;
 
-        // (_numberOfEpochs * elapsedTimestamp) / promotionDurationTimestamp
+        // elapsedTimestamp / epochDurationTimestamp
         return
-            (_numberOfEpochs * (block.timestamp - _promotion.startTimestamp)) /
-            (_promotion.epochDuration * _numberOfEpochs);
+            (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
     }
 
     /**
@@ -289,10 +287,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
-        require(
-            block.timestamp >= _epochStartTimestamp && block.timestamp <= _epochEndTimestamp,
-            "TwabRewards/epoch-not-over"
-        );
+        require(block.timestamp > _epochEndTimestamp, "TwabRewards/epoch-not-over");
 
         ITicket _ticket = ITicket(_promotion.ticket);
 

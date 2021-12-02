@@ -47,8 +47,8 @@ const config: HardhatUserConfig = {
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',
             '@pooltogether/v4-core/contracts/interfaces/IStrategy.sol',
             '@pooltogether/v4-core/contracts/test/ERC20Mintable.sol',
-            '@pooltogether/v4-core/contracts/test/PrizePoolHarness.sol',
             '@pooltogether/v4-core/contracts/test/ReserveHarness.sol',
+            '@pooltogether/v4-core/contracts/test/TicketHarness.sol',
         ],
     },
     solidity: {

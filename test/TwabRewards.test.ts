@@ -223,7 +223,7 @@ describe('TwabRewards', () => {
     describe('_requireEpochLimit()', () => {
         it('should revert if number of epochs exceeds limit', async () => {
             await expect(twabRewards.requireEpochLimit(256)).to.be.revertedWith(
-                'TwabRewards/exceeds-256-epochs-limit',
+                'TwabRewards/exceeds-255-epochs-limit',
             );
         });
     });

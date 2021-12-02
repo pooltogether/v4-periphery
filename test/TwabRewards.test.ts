@@ -6,7 +6,11 @@ import { expect } from 'chai';
 import { Contract, ContractFactory, Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
-const { constants, getContractFactory, getSigners, utils, Wallet } = ethers;
+import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
+
+const increaseTime = (time: number) => increaseTimeUtil(provider, time);
+
+const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { parseEther: toWei } = utils;
 const { AddressZero } = constants;
 
@@ -57,34 +61,36 @@ describe('TwabRewards', () => {
         latestBlockTimestamp = (await ethers.provider.getBlock('latest')).timestamp;
     });
 
+    const tokensPerEpoch = toWei('10000');
+    const epochDuration = 604800; // 1 week in seconds
+    const numberOfEpochs = 12; // 3 months since 1 epoch runs for 1 week
+    const promotionAmount = tokensPerEpoch.mul(numberOfEpochs);
+
+    const createPromotion = async (
+        ticketAddress: string,
+        epochsNumber: number = numberOfEpochs,
+    ) => {
+        await rewardToken.mint(wallet1.address, promotionAmount);
+        await rewardToken.approve(twabRewards.address, promotionAmount);
+
+        return await twabRewards.createPromotion(
+            ticketAddress,
+            rewardToken.address,
+            tokensPerEpoch,
+            latestBlockTimestamp,
+            epochDuration,
+            epochsNumber,
+        );
+    };
+
     describe('createPromotion()', async () => {
-        const tokensPerEpoch = toWei('10000');
-        const epochDuration = 604800; // 1 week in seconds
-        const numberOfEpochs = 12; // 3 months since 1 epoch runs for 1 week
-        const amount = tokensPerEpoch.mul(numberOfEpochs);
-
-        const createPromotion = async (
-            ticketAddress: string,
-            epochsNumber: number = numberOfEpochs,
-        ) => {
-            await rewardToken.mint(wallet1.address, amount);
-            await rewardToken.approve(twabRewards.address, amount);
-
-            return await twabRewards.createPromotion(
-                ticketAddress,
-                rewardToken.address,
-                tokensPerEpoch,
-                latestBlockTimestamp,
-                epochDuration,
-                epochsNumber,
-            );
-        };
-
         it('should create a new promotion', async () => {
-            const transaction = await createPromotion(ticket.address);
+            const createTransaction = await createPromotion(ticket.address);
             const promotionId = 1;
 
-            expect(transaction).to.emit(twabRewards, 'PromotionCreated').withArgs(promotionId);
+            expect(createTransaction)
+                .to.emit(twabRewards, 'PromotionCreated')
+                .withArgs(promotionId);
 
             const promotion = await twabRewards.callStatic.getPromotion(promotionId);
 
@@ -108,6 +114,84 @@ describe('TwabRewards', () => {
 
             await expect(createPromotion(randomWallet.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
+            );
+        });
+    });
+
+    describe('cancelPromotion()', async () => {
+        it('should cancel a promotion during the first epoch and transfer full reward tokens amount', async () => {
+            await createPromotion(ticket.address);
+
+            const promotionId = 1;
+            const cancelTransaction = await twabRewards.cancelPromotion(
+                promotionId,
+                wallet1.address,
+            );
+
+            expect(cancelTransaction)
+                .to.emit(twabRewards, 'PromotionCancelled')
+                .withArgs(promotionId, promotionAmount);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(promotionAmount);
+        });
+
+        it('should cancel a promotion during the 6th epoch and transfer half the reward tokens amount', async () => {
+            await createPromotion(ticket.address);
+            await increaseTime(epochDuration * 6 - epochDuration / 2);
+
+            const promotionId = 1;
+            const halfPromotionAmount = promotionAmount.div(2);
+            const cancelTransaction = await twabRewards.cancelPromotion(
+                promotionId,
+                wallet1.address,
+            );
+
+            expect(cancelTransaction)
+                .to.emit(twabRewards, 'PromotionCancelled')
+                .withArgs(promotionId, halfPromotionAmount);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(halfPromotionAmount);
+        });
+
+        it('should cancel a promotion during the last epoch and transfer 0 reward tokens amount', async () => {
+            await createPromotion(ticket.address);
+            await increaseTime(epochDuration * numberOfEpochs - epochDuration / 2);
+
+            const promotionId = 1;
+            const cancelTransaction = await twabRewards.cancelPromotion(
+                promotionId,
+                wallet1.address,
+            );
+
+            expect(cancelTransaction)
+                .to.emit(twabRewards, 'PromotionCancelled')
+                .withArgs(promotionId, 0);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(0);
+        });
+
+        it('should fail to cancel promotion if not owner', async () => {
+            await createPromotion(ticket.address);
+
+            await expect(
+                twabRewards.connect(wallet2).cancelPromotion(1, AddressZero),
+            ).to.be.revertedWith('TwabRewards/only-promotion-creator');
+        });
+
+        it('should fail to cancel an inactive promotion', async () => {
+            await createPromotion(ticket.address);
+            await increaseTime(epochDuration * 13);
+
+            await expect(twabRewards.cancelPromotion(1, wallet1.address)).to.be.revertedWith(
+                'TwabRewards/promotion-not-active',
+            );
+        });
+
+        it('should fail to cancel promotion if recipient is address zero', async () => {
+            await createPromotion(ticket.address);
+
+            await expect(twabRewards.cancelPromotion(1, AddressZero)).to.be.revertedWith(
+                'TwabRewards/recipient-not-zero-address',
             );
         });
     });

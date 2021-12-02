@@ -271,10 +271,10 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         uint256 _numberOfEpochs = _promotion.numberOfEpochs;
 
-        // (_numberOfEpochs * block.timestamp) / promotionEndTimestamp
+        // (_numberOfEpochs * elapsedTimestamp) / promotionDurationTimestamp
         return
-            (_numberOfEpochs * block.timestamp) /
-            (_promotion.startTimestamp + (_promotion.epochDuration * _numberOfEpochs));
+            (_numberOfEpochs * (block.timestamp - _promotion.startTimestamp)) /
+            (_promotion.epochDuration * _numberOfEpochs);
     }
 
     /**

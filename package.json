@@ -21,6 +21,7 @@
         "impersonate-accounts": "hardhat --network localhost fork:impersonate-accounts ",
         "distribute-ether": "hardhat --network localhost fork:distribute-ether-from-binance",
         "create-prize-pool": "hardhat --network localhost fork:create-aave-prize-pool",
+        "remove-logs": "yarn run hardhat remove-logs",
         "run-fork": "yarn impersonate-accounts && yarn distribute-ether && yarn create-prize-pool",
         "test": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat test",
         "prepack": "yarn compile"

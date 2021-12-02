@@ -351,15 +351,11 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Set boolean value for a specific epoch.
         @dev Bits are stored in a uint256 from right to left.
-        Let's take the example of the following 8 bits word. 0110 0111
-        To set the boolean value to 0 for the epoch id 2, we need to create a mask by shifting 1 to the left by 2 bits.
+        Let's take the example of the following 8 bits word. 0110 0011
+        To set the boolean value to 1 for the epoch id 2, we need to create a mask by shifting 1 to the left by 2 bits.
         We get: 0000 0001 << 2 = 0000 0100
         We then OR the mask with the word to set the value.
-        We get: 0110 0111 | 0000 0100 = 0110 0111
-        To set the boolean value to 0 for the epoch id 2, we need to create a mask by shifting 1 to the left by 2 bits and then inverting it.
-        We get: 0000 0001 << 2 = ~(0000 0100) = 1111 1011
-        We then AND the mask with the word to clear the value.
-        We get: 0110 0111 & 1111 1011 = 0110 0011
+        We get: 0110 0011 | 0000 0100 = 0110 0111
         @param _epochs Tightly packed epoch ids with their boolean values
         @param _epochId Id of the epoch to set the boolean for
         @return Tightly packed epoch ids with the newly boolean value set
@@ -369,7 +365,7 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
-        @notice Get boolean for a specific epoch id.
+        @notice Check if rewards of an epoch for a given promotion have already been claimed by the user.
         @dev Bits are stored in a uint256 from right to left.
         Let's take the example of the following 8 bits word. 0110 0111
         To retrieve the boolean value for the epoch id 2, we need to shift the word to the right by 2 bits.
@@ -377,17 +373,6 @@ contract TwabRewards is ITwabRewards {
         We then get the value of the last bit by masking with 1.
         We get: 0001 1001 & 0000 0001 = 0000 0001 = 1
         We then return the boolean value true since the last bit is 1.
-        @param _epochs Tightly packed epoch ids with their boolean values
-        @param _epochId Id of the epoch to get the boolean for
-        @return true if the epoch has been claimed, false otherwise
-    */
-    function _getClaimedEpoch(uint256 _epochs, uint256 _epochId) internal pure returns (bool) {
-        uint256 flag = (_epochs >> _epochId) & uint256(1);
-        return (flag == 1 ? true : false);
-    }
-
-    /**
-        @notice Check if rewards of an epoch for a given promotion have already been claimed by the user.
         @param _user Address of the user to check
         @param _promotionId Promotion id to check
         @param _epochId Epoch id to check
@@ -398,7 +383,8 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256 _epochId
     ) internal view returns (bool) {
-        return _getClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochId);
+        uint256 flag = (_claimedEpochs[_promotionId][_user] >> _epochId) & uint256(1);
+        return (flag == 1 ? true : false);
     }
 
     /**

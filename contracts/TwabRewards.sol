@@ -88,12 +88,6 @@ contract TwabRewards is ITwabRewards {
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
-        IERC20(_token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _tokensPerEpoch * _numberOfEpochs
-        );
-
         Promotion memory _nextPromotion = Promotion(
             msg.sender,
             _ticket,
@@ -105,6 +99,12 @@ contract TwabRewards is ITwabRewards {
         );
 
         _promotions[_nextPromotionId] = _nextPromotion;
+
+        IERC20(_token).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _tokensPerEpoch * _numberOfEpochs
+        );
 
         emit PromotionCreated(_nextPromotionId);
 
@@ -153,8 +153,8 @@ contract TwabRewards is ITwabRewards {
         IERC20 _token = IERC20(_promotion.token);
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
 
-        _token.safeTransfer(address(this), _amount);
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
+        _token.safeTransfer(address(this), _amount);
 
         emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
 

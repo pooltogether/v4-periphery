@@ -177,7 +177,7 @@ contract TwabRewards is ITwabRewards {
     }
 
     /// @inheritdoc ITwabRewards
-    function getRewardAmount(
+    function getRewardsAmount(
         address _user,
         uint256 _promotionId,
         uint256[] calldata _epochIds

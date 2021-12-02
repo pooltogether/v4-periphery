@@ -115,7 +115,7 @@ interface ITwabRewards {
         @param _epochIds Epoch ids to get reward amount for
         @return Amount of tokens to be rewarded
      */
-    function getRewardAmount(
+    function getRewardsAmount(
         address _user,
         uint256 _promotionId,
         uint256[] calldata _epochIds

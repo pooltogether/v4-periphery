@@ -23,7 +23,7 @@ interface ITwabRewards {
     struct Promotion {
         address creator;
         address ticket;
-        address token;
+        IERC20 token;
         uint216 tokensPerEpoch;
         uint32 startTimestamp;
         uint32 epochDuration;
@@ -32,8 +32,8 @@ interface ITwabRewards {
 
     /**
         @notice Create a new promotion.
-        @dev Will revert if a promotion is already active.
         @dev For sake of simplicity, `msg.sender` will be the creator of the promotion.
+        @dev We approve the contract to spend the max amount of reward tokens in order to save on gas when claiming rewards.
         @dev `_latestPromotionId` starts at 0 and is incremented by 1 for each new promotion.
         So the first promotion will have id 1, the second 2, etc.
         @param _ticket Prize Pool ticket address for which the promotion is created
@@ -46,7 +46,7 @@ interface ITwabRewards {
     */
     function createPromotion(
         address _ticket,
-        address _token,
+        IERC20 _token,
         uint216 _tokensPerEpoch,
         uint32 _startTimestamp,
         uint32 _epochDuration,

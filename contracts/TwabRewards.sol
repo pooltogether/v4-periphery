@@ -58,7 +58,7 @@ contract TwabRewards is ITwabRewards {
         @param epochIds Ids of the epochs being claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(uint256 indexed promotionId, uint256[] indexed epochIds, uint256 amount);
+    event RewardsClaimed(uint256 indexed promotionId, uint256[] epochIds, uint256 amount);
 
     /* ============ Modifiers ============ */
 
@@ -77,7 +77,7 @@ contract TwabRewards is ITwabRewards {
     /// @inheritdoc ITwabRewards
     function createPromotion(
         address _ticket,
-        address _token,
+        IERC20 _token,
         uint216 _tokensPerEpoch,
         uint32 _startTimestamp,
         uint32 _epochDuration,
@@ -100,11 +100,13 @@ contract TwabRewards is ITwabRewards {
 
         _promotions[_nextPromotionId] = _nextPromotion;
 
-        IERC20(_token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _tokensPerEpoch * _numberOfEpochs
-        );
+        uint256 _allowance = _token.allowance(address(this), address(this));
+
+        if (_allowance < type(uint256).max) {
+            _token.safeIncreaseAllowance(address(this), type(uint256).max - _allowance);
+        }
+
+        _token.safeTransferFrom(msg.sender, address(this), _tokensPerEpoch * _numberOfEpochs);
 
         emit PromotionCreated(_nextPromotionId);
 
@@ -122,12 +124,10 @@ contract TwabRewards is ITwabRewards {
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
-
-        IERC20 _token = IERC20(_promotion.token);
         uint256 _remainingRewards = _getRemainingRewards(_promotionId);
 
         if (_remainingRewards > 0) {
-            _token.safeTransfer(_to, _remainingRewards);
+            _promotion.token.safeTransfer(_to, _remainingRewards);
         }
 
         delete _promotions[_promotionId];
@@ -149,9 +149,8 @@ contract TwabRewards is ITwabRewards {
         uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
-        IERC20 _token = IERC20(_promotion.token);
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
-        _token.safeTransferFrom(msg.sender, address(this), _amount);
+        _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
 
         emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
 
@@ -194,32 +193,28 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256[] calldata _epochIds
     ) external override returns (uint256) {
-        uint256 _rewardAmount;
-
+        uint256 _rewardsAmount;
         uint256 _userClaimedEpochs = _claimedEpochs[_promotionId][_user];
 
         for (uint256 index = 0; index < _epochIds.length; index++) {
             uint256 _epochId = _epochIds[index];
-
-            require(_epochId < _getCurrentEpochId(_promotionId), "TwabRewards/epoch-not-over");
 
             require(
                 !_isClaimedEpoch(_user, _promotionId, _epochId),
                 "TwabRewards/rewards-already-claimed"
             );
 
-            _rewardAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
+            _rewardsAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
             _userClaimedEpochs = _updateClaimedEpoch(_userClaimedEpochs, _epochId);
         }
 
         _claimedEpochs[_promotionId][_user] = _userClaimedEpochs;
 
-        IERC20 _token = IERC20(_getPromotion(_promotionId).token);
-        _token.safeTransferFrom(address(this), _user, _rewardAmount);
+        _getPromotion(_promotionId).token.safeTransferFrom(address(this), _user, _rewardsAmount);
 
-        emit RewardsClaimed(_promotionId, _epochIds, _rewardAmount);
+        emit RewardsClaimed(_promotionId, _epochIds, _rewardsAmount);
 
-        return _rewardAmount;
+        return _rewardsAmount;
     }
 
     /* ============ Internal Functions ============ */
@@ -264,8 +259,7 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
 
         // elapsedTimestamp / epochDurationTimestamp
-        return
-            (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+        return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
     }
 
     /**

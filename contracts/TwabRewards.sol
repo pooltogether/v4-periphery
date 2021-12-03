@@ -308,7 +308,11 @@ contract TwabRewards is ITwabRewards {
             _epochEndTimestamps
         );
 
-        return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupplies[0];
+        if (_averageTotalSupplies[0] > 0) {
+            return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupplies[0];
+        }
+
+        return 0;
     }
 
     /**

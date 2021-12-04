@@ -126,11 +126,8 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         uint256 _remainingRewards = _getRemainingRewards(_promotionId);
 
-        if (_remainingRewards > 0) {
-            _promotion.token.safeTransfer(_to, _remainingRewards);
-        }
-
         delete _promotions[_promotionId];
+        _promotion.token.safeTransfer(_to, _remainingRewards);
 
         emit PromotionCancelled(_promotionId, _remainingRewards);
 
@@ -320,14 +317,8 @@ contract TwabRewards is ITwabRewards {
         uint256 _tokensPerEpoch = _promotion.tokensPerEpoch;
         uint256 _currentEpochId = _getCurrentEpochId(_promotionId);
 
-        if (_currentEpochId == 0) {
-            return _tokensPerEpoch * _numberOfEpochs;
-        } else if (_numberOfEpochs <= _currentEpochId + 1) {
-            return 0;
-        } else {
-            // _tokensPerEpoch * _numberOfEpochsLeft
-            return _tokensPerEpoch * (_numberOfEpochs - (_currentEpochId + 1));
-        }
+        // _tokensPerEpoch * _numberOfEpochsLeft
+        return _tokensPerEpoch * (_numberOfEpochs - _currentEpochId);
     }
 
     /**

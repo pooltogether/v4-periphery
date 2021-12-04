@@ -1,5 +1,4 @@
 import TicketInterface from '@pooltogether/v4-core/abis/ITicket.json';
-import YieldSourceStubInterface from '@pooltogether/v4-core/abis/YieldSourceStub.json';
 import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
@@ -11,7 +10,7 @@ import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
 const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
-const { parseEther: toWei, formatEther } = utils;
+const { parseEther: toWei } = utils;
 const { AddressZero } = constants;
 
 describe('TwabRewards', () => {
@@ -23,13 +22,11 @@ describe('TwabRewards', () => {
     let ticketFactory: ContractFactory;
     let twabRewardsFactory: ContractFactory;
 
-    let depositToken: Contract;
     let rewardToken: Contract;
     let ticket: Contract;
     let twabRewards: Contract;
 
     let mockTicket: MockContract;
-    let yieldSourceStub: MockContract;
 
     let createPromotionTimestamp: number;
 
@@ -42,13 +39,9 @@ describe('TwabRewards', () => {
     });
 
     beforeEach(async () => {
-        depositToken = await erc20MintableFactory.deploy('Token', 'TOKE');
         rewardToken = await erc20MintableFactory.deploy('Reward', 'REWA');
         twabRewards = await twabRewardsFactory.deploy();
         ticket = await erc20MintableFactory.deploy('Ticket', 'TICK');
-
-        yieldSourceStub = await deployMockContract(wallet1 as Signer, YieldSourceStubInterface);
-        await yieldSourceStub.mock.depositToken.returns(depositToken.address);
 
         ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, wallet1.address);
 
@@ -151,55 +144,32 @@ describe('TwabRewards', () => {
     });
 
     describe('cancelPromotion()', async () => {
-        it('should cancel a promotion during the first epoch and transfer full reward tokens amount', async () => {
-            await createPromotion(ticket.address);
+        it('should cancel a promotion and transfer the correct amount of reward tokens', async () => {
+            for (let index = 0; index < numberOfEpochs; index++) {
+                let promotionId = index + 1;
 
-            const promotionId = 1;
-            const cancelTransaction = await twabRewards.cancelPromotion(
-                promotionId,
-                wallet1.address,
-            );
+                await createPromotion(ticket.address);
 
-            expect(cancelTransaction)
-                .to.emit(twabRewards, 'PromotionCancelled')
-                .withArgs(promotionId, promotionAmount);
+                const { epochDuration, numberOfEpochs, tokensPerEpoch } =
+                    await twabRewards.callStatic.getPromotion(promotionId);
 
-            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(promotionAmount);
-        });
+                if (index > 0) {
+                    await increaseTime(epochDuration * index);
+                }
 
-        it('should cancel a promotion during the 6th epoch and transfer half the reward tokens amount', async () => {
-            await createPromotion(ticket.address);
-            await increaseTime(epochDuration * 6 - epochDuration / 2);
+                const transferredAmount = tokensPerEpoch
+                    .mul(numberOfEpochs)
+                    .sub(tokensPerEpoch.mul(index));
 
-            const promotionId = 1;
-            const halfPromotionAmount = promotionAmount.div(2);
-            const cancelTransaction = await twabRewards.cancelPromotion(
-                promotionId,
-                wallet1.address,
-            );
+                expect(await twabRewards.cancelPromotion(promotionId, wallet1.address))
+                    .to.emit(twabRewards, 'PromotionCancelled')
+                    .withArgs(promotionId, transferredAmount);
 
-            expect(cancelTransaction)
-                .to.emit(twabRewards, 'PromotionCancelled')
-                .withArgs(promotionId, halfPromotionAmount);
+                expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
 
-            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(halfPromotionAmount);
-        });
-
-        it('should cancel a promotion during the last epoch and transfer 0 reward tokens amount', async () => {
-            await createPromotion(ticket.address);
-            await increaseTime(epochDuration * numberOfEpochs - epochDuration / 2);
-
-            const promotionId = 1;
-            const cancelTransaction = await twabRewards.cancelPromotion(
-                promotionId,
-                wallet1.address,
-            );
-
-            expect(cancelTransaction)
-                .to.emit(twabRewards, 'PromotionCancelled')
-                .withArgs(promotionId, 0);
-
-            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(0);
+                // We burn tokens from wallet1 to reset balance
+                await rewardToken.burn(wallet1.address, transferredAmount);
+            }
         });
 
         it('should fail to cancel promotion if not owner', async () => {
@@ -292,6 +262,26 @@ describe('TwabRewards', () => {
             expect(promotion.startTimestamp).to.equal(createPromotionTimestamp);
             expect(promotion.epochDuration).to.equal(epochDuration);
             expect(promotion.numberOfEpochs).to.equal(numberOfEpochs);
+        });
+    });
+
+    describe('getRemainingRewards()', async () => {
+        it('should return the correct amount of reward tokens left', async () => {
+            await createPromotion(ticket.address);
+
+            const promotionId = 1;
+            const { epochDuration, numberOfEpochs, tokensPerEpoch } =
+                await twabRewards.callStatic.getPromotion(promotionId);
+
+            for (let index = 0; index < numberOfEpochs; index++) {
+                if (index > 0) {
+                    await increaseTime(epochDuration);
+                }
+
+                expect(await twabRewards.getRemainingRewards(promotionId)).to.equal(
+                    tokensPerEpoch.mul(numberOfEpochs).sub(tokensPerEpoch.mul(index)),
+                );
+            }
         });
     });
 

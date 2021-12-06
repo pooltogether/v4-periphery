@@ -204,20 +204,20 @@ describe('TwabRewards', () => {
 
             const numberOfEpochsAdded = 6;
             const extendedPromotionAmount = tokensPerEpoch.mul(numberOfEpochsAdded);
+            const extendedPromotionEpochs = numberOfEpochs + numberOfEpochsAdded;
 
             await rewardToken.mint(wallet1.address, extendedPromotionAmount);
             await rewardToken.approve(twabRewards.address, extendedPromotionAmount);
 
             const promotionId = 1;
-            const extendTransaction = await twabRewards.extendPromotion(1, numberOfEpochsAdded);
 
-            expect(extendTransaction)
+            expect(await twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
                 .to.emit(twabRewards, 'PromotionExtended')
-                .withArgs(
-                    promotionId,
-                    extendedPromotionAmount,
-                    numberOfEpochs + numberOfEpochsAdded,
-                );
+                .withArgs(promotionId, extendedPromotionAmount, extendedPromotionEpochs);
+
+            expect(
+                (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
+            ).to.equal(extendedPromotionEpochs);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(0);
             expect(await rewardToken.balanceOf(twabRewards.address)).to.equal(

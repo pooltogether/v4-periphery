@@ -73,7 +73,6 @@ interface ITwabRewards {
         @notice Claim rewards for a given promotion and epoch.
         @dev Rewards can be claimed on behalf of a user.
         @dev Rewards can only be claimed for a past epoch.
-        @dev Caller may want to claim full or partial `amount` of rewards.
         @param _user Address of the user to claim rewards for
         @param _promotionId Promotion id to claim rewards for
         @param _epochIds Epoch ids to claim rewards for
@@ -93,19 +92,19 @@ interface ITwabRewards {
     function getPromotion(uint256 _promotionId) external view returns (Promotion memory);
 
     /**
-        @notice Get the total amount of tokens left to be rewarded.
-        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
-        @return Amount of tokens left to be rewarded
-     */
-    function getRemainingRewards(uint256 _promotionId) external view returns (uint256);
-
-    /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
         @param _promotionId Promotion id to get current epoch for
         @return Epoch id
      */
     function getCurrentEpochId(uint256 _promotionId) external view returns (uint256);
+
+    /**
+        @notice Get the total amount of tokens left to be rewarded.
+        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
+        @return Amount of tokens left to be rewarded
+     */
+    function getRemainingRewards(uint256 _promotionId) external view returns (uint256);
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.

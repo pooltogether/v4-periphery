@@ -1,6 +1,6 @@
 {
     "name": "@pooltogether/v4-periphery",
-    "version": "1.0.0",
+    "version": "1.1.0-beta.1",
     "description": "PoolTogether V4 Periphery",
     "main": "index.js",
     "license": "MIT",

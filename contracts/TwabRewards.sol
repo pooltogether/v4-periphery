@@ -169,7 +169,7 @@ contract TwabRewards is ITwabRewards {
             uint256 _epochId = _epochIds[index];
 
             require(
-                !_isClaimedEpoch(_user, _promotionId, _epochId),
+                !_isClaimedEpoch(_userClaimedEpochs, _epochId),
                 "TwabRewards/rewards-already-claimed"
             );
 
@@ -357,17 +357,15 @@ contract TwabRewards is ITwabRewards {
         We then get the value of the last bit by masking with 1.
         We get: 0001 1001 & 0000 0001 = 0000 0001 = 1
         We then return the boolean value true since the last bit is 1.
-        @param _user Address of the user to check
-        @param _promotionId Promotion id to check
+        @param _userClaimedEpochs Record of epochs already claimed by the user
         @param _epochId Epoch id to check
         @return true if the rewards have already been claimed for the given epoch, false otherwise
      */
     function _isClaimedEpoch(
-        address _user,
-        uint256 _promotionId,
+        uint256 _userClaimedEpochs,
         uint256 _epochId
-    ) internal view returns (bool) {
-        uint256 flag = (_claimedEpochs[_promotionId][_user] >> _epochId) & uint256(1);
+    ) internal pure returns (bool) {
+        uint256 flag = (_userClaimedEpochs >> _epochId) & uint256(1);
         return (flag == 1 ? true : false);
     }
 }

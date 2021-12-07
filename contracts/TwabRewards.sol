@@ -162,6 +162,8 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256[] calldata _epochIds
     ) external override returns (uint256) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+
         uint256 _rewardsAmount;
         uint256 _userClaimedEpochs = _claimedEpochs[_promotionId][_user];
 
@@ -173,7 +175,7 @@ contract TwabRewards is ITwabRewards {
                 "TwabRewards/rewards-already-claimed"
             );
 
-            _rewardsAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
+            _rewardsAmount += _calculateRewardAmount(_user, _promotion, _epochId);
             _userClaimedEpochs = _updateClaimedEpoch(_userClaimedEpochs, _epochId);
         }
 
@@ -207,10 +209,11 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256[] calldata _epochIds
     ) external view override returns (uint256[] memory) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
         uint256[] memory _rewardsAmount = new uint256[](_epochIds.length);
 
         for (uint256 index = 0; index < _epochIds.length; index++) {
-            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotionId, _epochIds[index]);
+            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);
         }
 
         return _rewardsAmount;
@@ -277,17 +280,15 @@ contract TwabRewards is ITwabRewards {
         @notice Get reward amount for a specific user.
         @dev Rewards can only be claimed once the epoch is over.
         @param _user User to get reward amount for
-        @param _promotionId Promotion id from which the epoch is
+        @param _promotion Promotion from which the epoch is
         @param _epochId Epoch id to get reward amount for
         @return Reward amount
      */
     function _calculateRewardAmount(
         address _user,
-        uint256 _promotionId,
+        Promotion memory _promotion,
         uint256 _epochId
     ) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
         uint256 _epochDuration = _promotion.epochDuration;
         uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;

@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.6;
 
-import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title  PoolTogether V4 ITwabRewards

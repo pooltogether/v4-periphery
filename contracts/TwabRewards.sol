@@ -99,12 +99,6 @@ contract TwabRewards is ITwabRewards {
             _numberOfEpochs
         );
 
-        uint256 _allowance = _token.allowance(address(this), address(this));
-
-        if (_allowance < type(uint256).max) {
-            _token.safeIncreaseAllowance(address(this), type(uint256).max - _allowance);
-        }
-
         _token.safeTransferFrom(msg.sender, address(this), _tokensPerEpoch * _numberOfEpochs);
 
         emit PromotionCreated(_nextPromotionId);

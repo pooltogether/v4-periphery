@@ -213,7 +213,7 @@ describe('TwabRewards', () => {
 
             expect(await twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
                 .to.emit(twabRewards, 'PromotionExtended')
-                .withArgs(promotionId, extendedPromotionAmount, extendedPromotionEpochs);
+                .withArgs(promotionId, numberOfEpochsAdded);
 
             expect(
                 (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
@@ -508,11 +508,11 @@ describe('TwabRewards', () => {
 
             await increaseTime(halfEpoch + 1);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
                 .withArgs(promotionId, epochIds, wallet2TotalRewardsAmount);
 
-            expect(await twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
                 .withArgs(promotionId, epochIds, wallet3TotalRewardsAmount);
 
@@ -536,7 +536,7 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
                 .withArgs(promotionId, epochIds, zeroAmount);
 
@@ -551,7 +551,7 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
                 .withArgs(promotionId, epochIds, zeroAmount);
         });

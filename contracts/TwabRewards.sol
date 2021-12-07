@@ -48,10 +48,9 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Emitted when a promotion is extended.
         @param promotionId Id of the promotion being extended
-        @param amount Amount of tokens transferred to the recipient address
-        @param numberOfEpochs New total number of epochs after extending the promotion
+        @param numberOfEpochs Number of epochs the promotion has been extended by
     */
-    event PromotionExtended(uint256 indexed promotionId, uint256 amount, uint256 numberOfEpochs);
+    event PromotionExtended(uint256 indexed promotionId, uint256 numberOfEpochs);
 
     /**
         @notice Emitted when rewards have been claimed.
@@ -148,7 +147,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
         _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
 
-        emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
+        emit PromotionExtended(_promotionId, _numberOfEpochs);
 
         return true;
     }

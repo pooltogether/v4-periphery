@@ -56,9 +56,10 @@ contract TwabRewards is ITwabRewards {
         @notice Emitted when rewards have been claimed.
         @param promotionId Id of the promotion for which epoch rewards were claimed
         @param epochIds Ids of the epochs being claimed
+        @param user Address of the user for which the rewards were claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(uint256 indexed promotionId, uint256[] epochIds, uint256 amount);
+    event RewardsClaimed(uint256 indexed promotionId, uint256[] epochIds, address indexed user, uint256 amount);
 
     /* ============ Modifiers ============ */
 
@@ -177,7 +178,7 @@ contract TwabRewards is ITwabRewards {
 
         _getPromotion(_promotionId).token.safeTransfer(_user, _rewardsAmount);
 
-        emit RewardsClaimed(_promotionId, _epochIds, _rewardsAmount);
+        emit RewardsClaimed(_promotionId, _epochIds, _user, _rewardsAmount);
 
         return _rewardsAmount;
     }

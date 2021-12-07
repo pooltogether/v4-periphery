@@ -454,13 +454,13 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, wallet2TotalRewardsAmount);
 
-            expect(await twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet3TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet3.address, wallet3TotalRewardsAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(
                 wallet2TotalRewardsAmount,
@@ -510,11 +510,11 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, wallet2TotalRewardsAmount);
 
             await expect(twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet3TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet3.address, wallet3TotalRewardsAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(
                 wallet2TotalRewardsAmount,
@@ -538,7 +538,7 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(zeroAmount);
         });
@@ -553,7 +553,7 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
         });
 
         it('should fail to claim rewards if one or more epochs are not over yet', async () => {

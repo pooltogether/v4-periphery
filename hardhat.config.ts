@@ -5,6 +5,7 @@ import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
 import 'hardhat-dependency-compiler';
+import 'hardhat-log-remover';
 import 'solidity-coverage';
 
 import { HardhatUserConfig } from 'hardhat/config';
@@ -41,11 +42,13 @@ const config: HardhatUserConfig = {
     dependencyCompiler: {
         paths: [
             '@openzeppelin/contracts/token/ERC20/IERC20.sol',
+            '@pooltogether/v4-core/contracts/Ticket.sol',
             '@pooltogether/v4-core/contracts/prize-strategy/PrizeSplitStrategy.sol',
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',
             '@pooltogether/v4-core/contracts/interfaces/IStrategy.sol',
             '@pooltogether/v4-core/contracts/test/ERC20Mintable.sol',
             '@pooltogether/v4-core/contracts/test/ReserveHarness.sol',
+            '@pooltogether/v4-core/contracts/test/TicketHarness.sol',
         ],
     },
     solidity: {

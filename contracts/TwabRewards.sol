@@ -119,11 +119,13 @@ contract TwabRewards is ITwabRewards {
         onlyPromotionCreator(_promotionId)
         returns (bool)
     {
-        _requirePromotionActive(_promotionId);
+        Promotion memory _promotion = _getPromotion(_promotionId);
+
+        _requirePromotionActive(_promotion);
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
 
-        Promotion memory _promotion = _getPromotion(_promotionId);
-        uint256 _remainingRewards = _getRemainingRewards(_promotionId);
+
+        uint256 _remainingRewards = _getRemainingRewards(_promotion);
 
         delete _promotions[_promotionId];
         _promotion.token.safeTransfer(_to, _remainingRewards);
@@ -139,9 +141,10 @@ contract TwabRewards is ITwabRewards {
         override
         returns (bool)
     {
-        _requirePromotionActive(_promotionId);
-
         Promotion memory _promotion = _getPromotion(_promotionId);
+
+        _requirePromotionActive(_promotion);
+
         uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
@@ -190,12 +193,12 @@ contract TwabRewards is ITwabRewards {
 
     /// @inheritdoc ITwabRewards
     function getCurrentEpochId(uint256 _promotionId) external view override returns (uint256) {
-        return _getCurrentEpochId(_promotionId);
+        return _getCurrentEpochId(_getPromotion(_promotionId));
     }
 
     /// @inheritdoc ITwabRewards
     function getRemainingRewards(uint256 _promotionId) external view override returns (uint256) {
-        return _getRemainingRewards(_promotionId);
+        return _getRemainingRewards(_getPromotion(_promotionId));
     }
 
     /// @inheritdoc ITwabRewards
@@ -237,11 +240,9 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Determine if a promotion is active.
-        @param _promotionId Id of the promotion to check
+        @param _promotion Promotion to check
     */
-    function _requirePromotionActive(uint256 _promotionId) internal view {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _requirePromotionActive(Promotion memory _promotion) internal view {
         uint256 _promotionEndTimestamp = _promotion.startTimestamp +
             (_promotion.epochDuration * _promotion.numberOfEpochs);
 
@@ -264,12 +265,10 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
-        @param _promotionId Id of the promotion to get current epoch for
+        @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
-    function _getCurrentEpochId(uint256 _promotionId) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
         // elapsedTimestamp / epochDurationTimestamp
         return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
     }
@@ -323,16 +322,14 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Get the total amount of tokens left to be rewarded.
-        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
+        @param _promotion Promotion to get the total amount of tokens left to be rewarded for
         @return Amount of tokens left to be rewarded
      */
-    function _getRemainingRewards(uint256 _promotionId) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
         // _tokensPerEpoch * _numberOfEpochsLeft
         return
             _promotion.tokensPerEpoch *
-            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotionId));
+            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
     }
 
     /**

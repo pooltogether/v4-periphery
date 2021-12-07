@@ -33,20 +33,20 @@ contract TwabRewards is ITwabRewards {
     /* ============ Events ============ */
 
     /**
-        @notice Emmited when a promotion is created.
+        @notice Emitted when a promotion is created.
         @param promotionId Id of the newly created promotion
     */
     event PromotionCreated(uint256 indexed promotionId);
 
     /**
-        @notice Emmited when a promotion is cancelled.
+        @notice Emitted when a promotion is cancelled.
         @param promotionId Id of the promotion being cancelled
         @param amount Amount of tokens transferred to the promotion creator
     */
     event PromotionCancelled(uint256 indexed promotionId, uint256 amount);
 
     /**
-        @notice Emmited when a promotion is extended.
+        @notice Emitted when a promotion is extended.
         @param promotionId Id of the promotion being extended
         @param amount Amount of tokens transferred to the recipient address
         @param numberOfEpochs New total number of epochs after extending the promotion
@@ -54,7 +54,7 @@ contract TwabRewards is ITwabRewards {
     event PromotionExtended(uint256 indexed promotionId, uint256 amount, uint256 numberOfEpochs);
 
     /**
-        @notice Emmited when rewards have been claimed.
+        @notice Emitted when rewards have been claimed.
         @param promotionId Id of the promotion for which epoch rewards were claimed
         @param epochIds Ids of the epochs being claimed
         @param amount Amount of tokens transferred to the recipient address

@@ -179,7 +179,7 @@ contract TwabRewards is ITwabRewards {
 
         _claimedEpochs[_promotionId][_user] = _userClaimedEpochs;
 
-        _getPromotion(_promotionId).token.safeTransfer(_user, _rewardsAmount);
+        _promotion.token.safeTransfer(_user, _rewardsAmount);
 
         emit RewardsClaimed(_promotionId, _epochIds, _user, _rewardsAmount);
 

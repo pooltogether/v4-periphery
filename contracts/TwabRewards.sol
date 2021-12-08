@@ -12,6 +12,10 @@ import "./interfaces/ITwabRewards.sol";
  * @title PoolTogether V4 TwabRewards
  * @author PoolTogether Inc Team
  * @notice Contract to distribute rewards to depositors in a pool.
+ * This contract supports the creation of several promotions that can run simultaneously.
+ * In order to calculate user rewards, we use the TWAB (Time-Weighted Average Balance) from the Ticket contract.
+ * This way, users simply need to hold their tickets to be eligible to claim rewards.
+ * Rewards are calculated based on the average amount of tickets they hold during the epoch duration.
  */
 contract TwabRewards is ITwabRewards {
     using SafeERC20 for IERC20;

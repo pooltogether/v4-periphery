@@ -76,7 +76,7 @@ describe('TwabRewards', () => {
         it('should create a new promotion', async () => {
             const promotionId = 1;
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionId);
 
@@ -95,7 +95,7 @@ describe('TwabRewards', () => {
             const promotionIdOne = 1;
             const promotionIdTwo = 2;
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionIdOne);
 
@@ -109,7 +109,7 @@ describe('TwabRewards', () => {
             expect(firstPromotion.epochDuration).to.equal(epochDuration);
             expect(firstPromotion.numberOfEpochs).to.equal(numberOfEpochs);
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionIdTwo);
 
@@ -161,7 +161,7 @@ describe('TwabRewards', () => {
                     .mul(numberOfEpochs)
                     .sub(tokensPerEpoch.mul(index));
 
-                expect(await twabRewards.cancelPromotion(promotionId, wallet1.address))
+                await expect(twabRewards.cancelPromotion(promotionId, wallet1.address))
                     .to.emit(twabRewards, 'PromotionCancelled')
                     .withArgs(promotionId, transferredAmount);
 
@@ -211,7 +211,7 @@ describe('TwabRewards', () => {
 
             const promotionId = 1;
 
-            expect(await twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
+            await expect(twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
                 .to.emit(twabRewards, 'PromotionExtended')
                 .withArgs(promotionId, numberOfEpochsAdded);
 

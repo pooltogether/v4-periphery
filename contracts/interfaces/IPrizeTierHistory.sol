@@ -39,11 +39,10 @@ interface IPrizeTierHistory {
      * @notice Push PrizeTierHistory struct onto history array.
      * @dev    Callable only by owner or manager,
      * @param drawPrizeDistribution New PrizeTierHistory struct
-     * @return drawId Draw ID linked to PrizeTierHistory
      */
-    function push(PrizeTier calldata drawPrizeDistribution) external returns (uint32 drawId);
+    function push(PrizeTier calldata drawPrizeDistribution) external;
 
-    function replace(PrizeTier calldata _prizeTier) external returns (uint256);
+    function replace(PrizeTier calldata _prizeTier) external;
 
     /**
      * @notice Read PrizeTierHistory struct from history array.

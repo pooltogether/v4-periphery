@@ -357,10 +357,15 @@ describe('TwabRewards', () => {
             await ticket.mint(wallet3.address, wallet3Amount);
             await ticket.connect(wallet3).delegate(wallet3.address);
 
+            const timestampBeforeCreate = (await ethers.provider.getBlock('latest')).timestamp;
+
             await createPromotion(ticket.address);
 
+            const timestampAfterCreate = (await ethers.provider.getBlock('latest')).timestamp;
+            const elapsedTimeCreate = timestampAfterCreate - timestampBeforeCreate;
+
             // We adjust time to delegate right in the middle of epoch 3
-            await increaseTime(epochDuration * 2 + halfEpoch - 2);
+            await increaseTime(epochDuration * 2 + halfEpoch - (elapsedTimeCreate - 1));
 
             await ticket.connect(wallet3).delegate(wallet2.address);
 

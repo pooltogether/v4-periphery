@@ -76,7 +76,7 @@ describe('TwabRewards', () => {
         it('should create a new promotion', async () => {
             const promotionId = 1;
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionId);
 
@@ -95,7 +95,7 @@ describe('TwabRewards', () => {
             const promotionIdOne = 1;
             const promotionIdTwo = 2;
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionIdOne);
 
@@ -109,7 +109,7 @@ describe('TwabRewards', () => {
             expect(firstPromotion.epochDuration).to.equal(epochDuration);
             expect(firstPromotion.numberOfEpochs).to.equal(numberOfEpochs);
 
-            expect(await createPromotion(ticket.address))
+            await expect(createPromotion(ticket.address))
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(promotionIdTwo);
 
@@ -161,7 +161,7 @@ describe('TwabRewards', () => {
                     .mul(numberOfEpochs)
                     .sub(tokensPerEpoch.mul(index));
 
-                expect(await twabRewards.cancelPromotion(promotionId, wallet1.address))
+                await expect(twabRewards.cancelPromotion(promotionId, wallet1.address))
                     .to.emit(twabRewards, 'PromotionCancelled')
                     .withArgs(promotionId, transferredAmount);
 
@@ -211,9 +211,9 @@ describe('TwabRewards', () => {
 
             const promotionId = 1;
 
-            expect(await twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
+            await expect(twabRewards.extendPromotion(promotionId, numberOfEpochsAdded))
                 .to.emit(twabRewards, 'PromotionExtended')
-                .withArgs(promotionId, extendedPromotionAmount, extendedPromotionEpochs);
+                .withArgs(promotionId, numberOfEpochsAdded);
 
             expect(
                 (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
@@ -454,13 +454,13 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, wallet2TotalRewardsAmount);
 
-            expect(await twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet3TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet3.address, wallet3TotalRewardsAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(
                 wallet2TotalRewardsAmount,
@@ -508,13 +508,13 @@ describe('TwabRewards', () => {
 
             await increaseTime(halfEpoch + 1);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, wallet2TotalRewardsAmount);
 
-            expect(await twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet3.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet3TotalRewardsAmount);
+                .withArgs(promotionId, epochIds, wallet3.address, wallet3TotalRewardsAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(
                 wallet2TotalRewardsAmount,
@@ -536,9 +536,9 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
 
             expect(await rewardToken.balanceOf(wallet2.address)).to.equal(zeroAmount);
         });
@@ -551,9 +551,9 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
             await increaseTime(epochDuration * 3);
 
-            expect(await twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
+            await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
         });
 
         it('should fail to claim rewards if one or more epochs are not over yet', async () => {
@@ -612,6 +612,16 @@ describe('TwabRewards', () => {
             await expect(twabRewards.requireTicket(mockTicket.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
             );
+        });
+    });
+
+    describe('_isClaimedEpoch()', () => {
+        it('should return true for a claimed epoch', async () => {
+            expect(await twabRewards.callStatic.isClaimedEpoch('01100111', 2)).to.equal(true);
+        });
+
+        it('should return false for an unclaimed epoch', async () => {
+            expect(await twabRewards.callStatic.isClaimedEpoch('01100011', 2)).to.equal(false);
         });
     });
 });

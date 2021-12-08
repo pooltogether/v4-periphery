@@ -56,8 +56,8 @@ contract PrizeDistributionFactory is Manageable {
         require(address(_prizeDistributionBuffer) != address(0), "PDC/pdb-zero");
         require(address(_ticket) != address(0), "PDC/ticket-zero");
         require(_minPickCost > 0, "PDC/pick-cost-gt-zero");
-        
-        minPickCost = _minPickCost;        
+
+        minPickCost = _minPickCost;
         prizeTierHistory = _prizeTierHistory;
         drawBuffer = _drawBuffer;
         prizeDistributionBuffer = _prizeDistributionBuffer;
@@ -125,23 +125,29 @@ contract PrizeDistributionFactory is Manageable {
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
         IDrawBeacon.Draw memory draw = drawBuffer.getDraw(_drawId);
-        return calculatePrizeDistributionWithDrawData(_drawId, _totalNetworkTicketSupply, draw.beaconPeriodSeconds, draw.timestamp);
+        return
+            calculatePrizeDistributionWithDrawData(
+                _drawId,
+                _totalNetworkTicketSupply,
+                draw.beaconPeriodSeconds,
+                draw.timestamp
+            );
     }
 
     /**
      * @notice Calculates what the prize distribution will be, given a draw id and total network ticket supply.
-     * @param _drawId The draw from which to use the Draw and 
+     * @param _drawId The draw from which to use the Draw and
      * @param _totalNetworkTicketSupply The sum of all ticket supplies across all prize pools on the network
      * @param _beaconPeriodSeconds The beacon period in seconds
      * @param _drawTimestamp The timestamp at which the draw RNG request started.
      * @return A PrizeDistribution based on the given params and PrizeTier for the passed draw id
      */
-    function calculatePrizeDistributionWithDrawData(uint32 _drawId, uint256 _totalNetworkTicketSupply, uint32 _beaconPeriodSeconds, uint64 _drawTimestamp)
-        public
-        view
-        virtual
-        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
-    {
+    function calculatePrizeDistributionWithDrawData(
+        uint32 _drawId,
+        uint256 _totalNetworkTicketSupply,
+        uint32 _beaconPeriodSeconds,
+        uint64 _drawTimestamp
+    ) public view virtual returns (IPrizeDistributionBuffer.PrizeDistribution memory) {
         uint256 maxPicks = _totalNetworkTicketSupply / minPickCost;
 
         IPrizeDistributionBuffer.PrizeDistribution
@@ -162,7 +168,10 @@ contract PrizeDistributionFactory is Manageable {
             endTimestamps
         );
 
-        require(_totalNetworkTicketSupply >= ticketAverageTotalSupplies[0], "PDF/invalid-network-supply");
+        require(
+            _totalNetworkTicketSupply >= ticketAverageTotalSupplies[0],
+            "PDF/invalid-network-supply"
+        );
 
         if (_totalNetworkTicketSupply > 0) {
             prizeDistribution.numberOfPicks = uint256(

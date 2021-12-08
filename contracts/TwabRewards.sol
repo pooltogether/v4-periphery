@@ -12,6 +12,10 @@ import "./interfaces/ITwabRewards.sol";
  * @title PoolTogether V4 TwabRewards
  * @author PoolTogether Inc Team
  * @notice Contract to distribute rewards to depositors in a pool.
+ * This contract supports the creation of several promotions that can run simultaneously.
+ * In order to calculate user rewards, we use the TWAB (Time-Weighted Average Balance) from the Ticket contract.
+ * This way, users simply need to hold their tickets to be eligible to claim rewards.
+ * Rewards are calculated based on the average amount of tickets they hold during the epoch duration.
  */
 contract TwabRewards is ITwabRewards {
     using SafeERC20 for IERC20;
@@ -33,33 +37,38 @@ contract TwabRewards is ITwabRewards {
     /* ============ Events ============ */
 
     /**
-        @notice Emmited when a promotion is created.
+        @notice Emitted when a promotion is created.
         @param promotionId Id of the newly created promotion
     */
     event PromotionCreated(uint256 indexed promotionId);
 
     /**
-        @notice Emmited when a promotion is cancelled.
+        @notice Emitted when a promotion is cancelled.
         @param promotionId Id of the promotion being cancelled
         @param amount Amount of tokens transferred to the promotion creator
     */
     event PromotionCancelled(uint256 indexed promotionId, uint256 amount);
 
     /**
-        @notice Emmited when a promotion is extended.
+        @notice Emitted when a promotion is extended.
         @param promotionId Id of the promotion being extended
-        @param amount Amount of tokens transferred to the recipient address
-        @param numberOfEpochs New total number of epochs after extending the promotion
+        @param numberOfEpochs Number of epochs the promotion has been extended by
     */
-    event PromotionExtended(uint256 indexed promotionId, uint256 amount, uint256 numberOfEpochs);
+    event PromotionExtended(uint256 indexed promotionId, uint256 numberOfEpochs);
 
     /**
-        @notice Emmited when rewards have been claimed.
+        @notice Emitted when rewards have been claimed.
         @param promotionId Id of the promotion for which epoch rewards were claimed
         @param epochIds Ids of the epochs being claimed
+        @param user Address of the user for which the rewards were claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(uint256 indexed promotionId, uint256[] epochIds, uint256 amount);
+    event RewardsClaimed(
+        uint256 indexed promotionId,
+        uint256[] epochIds,
+        address indexed user,
+        uint256 amount
+    );
 
     /* ============ Modifiers ============ */
 
@@ -99,12 +108,6 @@ contract TwabRewards is ITwabRewards {
             _numberOfEpochs
         );
 
-        uint256 _allowance = _token.allowance(address(this), address(this));
-
-        if (_allowance < type(uint256).max) {
-            _token.safeIncreaseAllowance(address(this), type(uint256).max - _allowance);
-        }
-
         _token.safeTransferFrom(msg.sender, address(this), _tokensPerEpoch * _numberOfEpochs);
 
         emit PromotionCreated(_nextPromotionId);
@@ -119,11 +122,12 @@ contract TwabRewards is ITwabRewards {
         onlyPromotionCreator(_promotionId)
         returns (bool)
     {
-        _requirePromotionActive(_promotionId);
+        Promotion memory _promotion = _getPromotion(_promotionId);
+
+        _requirePromotionActive(_promotion);
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
 
-        Promotion memory _promotion = _getPromotion(_promotionId);
-        uint256 _remainingRewards = _getRemainingRewards(_promotionId);
+        uint256 _remainingRewards = _getRemainingRewards(_promotion);
 
         delete _promotions[_promotionId];
         _promotion.token.safeTransfer(_to, _remainingRewards);
@@ -139,16 +143,17 @@ contract TwabRewards is ITwabRewards {
         override
         returns (bool)
     {
-        _requirePromotionActive(_promotionId);
-
         Promotion memory _promotion = _getPromotion(_promotionId);
+
+        _requirePromotionActive(_promotion);
+
         uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
         _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
 
-        emit PromotionExtended(_promotionId, _amount, _extendedNumberOfEpochs);
+        emit PromotionExtended(_promotionId, _numberOfEpochs);
 
         return true;
     }
@@ -159,6 +164,8 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256[] calldata _epochIds
     ) external override returns (uint256) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
+
         uint256 _rewardsAmount;
         uint256 _userClaimedEpochs = _claimedEpochs[_promotionId][_user];
 
@@ -166,19 +173,19 @@ contract TwabRewards is ITwabRewards {
             uint256 _epochId = _epochIds[index];
 
             require(
-                !_isClaimedEpoch(_user, _promotionId, _epochId),
+                !_isClaimedEpoch(_userClaimedEpochs, _epochId),
                 "TwabRewards/rewards-already-claimed"
             );
 
-            _rewardsAmount += _calculateRewardAmount(_user, _promotionId, _epochId);
+            _rewardsAmount += _calculateRewardAmount(_user, _promotion, _epochId);
             _userClaimedEpochs = _updateClaimedEpoch(_userClaimedEpochs, _epochId);
         }
 
         _claimedEpochs[_promotionId][_user] = _userClaimedEpochs;
 
-        _getPromotion(_promotionId).token.safeTransfer(_user, _rewardsAmount);
+        _promotion.token.safeTransfer(_user, _rewardsAmount);
 
-        emit RewardsClaimed(_promotionId, _epochIds, _rewardsAmount);
+        emit RewardsClaimed(_promotionId, _epochIds, _user, _rewardsAmount);
 
         return _rewardsAmount;
     }
@@ -190,12 +197,12 @@ contract TwabRewards is ITwabRewards {
 
     /// @inheritdoc ITwabRewards
     function getCurrentEpochId(uint256 _promotionId) external view override returns (uint256) {
-        return _getCurrentEpochId(_promotionId);
+        return _getCurrentEpochId(_getPromotion(_promotionId));
     }
 
     /// @inheritdoc ITwabRewards
     function getRemainingRewards(uint256 _promotionId) external view override returns (uint256) {
-        return _getRemainingRewards(_promotionId);
+        return _getRemainingRewards(_getPromotion(_promotionId));
     }
 
     /// @inheritdoc ITwabRewards
@@ -204,10 +211,11 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionId,
         uint256[] calldata _epochIds
     ) external view override returns (uint256[] memory) {
+        Promotion memory _promotion = _getPromotion(_promotionId);
         uint256[] memory _rewardsAmount = new uint256[](_epochIds.length);
 
         for (uint256 index = 0; index < _epochIds.length; index++) {
-            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotionId, _epochIds[index]);
+            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);
         }
 
         return _rewardsAmount;
@@ -237,11 +245,9 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Determine if a promotion is active.
-        @param _promotionId Id of the promotion to check
+        @param _promotion Promotion to check
     */
-    function _requirePromotionActive(uint256 _promotionId) internal view {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _requirePromotionActive(Promotion memory _promotion) internal view {
         uint256 _promotionEndTimestamp = _promotion.startTimestamp +
             (_promotion.epochDuration * _promotion.numberOfEpochs);
 
@@ -264,12 +270,10 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
-        @param _promotionId Id of the promotion to get current epoch for
+        @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
-    function _getCurrentEpochId(uint256 _promotionId) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
         // elapsedTimestamp / epochDurationTimestamp
         return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
     }
@@ -278,17 +282,15 @@ contract TwabRewards is ITwabRewards {
         @notice Get reward amount for a specific user.
         @dev Rewards can only be claimed once the epoch is over.
         @param _user User to get reward amount for
-        @param _promotionId Promotion id from which the epoch is
+        @param _promotion Promotion from which the epoch is
         @param _epochId Epoch id to get reward amount for
         @return Reward amount
      */
     function _calculateRewardAmount(
         address _user,
-        uint256 _promotionId,
+        Promotion memory _promotion,
         uint256 _epochId
     ) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
         uint256 _epochDuration = _promotion.epochDuration;
         uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
@@ -323,16 +325,14 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Get the total amount of tokens left to be rewarded.
-        @param _promotionId Promotion id to get the total amount of tokens left to be rewarded for
+        @param _promotion Promotion to get the total amount of tokens left to be rewarded for
         @return Amount of tokens left to be rewarded
      */
-    function _getRemainingRewards(uint256 _promotionId) internal view returns (uint256) {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
+    function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
         // _tokensPerEpoch * _numberOfEpochsLeft
         return
             _promotion.tokensPerEpoch *
-            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotionId));
+            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
     }
 
     /**
@@ -343,12 +343,16 @@ contract TwabRewards is ITwabRewards {
         We get: 0000 0001 << 2 = 0000 0100
         We then OR the mask with the word to set the value.
         We get: 0110 0011 | 0000 0100 = 0110 0111
-        @param _epochs Tightly packed epoch ids with their boolean values
+        @param _userClaimedEpochs Tightly packed epoch ids with their boolean values
         @param _epochId Id of the epoch to set the boolean for
         @return Tightly packed epoch ids with the newly boolean value set
     */
-    function _updateClaimedEpoch(uint256 _epochs, uint256 _epochId) public pure returns (uint256) {
-        return _epochs | (uint256(1) << _epochId);
+    function _updateClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+        public
+        pure
+        returns (uint256)
+    {
+        return _userClaimedEpochs | (uint256(1) << _epochId);
     }
 
     /**
@@ -360,17 +364,15 @@ contract TwabRewards is ITwabRewards {
         We then get the value of the last bit by masking with 1.
         We get: 0001 1001 & 0000 0001 = 0000 0001 = 1
         We then return the boolean value true since the last bit is 1.
-        @param _user Address of the user to check
-        @param _promotionId Promotion id to check
+        @param _userClaimedEpochs Record of epochs already claimed by the user
         @param _epochId Epoch id to check
         @return true if the rewards have already been claimed for the given epoch, false otherwise
      */
-    function _isClaimedEpoch(
-        address _user,
-        uint256 _promotionId,
-        uint256 _epochId
-    ) internal view returns (bool) {
-        uint256 flag = (_claimedEpochs[_promotionId][_user] >> _epochId) & uint256(1);
-        return (flag == 1 ? true : false);
+    function _isClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+        internal
+        pure
+        returns (bool)
+    {
+        return (_userClaimedEpochs >> _epochId) & uint256(1) == 1;
     }
 }

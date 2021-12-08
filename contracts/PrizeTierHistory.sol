@@ -26,7 +26,6 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         external
         override
         onlyManagerOrOwner
-        returns (uint32)
     {
         PrizeTier[] memory _history = history;
 
@@ -46,14 +45,13 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     }
 
     // @inheritdoc IPrizeTierHistory
-    function replace(PrizeTier calldata _prizeTier) external override onlyOwner returns (uint256) {
+    function replace(PrizeTier calldata _prizeTier) external override onlyOwner {
         uint256 cardinality = history.length;
         require(cardinality > 0, "PrizeTierHistory/no-prize-tiers");
 
         uint256 leftSide = 0;
         uint256 rightSide = cardinality - 1;
         uint32 oldestDrawId = history[leftSide].drawId;
-        uint32 newestDrawId = history[rightSide].drawId;
 
         require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
 

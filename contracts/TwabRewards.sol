@@ -348,7 +348,7 @@ contract TwabRewards is ITwabRewards {
         @return Tightly packed epoch ids with the newly boolean value set
     */
     function _updateClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
-        public
+        internal
         pure
         returns (uint256)
     {

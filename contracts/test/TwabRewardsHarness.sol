@@ -8,4 +8,12 @@ contract TwabRewardsHarness is TwabRewards {
     function requireTicket(address _ticket) external view {
         return _requireTicket(_ticket);
     }
+
+    function isClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+        external
+        pure
+        returns (bool)
+    {
+        return _isClaimedEpoch(_userClaimedEpochs, _epochId);
+    }
 }

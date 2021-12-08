@@ -153,79 +153,91 @@ describe('PrizeDistributionFactory', () => {
 
     describe('constructor()', () => {
         it('requires a pick cost > 0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                wallet1.address,
-                prizeTierHistory.address,
-                drawBuffer.address,
-                prizeDistributionBuffer.address,
-                ticket.address,
-                0,
-            )).to.be.revertedWith('PDC/pick-cost-gt-zero')
-        })
-        
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    wallet1.address,
+                    prizeTierHistory.address,
+                    drawBuffer.address,
+                    prizeDistributionBuffer.address,
+                    ticket.address,
+                    0,
+                ),
+            ).to.be.revertedWith('PDC/pick-cost-gt-zero');
+        });
+
         it('requires owner != 0x0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                ethers.constants.AddressZero,
-                prizeTierHistory.address,
-                drawBuffer.address,
-                prizeDistributionBuffer.address,
-                ticket.address,
-                maxPickCost,
-            )).to.be.revertedWith('PDC/owner-zero')
-        })
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    ethers.constants.AddressZero,
+                    prizeTierHistory.address,
+                    drawBuffer.address,
+                    prizeDistributionBuffer.address,
+                    ticket.address,
+                    maxPickCost,
+                ),
+            ).to.be.revertedWith('PDC/owner-zero');
+        });
 
         it('requires tier history != 0x0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                wallet1.address,
-                ethers.constants.AddressZero,
-                drawBuffer.address,
-                prizeDistributionBuffer.address,
-                ticket.address,
-                maxPickCost,
-            )).to.be.revertedWith('PDC/pth-zero')
-        })
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    wallet1.address,
+                    ethers.constants.AddressZero,
+                    drawBuffer.address,
+                    prizeDistributionBuffer.address,
+                    ticket.address,
+                    maxPickCost,
+                ),
+            ).to.be.revertedWith('PDC/pth-zero');
+        });
 
         it('requires draw buffer != 0x0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                wallet1.address,
-                prizeTierHistory.address,
-                ethers.constants.AddressZero,
-                prizeDistributionBuffer.address,
-                ticket.address,
-                maxPickCost,
-            )).to.be.revertedWith('PDC/db-zero')
-        })
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    wallet1.address,
+                    prizeTierHistory.address,
+                    ethers.constants.AddressZero,
+                    prizeDistributionBuffer.address,
+                    ticket.address,
+                    maxPickCost,
+                ),
+            ).to.be.revertedWith('PDC/db-zero');
+        });
 
         it('requires prize dist buffer != 0x0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                wallet1.address,
-                prizeTierHistory.address,
-                drawBuffer.address,
-                ethers.constants.AddressZero,
-                ticket.address,
-                maxPickCost,
-            )).to.be.revertedWith('PDC/pdb-zero')
-        })
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    wallet1.address,
+                    prizeTierHistory.address,
+                    drawBuffer.address,
+                    ethers.constants.AddressZero,
+                    ticket.address,
+                    maxPickCost,
+                ),
+            ).to.be.revertedWith('PDC/pdb-zero');
+        });
 
         it('requires ticket != 0x0', async () => {
-            await expect(prizeDistributionFactoryFactory.deploy(
-                wallet1.address,
-                prizeTierHistory.address,
-                drawBuffer.address,
-                prizeDistributionBuffer.address,
-                ethers.constants.AddressZero,
-                maxPickCost,
-            )).to.be.revertedWith('PDC/ticket-zero')
-        })
-    })
+            await expect(
+                prizeDistributionFactoryFactory.deploy(
+                    wallet1.address,
+                    prizeTierHistory.address,
+                    drawBuffer.address,
+                    prizeDistributionBuffer.address,
+                    ethers.constants.AddressZero,
+                    maxPickCost,
+                ),
+            ).to.be.revertedWith('PDC/ticket-zero');
+        });
+    });
 
     describe('calculatePrizeDistribution()', () => {
         it('should require that the passed total supply is gte ticket total supply', async () => {
             await setupMocks({}, {}, toWei('100'));
             await expect(
-                prizeDistributionFactory.calculatePrizeDistribution(1, toWei('10'))
-            ).be.revertedWith('PDF/invalid-network-supply')
-        })
+                prizeDistributionFactory.calculatePrizeDistribution(1, toWei('10')),
+            ).be.revertedWith('PDF/invalid-network-supply');
+        });
 
         it('should copy in all of the prize tier values', async () => {
             await setupMocks();
@@ -249,16 +261,18 @@ describe('PrizeDistributionFactory', () => {
         });
 
         it('should handle when tickets equal total supply', async () => {
-            await setupMocks({}, {}, toWei('100'))
+            await setupMocks({}, {}, toWei('100'));
             expect(
-                toObject(await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('100'))),
+                toObject(
+                    await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('100')),
+                ),
             ).to.deep.include(
                 createPrizeDistribution({
                     matchCardinality: 3,
                     numberOfPicks: BigNumber.from(64),
                 }),
             );
-        })
+        });
     });
 
     describe('pushPrizeDistribution()', () => {
@@ -271,9 +285,10 @@ describe('PrizeDistributionFactory', () => {
         });
 
         it('requires the manager or owner', async () => {
-            await expect(prizeDistributionFactory.connect(wallet3).pushPrizeDistribution(1, toWei('1000')))
-                .to.be.revertedWith('Manageable/caller-not-manager-or-owner')
-        })
+            await expect(
+                prizeDistributionFactory.connect(wallet3).pushPrizeDistribution(1, toWei('1000')),
+            ).to.be.revertedWith('Manageable/caller-not-manager-or-owner');
+        });
     });
 
     describe('setPrizeDistribution()', () => {
@@ -286,8 +301,9 @@ describe('PrizeDistributionFactory', () => {
         });
 
         it('requires the owner', async () => {
-            await expect(prizeDistributionFactory.connect(wallet3).setPrizeDistribution(1, toWei('1000')))
-                .to.be.revertedWith('Ownable/caller-not-owner')
-        })
+            await expect(
+                prizeDistributionFactory.connect(wallet3).setPrizeDistribution(1, toWei('1000')),
+            ).to.be.revertedWith('Ownable/caller-not-owner');
+        });
     });
 });

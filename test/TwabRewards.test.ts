@@ -614,4 +614,14 @@ describe('TwabRewards', () => {
             );
         });
     });
+
+    describe('_isClaimedEpoch()', () => {
+        it('should return true for a claimed epoch', async () => {
+            expect(await twabRewards.callStatic.isClaimedEpoch('01100111', 2)).to.equal(true);
+        });
+
+        it('should return false for an unclaimed epoch', async () => {
+            expect(await twabRewards.callStatic.isClaimedEpoch('01100011', 2)).to.equal(false);
+        });
+    });
 });

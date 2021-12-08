@@ -63,7 +63,12 @@ contract TwabRewards is ITwabRewards {
         @param user Address of the user for which the rewards were claimed
         @param amount Amount of tokens transferred to the recipient address
     */
-    event RewardsClaimed(uint256 indexed promotionId, uint256[] epochIds, address indexed user, uint256 amount);
+    event RewardsClaimed(
+        uint256 indexed promotionId,
+        uint256[] epochIds,
+        address indexed user,
+        uint256 amount
+    );
 
     /* ============ Modifiers ============ */
 
@@ -121,7 +126,6 @@ contract TwabRewards is ITwabRewards {
 
         _requirePromotionActive(_promotion);
         require(_to != address(0), "TwabRewards/recipient-not-zero-address");
-
 
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
 
@@ -339,12 +343,16 @@ contract TwabRewards is ITwabRewards {
         We get: 0000 0001 << 2 = 0000 0100
         We then OR the mask with the word to set the value.
         We get: 0110 0011 | 0000 0100 = 0110 0111
-        @param _epochs Tightly packed epoch ids with their boolean values
+        @param _userClaimedEpochs Tightly packed epoch ids with their boolean values
         @param _epochId Id of the epoch to set the boolean for
         @return Tightly packed epoch ids with the newly boolean value set
     */
-    function _updateClaimedEpoch(uint256 _epochs, uint256 _epochId) public pure returns (uint256) {
-        return _epochs | (uint256(1) << _epochId);
+    function _updateClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+        public
+        pure
+        returns (uint256)
+    {
+        return _userClaimedEpochs | (uint256(1) << _epochId);
     }
 
     /**
@@ -360,11 +368,11 @@ contract TwabRewards is ITwabRewards {
         @param _epochId Epoch id to check
         @return true if the rewards have already been claimed for the given epoch, false otherwise
      */
-    function _isClaimedEpoch(
-        uint256 _userClaimedEpochs,
-        uint256 _epochId
-    ) internal pure returns (bool) {
-        uint256 flag = (_userClaimedEpochs >> _epochId) & uint256(1);
-        return (flag == 1 ? true : false);
+    function _isClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+        internal
+        pure
+        returns (bool)
+    {
+        return (_userClaimedEpochs >> _epochId) & uint256(1) == 1;
     }
 }

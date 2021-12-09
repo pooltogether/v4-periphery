@@ -264,7 +264,9 @@ contract TwabRewards is ITwabRewards {
         @return Promotion settings
      */
     function _getPromotion(uint256 _promotionId) internal view returns (Promotion memory) {
-        return _promotions[_promotionId];
+        Promotion memory _promotion = _promotions[_promotionId];
+        require(_promotion.creator != address(0), "TwabRewards/invalid-promotion");
+        return _promotion;
     }
 
     /**

@@ -189,6 +189,12 @@ describe('TwabRewards', () => {
             );
         });
 
+        it('should fail to cancel an inexistent promotion', async () => {
+            await expect(twabRewards.cancelPromotion(1, wallet1.address)).to.be.revertedWith(
+                'TwabRewards/invalid-promotion',
+            );
+        });
+
         it('should fail to cancel promotion if recipient is address zero', async () => {
             await createPromotion(ticket.address);
 
@@ -235,10 +241,8 @@ describe('TwabRewards', () => {
         });
 
         it('should fail to extend an inexistent promotion', async () => {
-            await createPromotion(ticket.address);
-
-            await expect(twabRewards.extendPromotion(2, 6)).to.be.revertedWith(
-                'TwabRewards/promotion-not-active',
+            await expect(twabRewards.extendPromotion(1, 6)).to.be.revertedWith(
+                'TwabRewards/invalid-promotion',
             );
         });
 
@@ -263,6 +267,12 @@ describe('TwabRewards', () => {
             expect(promotion.epochDuration).to.equal(epochDuration);
             expect(promotion.numberOfEpochs).to.equal(numberOfEpochs);
         });
+
+        it('should revert if promotion id does not exist', async () => {
+            await expect(twabRewards.callStatic.getPromotion(1)).to.be.revertedWith(
+                'TwabRewards/invalid-promotion',
+            );
+        });
     });
 
     describe('getRemainingRewards()', async () => {
@@ -283,6 +293,12 @@ describe('TwabRewards', () => {
                 );
             }
         });
+
+        it('should revert if promotion id passed is inexistent', async () => {
+            await expect(twabRewards.callStatic.getPromotion(1)).to.be.revertedWith(
+                'TwabRewards/invalid-promotion',
+            );
+        });
     });
 
     describe('getCurrentEpochId()', async () => {
@@ -291,6 +307,12 @@ describe('TwabRewards', () => {
             await increaseTime(epochDuration * 3);
 
             expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(3);
+        });
+
+        it('should revert if promotion id passed is inexistent', async () => {
+            await expect(twabRewards.callStatic.getCurrentEpochId(1)).to.be.revertedWith(
+                'TwabRewards/invalid-promotion',
+            );
         });
     });
 
@@ -431,6 +453,12 @@ describe('TwabRewards', () => {
                 twabRewards.callStatic.getRewardsAmount(wallet2.address, 1, ['1', '2', '3']),
             ).to.be.revertedWith('TwabRewards/epoch-not-over');
         });
+
+        it('should revert if promotion id passed is inexistent', async () => {
+            await expect(
+                twabRewards.callStatic.getRewardsAmount(wallet2.address, 1, ['0', '1', '2']),
+            ).to.be.revertedWith('TwabRewards/invalid-promotion');
+        });
     });
 
     describe('claimRewards()', async () => {
@@ -559,6 +587,12 @@ describe('TwabRewards', () => {
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
                 .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
+        });
+
+        it('should fail to claim rewards for an inexistent promotion', async () => {
+            await expect(
+                twabRewards.claimRewards(wallet2.address, 1, ['0', '1', '2']),
+            ).to.be.revertedWith('TwabRewards/invalid-promotion');
         });
 
         it('should fail to claim rewards if one or more epochs are not over yet', async () => {

@@ -77,7 +77,7 @@ contract TwabRewards is ITwabRewards {
     modifier onlyPromotionCreator(uint256 _promotionId) {
         require(
             msg.sender == _getPromotion(_promotionId).creator,
-            "TwabRewards/only-promotion-creator"
+            "TwabRewards/only-promo-creator"
         );
         _;
     }
@@ -126,7 +126,7 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
 
         _requirePromotionActive(_promotion);
-        require(_to != address(0), "TwabRewards/recipient-not-zero-address");
+        require(_to != address(0), "TwabRewards/payee-not-zero-addr");
 
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
 
@@ -175,7 +175,7 @@ contract TwabRewards is ITwabRewards {
 
             require(
                 !_isClaimedEpoch(_userClaimedEpochs, _epochId),
-                "TwabRewards/rewards-already-claimed"
+                "TwabRewards/rewards-claimed"
             );
 
             _rewardsAmount += _calculateRewardAmount(_user, _promotion, _epochId);
@@ -229,7 +229,7 @@ contract TwabRewards is ITwabRewards {
     @param _ticket Address to check
    */
     function _requireTicket(address _ticket) internal view {
-        require(_ticket != address(0), "TwabRewards/ticket-not-zero-address");
+        require(_ticket != address(0), "TwabRewards/ticket-not-zero-addr");
 
         (bool succeeded, bytes memory data) = address(_ticket).staticcall(
             abi.encodePacked(ITicket(_ticket).controller.selector)
@@ -254,7 +254,7 @@ contract TwabRewards is ITwabRewards {
 
         require(
             _promotionEndTimestamp > 0 && _promotionEndTimestamp >= block.timestamp,
-            "TwabRewards/promotion-not-active"
+            "TwabRewards/promotion-inactive"
         );
     }
 

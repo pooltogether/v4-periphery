@@ -168,8 +168,9 @@ contract TwabRewards is ITwabRewards {
 
         uint256 _rewardsAmount;
         uint256 _userClaimedEpochs = _claimedEpochs[_promotionId][_user];
+        uint256 _epochIdsLength = _epochIds.length;
 
-        for (uint256 index = 0; index < _epochIds.length; index++) {
+        for (uint256 index = 0; index < _epochIdsLength; index++) {
             uint256 _epochId = _epochIds[index];
 
             require(
@@ -212,9 +213,11 @@ contract TwabRewards is ITwabRewards {
         uint256[] calldata _epochIds
     ) external view override returns (uint256[] memory) {
         Promotion memory _promotion = _getPromotion(_promotionId);
-        uint256[] memory _rewardsAmount = new uint256[](_epochIds.length);
 
-        for (uint256 index = 0; index < _epochIds.length; index++) {
+        uint256 _epochIdsLength = _epochIds.length;
+        uint256[] memory _rewardsAmount = new uint256[](_epochIdsLength);
+
+        for (uint256 index = 0; index < _epochIdsLength; index++) {
             _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);
         }
 

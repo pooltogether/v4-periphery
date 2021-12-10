@@ -140,7 +140,7 @@ describe('TwabRewards', () => {
 
         it('should fail to create a new promotion if ticket is address zero', async () => {
             await expect(createPromotion(AddressZero)).to.be.revertedWith(
-                'TwabRewards/ticket-not-zero-address',
+                'TwabRewards/ticket-not-zero-addr',
             );
         });
 
@@ -191,7 +191,7 @@ describe('TwabRewards', () => {
 
             await expect(
                 twabRewards.connect(wallet2).cancelPromotion(1, AddressZero),
-            ).to.be.revertedWith('TwabRewards/only-promotion-creator');
+            ).to.be.revertedWith('TwabRewards/only-promo-creator');
         });
 
         it('should fail to cancel an inactive promotion', async () => {
@@ -199,7 +199,7 @@ describe('TwabRewards', () => {
             await increaseTime(epochDuration * 13);
 
             await expect(twabRewards.cancelPromotion(1, wallet1.address)).to.be.revertedWith(
-                'TwabRewards/promotion-not-active',
+                'TwabRewards/promotion-inactive',
             );
         });
 
@@ -213,7 +213,7 @@ describe('TwabRewards', () => {
             await createPromotion(ticket.address);
 
             await expect(twabRewards.cancelPromotion(1, AddressZero)).to.be.revertedWith(
-                'TwabRewards/recipient-not-zero-address',
+                'TwabRewards/payee-not-zero-addr',
             );
         });
     });
@@ -250,7 +250,7 @@ describe('TwabRewards', () => {
             await increaseTime(epochDuration * 13);
 
             await expect(twabRewards.extendPromotion(1, 6)).to.be.revertedWith(
-                'TwabRewards/promotion-not-active',
+                'TwabRewards/promotion-inactive',
             );
         });
 
@@ -640,14 +640,14 @@ describe('TwabRewards', () => {
 
             await expect(
                 twabRewards.claimRewards(wallet2.address, promotionId, ['2', '3', '4']),
-            ).to.be.revertedWith('TwabRewards/rewards-already-claimed');
+            ).to.be.revertedWith('TwabRewards/rewards-claimed');
         });
     });
 
     describe('_requireTicket()', () => {
         it('should revert if ticket address is address zero', async () => {
             await expect(twabRewards.requireTicket(AddressZero)).to.be.revertedWith(
-                'TwabRewards/ticket-not-zero-address',
+                'TwabRewards/ticket-not-zero-addr',
             );
         });
 

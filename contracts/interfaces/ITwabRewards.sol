@@ -38,6 +38,8 @@ interface ITwabRewards {
         @dev Ideally, `_startTimestamp` should be set to a value far in the future.
         So the transaction is minted in a block way ahead of the actual start of the promotion.
         The transaction will revert if mined in a block with a timestamp lower to start timestamp.
+        @dev The transaction will revert if the amount of reward tokens provided is not equal to `_tokensPerEpoch * _numberOfEpochs`.
+        This scenario could happen if the token supplied is a fee on transfer one.
         @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
         @param _startTimestamp Timestamp at which the promotion starts

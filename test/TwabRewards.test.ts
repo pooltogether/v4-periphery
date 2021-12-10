@@ -299,7 +299,7 @@ describe('TwabRewards', () => {
 
             for (let index = 0; index < numberOfEpochs; index++) {
                 if (index > 0) {
-                    await increaseTime(epochDuration);
+                    await increaseTime(epochDuration.toNumber());
                 }
 
                 expect(await twabRewards.getRemainingRewards(promotionId)).to.equal(

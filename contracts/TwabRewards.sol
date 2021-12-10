@@ -94,6 +94,7 @@ contract TwabRewards is ITwabRewards {
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
         _requireTicket(_ticket);
+        require(_startTimestamp >= block.timestamp, "TwabRewards/past-start-timestamp");
 
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;

@@ -7,7 +7,8 @@ import { ethers } from 'hardhat';
 
 import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
 
-const increaseTime = (time: number) => increaseTimeUtil(provider, time);
+// We add 1 cause promotion starts a latest timestamp + 1
+const increaseTime = (time: number) => increaseTimeUtil(provider, time + 1);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { parseEther: toWei } = utils;
@@ -56,11 +57,16 @@ describe('TwabRewards', () => {
     const createPromotion = async (
         ticketAddress: string,
         epochsNumber: number = numberOfEpochs,
+        startTimestamp?: number,
     ) => {
         await rewardToken.mint(wallet1.address, promotionAmount);
         await rewardToken.approve(twabRewards.address, promotionAmount);
 
-        createPromotionTimestamp = (await ethers.provider.getBlock('latest')).timestamp;
+        if (startTimestamp) {
+            createPromotionTimestamp = startTimestamp;
+        } else {
+            createPromotionTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 1;
+        }
 
         return await twabRewards.createPromotion(
             ticketAddress,
@@ -136,6 +142,14 @@ describe('TwabRewards', () => {
             await expect(createPromotion(randomWallet.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
             );
+        });
+
+        it('should fail to create a new promotion if start timestamp is before block timestamp', async () => {
+            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
+
+            await expect(
+                createPromotion(ticket.address, numberOfEpochs, startTimestamp),
+            ).to.be.revertedWith('TwabRewards/past-start-timestamp');
         });
 
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {

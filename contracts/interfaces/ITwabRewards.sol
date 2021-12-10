@@ -35,6 +35,9 @@ interface ITwabRewards {
         @dev For sake of simplicity, `msg.sender` will be the creator of the promotion.
         @dev `_latestPromotionId` starts at 0 and is incremented by 1 for each new promotion.
         So the first promotion will have id 1, the second 2, etc.
+        @dev Ideally, `_startTimestamp` should be set to a value far in the future.
+        So the transaction is minted in a block way ahead of the actual start of the promotion.
+        The transaction will revert if mined in a block with a timestamp lower to start timestamp.
         @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
         @param _tokensPerEpoch Number of tokens to be distributed per epoch

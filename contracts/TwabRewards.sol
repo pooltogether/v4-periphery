@@ -16,6 +16,7 @@ import "./interfaces/ITwabRewards.sol";
  * In order to calculate user rewards, we use the TWAB (Time-Weighted Average Balance) from the Ticket contract.
  * This way, users simply need to hold their tickets to be eligible to claim rewards.
  * Rewards are calculated based on the average amount of tickets they hold during the epoch duration.
+ * @dev This contract does not support the use of fee on transfer tokens.
  */
 contract TwabRewards is ITwabRewards {
     using SafeERC20 for IERC20;
@@ -108,7 +109,14 @@ contract TwabRewards is ITwabRewards {
             _numberOfEpochs
         );
 
-        _token.safeTransferFrom(msg.sender, address(this), _tokensPerEpoch * _numberOfEpochs);
+        uint256 _beforeBalance = _token.balanceOf(address(this));
+
+        uint256 _amount = _tokensPerEpoch * _numberOfEpochs;
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
+
+        uint256 _afterBalance = _token.balanceOf(address(this));
+
+        require(_beforeBalance + _amount == _afterBalance, "TwabRewards/promo-amount-diff");
 
         emit PromotionCreated(_nextPromotionId);
 
@@ -173,10 +181,7 @@ contract TwabRewards is ITwabRewards {
         for (uint256 index = 0; index < _epochIdsLength; index++) {
             uint256 _epochId = _epochIds[index];
 
-            require(
-                !_isClaimedEpoch(_userClaimedEpochs, _epochId),
-                "TwabRewards/rewards-claimed"
-            );
+            require(!_isClaimedEpoch(_userClaimedEpochs, _epochId), "TwabRewards/rewards-claimed");
 
             _rewardsAmount += _calculateRewardAmount(_user, _promotion, _epochId);
             _userClaimedEpochs = _updateClaimedEpoch(_userClaimedEpochs, _epochId);
@@ -254,10 +259,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _promotionEndTimestamp = _promotion.startTimestamp +
             (_promotion.epochDuration * _promotion.numberOfEpochs);
 
-        require(
-            _promotionEndTimestamp > block.timestamp,
-            "TwabRewards/promotion-inactive"
-        );
+        require(_promotionEndTimestamp > block.timestamp, "TwabRewards/promotion-inactive");
     }
 
     /**

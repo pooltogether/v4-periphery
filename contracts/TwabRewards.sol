@@ -255,7 +255,7 @@ contract TwabRewards is ITwabRewards {
             (_promotion.epochDuration * _promotion.numberOfEpochs);
 
         require(
-            _promotionEndTimestamp > 0 && _promotionEndTimestamp >= block.timestamp,
+            _promotionEndTimestamp > block.timestamp,
             "TwabRewards/promotion-inactive"
         );
     }

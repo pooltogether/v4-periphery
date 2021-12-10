@@ -15,8 +15,8 @@ interface ITwabRewards {
         @param creator Addresss of the promotion creator
         @param ticket Prize Pool ticket address for which the promotion has been created
         @param token Address of the token to be distributed as reward
-        @param tokensPerEpoch Number of tokens to be distributed per epoch
         @param startTimestamp Timestamp at which the promotion starts
+        @param tokensPerEpoch Number of tokens to be distributed per epoch
         @param epochDuration Duration of one epoch in seconds
         @param numberOfEpochs Number of epochs the promotion will last for
      */
@@ -24,9 +24,9 @@ interface ITwabRewards {
         address creator;
         address ticket;
         IERC20 token;
-        uint216 tokensPerEpoch;
-        uint32 startTimestamp;
-        uint32 epochDuration;
+        uint128 startTimestamp;
+        uint256 tokensPerEpoch;
+        uint56 epochDuration;
         uint8 numberOfEpochs;
     }
 
@@ -37,8 +37,8 @@ interface ITwabRewards {
         So the first promotion will have id 1, the second 2, etc.
         @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
-        @param _tokensPerEpoch Number of tokens to be distributed per epoch
         @param _startTimestamp Timestamp at which the promotion starts
+        @param _tokensPerEpoch Number of tokens to be distributed per epoch
         @param _epochDuration Duration of one epoch in seconds
         @param _numberOfEpochs Number of epochs the promotion will last for
         @return Id of the newly created promotion
@@ -46,9 +46,9 @@ interface ITwabRewards {
     function createPromotion(
         address _ticket,
         IERC20 _token,
-        uint216 _tokensPerEpoch,
-        uint32 _startTimestamp,
-        uint32 _epochDuration,
+        uint128 _startTimestamp,
+        uint256 _tokensPerEpoch,
+        uint56 _epochDuration,
         uint8 _numberOfEpochs
     ) external returns (uint256);
 

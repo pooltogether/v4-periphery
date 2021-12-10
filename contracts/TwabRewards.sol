@@ -88,8 +88,8 @@ contract TwabRewards is ITwabRewards {
     function createPromotion(
         address _ticket,
         IERC20 _token,
-        uint216 _tokensPerEpoch,
         uint32 _startTimestamp,
+        uint216 _tokensPerEpoch,
         uint32 _epochDuration,
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
@@ -103,8 +103,8 @@ contract TwabRewards is ITwabRewards {
             msg.sender,
             _ticket,
             _token,
-            _tokensPerEpoch,
             _startTimestamp,
+            _tokensPerEpoch,
             _epochDuration,
             _numberOfEpochs
         );

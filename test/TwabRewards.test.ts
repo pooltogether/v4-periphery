@@ -71,8 +71,8 @@ describe('TwabRewards', () => {
         return await twabRewards.createPromotion(
             ticketAddress,
             rewardToken.address,
-            tokensPerEpoch,
             createPromotionTimestamp,
+            tokensPerEpoch,
             epochDuration,
             epochsNumber,
         );

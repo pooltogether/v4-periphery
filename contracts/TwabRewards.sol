@@ -279,13 +279,10 @@ contract TwabRewards is ITwabRewards {
         @param _promotion Promotion to check
     */
     function _requirePromotionActive(Promotion memory _promotion) internal view {
-        unchecked {
-            // promotionEndTimestamp > block.timestamp
-            require(
-                _getPromotionEndTimestamp(_promotion) > block.timestamp,
-                "TwabRewards/promotion-inactive"
-            );
-        }
+        require(
+            _getPromotionEndTimestamp(_promotion) > block.timestamp,
+            "TwabRewards/promotion-inactive"
+        );
     }
 
     /**
@@ -310,7 +307,9 @@ contract TwabRewards is ITwabRewards {
         pure
         returns (uint256)
     {
-        return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+        unchecked {
+            return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+        }
     }
 
     /**

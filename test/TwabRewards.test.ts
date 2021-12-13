@@ -197,7 +197,7 @@ describe('TwabRewards', () => {
 
                 await expect(twabRewards.cancelPromotion(promotionId, wallet1.address))
                     .to.emit(twabRewards, 'PromotionCancelled')
-                    .withArgs(promotionId, transferredAmount);
+                    .withArgs(promotionId, wallet1.address, transferredAmount);
 
                 expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
                 expect(
@@ -241,7 +241,7 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.cancelPromotion(promotionId, wallet1.address))
                 .to.emit(twabRewards, 'PromotionCancelled')
-                .withArgs(promotionId, transferredAmount);
+                .withArgs(promotionId, wallet1.address, transferredAmount);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
             expect(

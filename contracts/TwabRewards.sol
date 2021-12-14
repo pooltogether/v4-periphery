@@ -16,10 +16,7 @@ import "./interfaces/ITwabRewards.sol";
  * In order to calculate user rewards, we use the TWAB (Time-Weighted Average Balance) from the Ticket contract.
  * This way, users simply need to hold their tickets to be eligible to claim rewards.
  * Rewards are calculated based on the average amount of tickets they hold during the epoch duration.
-<<<<<<< HEAD
  * @dev This contract supports only one prize pool ticket.
-=======
->>>>>>> d8c9803 (fix(TwabRewards): check createPromotion amount)
  * @dev This contract does not support the use of fee on transfer tokens.
  */
 contract TwabRewards is ITwabRewards {

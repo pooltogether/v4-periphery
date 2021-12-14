@@ -238,6 +238,24 @@ describe('TwabRewards', () => {
             ).to.be.revertedWith('TwabRewards/epochs-not-zero');
         });
 
+        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, toWei('0')),
+            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
+        });
+
+        it('should fail to create a new promotion if epoch duration is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
+            ).to.be.revertedWith('TwabRewards/duration-not-zero');
+        });
+
+        it('should fail to create a new promotion if number of epochs is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
+            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
+        });
+
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {
             await expect(
                 createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 256),

@@ -300,14 +300,19 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
+        @dev We calculate the current epoch id if the promotion has started. Otherwise, we return 0.
         @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
-        unchecked {
-            // elapsedTimestamp / epochDurationTimestamp
-            return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+        if (block.timestamp > _promotion.startTimestamp) {
+            unchecked {
+                // elapsedTimestamp / epochDurationTimestamp
+                return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+            }
         }
+
+        return 0;
     }
 
     /**

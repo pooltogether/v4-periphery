@@ -105,9 +105,14 @@ contract TwabRewards is ITwabRewards {
             _numberOfEpochs
         );
 
+        uint256 _amount;
+
+        unchecked {
+            _amount = _tokensPerEpoch * _numberOfEpochs;
+        }
+
         uint256 _beforeBalance = _token.balanceOf(address(this));
 
-        uint256 _amount = _tokensPerEpoch * _numberOfEpochs;
         _token.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint256 _afterBalance = _token.balanceOf(address(this));
@@ -158,8 +163,17 @@ contract TwabRewards is ITwabRewards {
         uint8 _extendedNumberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
-        uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
-        _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
+        uint256 _extendedAmount;
+
+        unchecked {
+            _extendedAmount = _numberOfEpochs * _promotion.tokensPerEpoch;
+        }
+
+        _promotion.token.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _extendedAmount
+        );
 
         emit PromotionExtended(_promotionId, _numberOfEpochs);
 
@@ -261,10 +275,14 @@ contract TwabRewards is ITwabRewards {
         @param _promotion Promotion to check
     */
     function _requirePromotionActive(Promotion memory _promotion) internal view {
-        uint256 _promotionEndTimestamp = _promotion.startTimestamp +
-            (_promotion.epochDuration * _promotion.numberOfEpochs);
-
-        require(_promotionEndTimestamp > block.timestamp, "TwabRewards/promotion-inactive");
+        unchecked {
+            // promotionEndTimestamp > block.timestamp
+            require(
+                (_promotion.startTimestamp +
+                    (_promotion.epochDuration * _promotion.numberOfEpochs)) > block.timestamp,
+                "TwabRewards/promotion-inactive"
+            );
+        }
     }
 
     /**
@@ -286,8 +304,10 @@ contract TwabRewards is ITwabRewards {
         @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
-        // elapsedTimestamp / epochDurationTimestamp
-        return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+        unchecked {
+            // elapsedTimestamp / epochDurationTimestamp
+            return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+        }
     }
 
     /**
@@ -341,10 +361,12 @@ contract TwabRewards is ITwabRewards {
         @return Amount of tokens left to be rewarded
      */
     function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
-        // _tokensPerEpoch * _numberOfEpochsLeft
-        return
-            _promotion.tokensPerEpoch *
-            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
+        unchecked {
+            // _tokensPerEpoch * _numberOfEpochsLeft
+            return
+                _promotion.tokensPerEpoch *
+                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
+        }
     }
 
     /**

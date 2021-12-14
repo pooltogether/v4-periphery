@@ -242,7 +242,7 @@ describe('TwabRewards', () => {
         it('should cancel promotion and still allow users to claim their rewards', async () => {
             const promotionId = 1;
             const epochNumber = 6;
-            const epochIds = ['0', '1', '2', '3', '4', '5'];
+            const epochIds = [0, 1, 2, 3, 4, 5];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -444,7 +444,7 @@ describe('TwabRewards', () => {
     describe('getRewardsAmount()', async () => {
         it('should get rewards amount for one or more epochs', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -484,7 +484,7 @@ describe('TwabRewards', () => {
 
         it('should decrease rewards amount if user delegate in the middle of an epoch', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const halfEpoch = epochDuration / 2;
 
             const wallet2Amount = toWei('750');
@@ -590,7 +590,7 @@ describe('TwabRewards', () => {
         it('should claim rewards for one or more epochs', async () => {
             const promotionId = 1;
             const epochNumber = 3;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -633,7 +633,7 @@ describe('TwabRewards', () => {
         it('should decrease rewards amount claimed if user delegate in the middle of an epoch', async () => {
             const promotionId = 1;
             const epochNumber = 3;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const halfEpoch = epochDuration / 2;
 
             const wallet2Amount = toWei('750');
@@ -687,7 +687,7 @@ describe('TwabRewards', () => {
 
         it('should claim 0 rewards if user has no tickets delegated to him', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const wallet2Amount = toWei('750');
             const zeroAmount = toWei('0');
 
@@ -705,7 +705,7 @@ describe('TwabRewards', () => {
 
         it('should return 0 if ticket average total supplies is 0', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const zeroAmount = toWei('0');
 
             await createPromotion();

@@ -3,7 +3,7 @@ import TicketInterface from '@pooltogether/v4-core/abis/ITicket.json';
 import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { Contract, ContractFactory } from 'ethers';
+import { BigNumber, Contract, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
@@ -44,7 +44,6 @@ describe('TwabRewards', () => {
     beforeEach(async () => {
         rewardToken = await erc20MintableFactory.deploy('Reward', 'REWA');
         twabRewards = await twabRewardsFactory.deploy();
-        ticket = await erc20MintableFactory.deploy('Ticket', 'TICK');
 
         ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, wallet1.address);
 
@@ -59,8 +58,10 @@ describe('TwabRewards', () => {
 
     const createPromotion = async (
         ticketAddress: string = ticket.address,
-        epochsNumber: number = numberOfEpochs,
         token: Contract | MockContract = rewardToken,
+        epochTokens: BigNumber = tokensPerEpoch,
+        epochTimestamp: number = epochDuration,
+        epochsNumber: number = numberOfEpochs,
         startTimestamp?: number,
     ) => {
         if (token.mock) {
@@ -86,8 +87,8 @@ describe('TwabRewards', () => {
             ticketAddress,
             token.address,
             createPromotionTimestamp,
-            tokensPerEpoch,
-            epochDuration,
+            epochTokens,
+            epochTimestamp,
             epochsNumber,
         );
     };
@@ -147,15 +148,24 @@ describe('TwabRewards', () => {
         it('should succeed to create a new promotion even if start timestamp is before block timestamp', async () => {
             const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
 
-            await expect(createPromotion(ticket.address, numberOfEpochs, rewardToken, startTimestamp))
+            await expect(
+                createPromotion(
+                    ticket.address,
+                    rewardToken,
+                    tokensPerEpoch,
+                    epochDuration,
+                    numberOfEpochs,
+                    startTimestamp,
+                ),
+            )
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(1);
         });
 
         it('should fail to create a new promotion if reward token is a fee on transfer token', async () => {
-            await expect(
-                createPromotion(ticket.address, numberOfEpochs, mockRewardToken),
-            ).to.be.revertedWith('TwabRewards/promo-amount-diff');
+            await expect(createPromotion(ticket.address, mockRewardToken)).to.be.revertedWith(
+                'TwabRewards/promo-amount-diff',
+            );
         });
 
         it('should fail to create a new promotion if ticket is address zero', async () => {
@@ -172,8 +182,28 @@ describe('TwabRewards', () => {
             );
         });
 
+        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, toWei('0')),
+            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
+        });
+
+        it('should fail to create a new promotion if epoch duration is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
+            ).to.be.revertedWith('TwabRewards/duration-not-zero');
+        });
+
+        it('should fail to create a new promotion if number of epochs is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
+            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
+        });
+
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {
-            await expect(createPromotion(ticket.address, 256)).to.be.reverted;
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 256),
+            ).to.be.reverted;
         });
     });
 
@@ -326,6 +356,12 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.extendPromotion(1, 6)).to.be.revertedWith(
                 'TwabRewards/promotion-inactive',
+            );
+        });
+
+        it('should fail to extend a promotion by zero epochs', async () => {
+            await expect(twabRewards.extendPromotion(1, 0)).to.be.revertedWith(
+                'TwabRewards/epochs-not-zero',
             );
         });
 

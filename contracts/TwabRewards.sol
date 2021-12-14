@@ -99,6 +99,9 @@ contract TwabRewards is ITwabRewards {
         uint56 _epochDuration,
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
+        require(_tokensPerEpoch > 0, "TwabRewards/tokens-not-zero");
+        require(_epochDuration > 0, "TwabRewards/duration-not-zero");
+        _requireNumberOfEpochs(_numberOfEpochs);
         _requireTicket(_ticket);
 
         uint256 _nextPromotionId = _latestPromotionId + 1;
@@ -156,8 +159,9 @@ contract TwabRewards is ITwabRewards {
         override
         returns (bool)
     {
-        Promotion memory _promotion = _getPromotion(_promotionId);
+        _requireNumberOfEpochs(_numberOfEpochs);
 
+        Promotion memory _promotion = _getPromotion(_promotionId);
         _requirePromotionActive(_promotion);
 
         uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
@@ -254,6 +258,14 @@ contract TwabRewards is ITwabRewards {
         }
 
         require(succeeded && controllerAddress != address(0), "TwabRewards/invalid-ticket");
+    }
+
+    /**
+        @notice Allow a promotion to be created or extended only by a positive number of epochs.
+        @param _numberOfEpochs Number of epochs to check
+    */
+    function _requireNumberOfEpochs(uint8 _numberOfEpochs) internal view {
+        require(_numberOfEpochs > 0, "TwabRewards/epochs-not-zero");
     }
 
     /**

@@ -293,7 +293,7 @@ describe('TwabRewards', () => {
             await createPromotion();
 
             await expect(
-                twabRewards.connect(wallet2).cancelPromotion(1, AddressZero),
+                twabRewards.connect(wallet2).cancelPromotion(1, wallet1.address),
             ).to.be.revertedWith('TwabRewards/only-promo-creator');
         });
 

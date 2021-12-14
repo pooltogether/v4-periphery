@@ -228,6 +228,7 @@ describe('TwabRewards', () => {
                     .withArgs(promotionId, wallet1.address, transferredAmount);
 
                 expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
+
                 expect(
                     (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
                 ).to.equal(await twabRewards.callStatic.getCurrentEpochId(promotionId));
@@ -235,6 +236,30 @@ describe('TwabRewards', () => {
                 // We burn tokens from wallet1 to reset balance
                 await rewardToken.burn(wallet1.address, transferredAmount);
             }
+        });
+
+        it('should cancel a promotion before it starts and transfer the full amount of reward tokens', async () => {
+            const promotionId = 1;
+            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 60;
+
+            await createPromotion(
+                ticket.address,
+                rewardToken,
+                tokensPerEpoch,
+                epochDuration,
+                numberOfEpochs,
+                startTimestamp,
+            );
+
+            await expect(twabRewards.cancelPromotion(promotionId, wallet1.address))
+                .to.emit(twabRewards, 'PromotionCancelled')
+                .withArgs(promotionId, wallet1.address, promotionAmount);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(promotionAmount);
+
+            expect(
+                (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
+            ).to.equal(await twabRewards.callStatic.getCurrentEpochId(promotionId));
         });
 
         it('should cancel promotion and still allow users to claim their rewards', async () => {

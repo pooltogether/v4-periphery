@@ -310,18 +310,18 @@ contract TwabRewards is ITwabRewards {
             uint64(_epochEndTimestamp)
         );
 
-        uint64[] memory _epochStartTimestamps = new uint64[](1);
-        _epochStartTimestamps[0] = _epochStartTimestamp;
+        if (_averageBalance > 0) {
+            uint64[] memory _epochStartTimestamps = new uint64[](1);
+            _epochStartTimestamps[0] = _epochStartTimestamp;
 
-        uint64[] memory _epochEndTimestamps = new uint64[](1);
-        _epochEndTimestamps[0] = _epochEndTimestamp;
+            uint64[] memory _epochEndTimestamps = new uint64[](1);
+            _epochEndTimestamps[0] = _epochEndTimestamp;
 
-        uint256 _averageTotalSupply = _ticket.getAverageTotalSuppliesBetween(
-            _epochStartTimestamps,
-            _epochEndTimestamps
-        )[0];
+            uint256 _averageTotalSupply = _ticket.getAverageTotalSuppliesBetween(
+                _epochStartTimestamps,
+                _epochEndTimestamps
+            )[0];
 
-        if (_averageTotalSupply > 0) {
             return (_promotion.tokensPerEpoch * _averageBalance) / _averageTotalSupply;
         }
 

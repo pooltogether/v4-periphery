@@ -71,7 +71,7 @@ contract TwabRewards is ITwabRewards {
     */
     event RewardsClaimed(
         uint256 indexed promotionId,
-        uint256[] epochIds,
+        uint8[] epochIds,
         address indexed user,
         uint256 amount
     );
@@ -180,7 +180,7 @@ contract TwabRewards is ITwabRewards {
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256[] calldata _epochIds
+        uint8[] calldata _epochIds
     ) external override returns (uint256) {
         Promotion memory _promotion = _getPromotion(_promotionId);
 
@@ -189,7 +189,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _epochIdsLength = _epochIds.length;
 
         for (uint256 index = 0; index < _epochIdsLength; index++) {
-            uint256 _epochId = _epochIds[index];
+            uint8 _epochId = _epochIds[index];
 
             require(!_isClaimedEpoch(_userClaimedEpochs, _epochId), "TwabRewards/rewards-claimed");
 
@@ -225,7 +225,7 @@ contract TwabRewards is ITwabRewards {
     function getRewardsAmount(
         address _user,
         uint256 _promotionId,
-        uint256[] calldata _epochIds
+        uint8[] calldata _epochIds
     ) external view override returns (uint256[] memory) {
         Promotion memory _promotion = _getPromotion(_promotionId);
 
@@ -265,7 +265,7 @@ contract TwabRewards is ITwabRewards {
         @notice Allow a promotion to be created or extended only by a positive number of epochs.
         @param _numberOfEpochs Number of epochs to check
     */
-    function _requireNumberOfEpochs(uint8 _numberOfEpochs) internal view {
+    function _requireNumberOfEpochs(uint8 _numberOfEpochs) internal pure {
         require(_numberOfEpochs > 0, "TwabRewards/epochs-not-zero");
     }
 
@@ -314,11 +314,11 @@ contract TwabRewards is ITwabRewards {
     function _calculateRewardAmount(
         address _user,
         Promotion memory _promotion,
-        uint256 _epochId
+        uint8 _epochId
     ) internal view returns (uint256) {
-        uint256 _epochDuration = _promotion.epochDuration;
-        uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
-        uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
+        uint56 _epochDuration = _promotion.epochDuration;
+        uint64 _epochStartTimestamp = uint64(_promotion.startTimestamp) + (_epochDuration * _epochId);
+        uint64 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
         require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
 
@@ -331,10 +331,10 @@ contract TwabRewards is ITwabRewards {
         );
 
         uint64[] memory _epochStartTimestamps = new uint64[](1);
-        _epochStartTimestamps[0] = uint64(_epochStartTimestamp);
+        _epochStartTimestamps[0] = _epochStartTimestamp;
 
         uint64[] memory _epochEndTimestamps = new uint64[](1);
-        _epochEndTimestamps[0] = uint64(_epochEndTimestamp);
+        _epochEndTimestamps[0] = _epochEndTimestamp;
 
         uint256[] memory _averageTotalSupplies = _ticket.getAverageTotalSuppliesBetween(
             _epochStartTimestamps,
@@ -372,7 +372,7 @@ contract TwabRewards is ITwabRewards {
         @param _epochId Id of the epoch to set the boolean for
         @return Tightly packed epoch ids with the newly boolean value set
     */
-    function _updateClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+    function _updateClaimedEpoch(uint256 _userClaimedEpochs, uint8 _epochId)
         internal
         pure
         returns (uint256)
@@ -393,7 +393,7 @@ contract TwabRewards is ITwabRewards {
         @param _epochId Epoch id to check
         @return true if the rewards have already been claimed for the given epoch, false otherwise
      */
-    function _isClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+    function _isClaimedEpoch(uint256 _userClaimedEpochs, uint8 _epochId)
         internal
         pure
         returns (bool)

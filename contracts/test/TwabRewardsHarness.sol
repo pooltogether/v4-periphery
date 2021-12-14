@@ -9,7 +9,7 @@ contract TwabRewardsHarness is TwabRewards {
         return _requireTicket(_ticket);
     }
 
-    function isClaimedEpoch(uint256 _userClaimedEpochs, uint256 _epochId)
+    function isClaimedEpoch(uint256 _userClaimedEpochs, uint8 _epochId)
         external
         pure
         returns (bool)

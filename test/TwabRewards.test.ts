@@ -540,10 +540,7 @@ describe('TwabRewards', () => {
                 numberOfEpochs,
                 startTimestamp,
             );
-<<<<<<< HEAD
 
-=======
->>>>>>> 2c8b71d (fix(TwabRewards): test claimRewards epochs limit)
             expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(0);
         });
 

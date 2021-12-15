@@ -530,6 +530,7 @@ describe('TwabRewards', () => {
                 numberOfEpochs,
                 startTimestamp,
             );
+
             expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(0);
         });
 
@@ -683,6 +684,21 @@ describe('TwabRewards', () => {
             await expect(
                 twabRewards.callStatic.getRewardsAmount(wallet2.address, 1, ['1', '2', '3']),
             ).to.be.revertedWith('TwabRewards/epoch-not-over');
+        });
+
+        it('should fail to get rewards amount for epoch ids that does not exist', async () => {
+            const wallet2Amount = toWei('750');
+            const wallet3Amount = toWei('250');
+
+            await ticket.mint(wallet2.address, wallet2Amount);
+            await ticket.mint(wallet3.address, wallet3Amount);
+
+            await createPromotion();
+            await increaseTime(epochDuration * 13);
+
+            await expect(
+                twabRewards.callStatic.getRewardsAmount(wallet2.address, 1, ['12', '13', '14']),
+            ).to.be.revertedWith('TwabRewards/invalid-epoch-id');
         });
 
         it('should revert if promotion id passed is inexistent', async () => {
@@ -860,6 +876,23 @@ describe('TwabRewards', () => {
             await expect(
                 twabRewards.claimRewards(wallet2.address, promotionId, ['2', '3', '4']),
             ).to.be.revertedWith('TwabRewards/rewards-claimed');
+        });
+
+        it('should fail to claim rewards for epoch ids that does not exist', async () => {
+            const promotionId = 1;
+
+            const wallet2Amount = toWei('750');
+            const wallet3Amount = toWei('250');
+
+            await ticket.mint(wallet2.address, wallet2Amount);
+            await ticket.mint(wallet3.address, wallet3Amount);
+
+            await createPromotion();
+            await increaseTime(epochDuration * 13);
+
+            await expect(
+                twabRewards.claimRewards(wallet2.address, promotionId, ['12', '13', '14']),
+            ).to.be.revertedWith('TwabRewards/invalid-epoch-id');
         });
 
         it('should fail to claim rewards past 255', async () => {

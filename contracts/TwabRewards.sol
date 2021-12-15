@@ -332,7 +332,9 @@ contract TwabRewards is ITwabRewards {
 
     /**
         @notice Get reward amount for a specific user.
-        @dev Rewards can only be claimed once the epoch is over.
+        @dev Rewards can only be calculated once the epoch is over.
+        @dev Will revert if `_epochId` is over the total number of epochs or if epoch is not over.
+        @dev Will return 0 if the user average balance of tickets is 0.
         @param _user User to get reward amount for
         @param _promotion Promotion from which the epoch is
         @param _epochId Epoch id to get reward amount for
@@ -348,6 +350,7 @@ contract TwabRewards is ITwabRewards {
         uint64 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
         require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
+        require(_epochId < _promotion.numberOfEpochs, "TwabRewards/invalid-epoch-id");
 
         ITicket _ticket = ITicket(_promotion.ticket);
 

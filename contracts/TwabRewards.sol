@@ -16,12 +16,16 @@ import "./interfaces/ITwabRewards.sol";
  * In order to calculate user rewards, we use the TWAB (Time-Weighted Average Balance) from the Ticket contract.
  * This way, users simply need to hold their tickets to be eligible to claim rewards.
  * Rewards are calculated based on the average amount of tickets they hold during the epoch duration.
+ * @dev This contract supports only one prize pool ticket.
  * @dev This contract does not support the use of fee on transfer tokens.
  */
 contract TwabRewards is ITwabRewards {
     using SafeERC20 for IERC20;
 
     /* ============ Global Variables ============ */
+
+    /// @notice Prize pool ticket for which the promotions are created.
+    ITicket public immutable ticket;
 
     /// @notice Settings of each promotion.
     mapping(uint256 => Promotion) internal _promotions;
@@ -76,11 +80,21 @@ contract TwabRewards is ITwabRewards {
         uint256 amount
     );
 
+    /* ============ Constructor ============ */
+
+    /**
+        @notice Constructor of the contract.
+        @param _ticket Prize Pool ticket address for which the promotions will be created
+    */
+    constructor(ITicket _ticket) {
+        _requireTicket(_ticket);
+        ticket = _ticket;
+    }
+
     /* ============ External Functions ============ */
 
     /// @inheritdoc ITwabRewards
     function createPromotion(
-        address _ticket,
         IERC20 _token,
         uint128 _startTimestamp,
         uint256 _tokensPerEpoch,
@@ -90,14 +104,12 @@ contract TwabRewards is ITwabRewards {
         require(_tokensPerEpoch > 0, "TwabRewards/tokens-not-zero");
         require(_epochDuration > 0, "TwabRewards/duration-not-zero");
         _requireNumberOfEpochs(_numberOfEpochs);
-        _requireTicket(_ticket);
 
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
         _promotions[_nextPromotionId] = Promotion(
             msg.sender,
-            _ticket,
             _token,
             _startTimestamp,
             _tokensPerEpoch,
@@ -253,11 +265,11 @@ contract TwabRewards is ITwabRewards {
     @notice Determine if address passed is actually a ticket.
     @param _ticket Address to check
    */
-    function _requireTicket(address _ticket) internal view {
-        require(_ticket != address(0), "TwabRewards/ticket-not-zero-addr");
+    function _requireTicket(ITicket _ticket) internal view {
+        require(address(_ticket) != address(0), "TwabRewards/ticket-not-zero-addr");
 
-        (bool succeeded, bytes memory data) = _ticket.staticcall(
-            abi.encodePacked(ITicket(_ticket).controller.selector)
+        (bool succeeded, bytes memory data) = address(_ticket).staticcall(
+            abi.encodePacked(_ticket.controller.selector)
         );
 
         require(
@@ -356,9 +368,7 @@ contract TwabRewards is ITwabRewards {
         require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
         require(_epochId < _promotion.numberOfEpochs, "TwabRewards/invalid-epoch-id");
 
-        ITicket _ticket = ITicket(_promotion.ticket);
-
-        uint256 _averageBalance = _ticket.getAverageBalanceBetween(
+        uint256 _averageBalance = ticket.getAverageBalanceBetween(
             _user,
             uint64(_epochStartTimestamp),
             uint64(_epochEndTimestamp)
@@ -371,7 +381,7 @@ contract TwabRewards is ITwabRewards {
             uint64[] memory _epochEndTimestamps = new uint64[](1);
             _epochEndTimestamps[0] = _epochEndTimestamp;
 
-            uint256 _averageTotalSupply = _ticket.getAverageTotalSuppliesBetween(
+            uint256 _averageTotalSupply = ticket.getAverageTotalSuppliesBetween(
                 _epochStartTimestamps,
                 _epochEndTimestamps
             )[0];

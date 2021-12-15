@@ -13,7 +13,7 @@ interface ITwabRewards {
     /**
         @notice Struct to keep track of each promotion's settings.
         @param creator Addresss of the promotion creator
-        @param ticket Prize Pool ticket address for which the promotion has been created
+        @param ticket Prize Pool ticket address
         @param token Address of the token to be distributed as reward
         @param startTimestamp Timestamp at which the promotion starts
         @param tokensPerEpoch Number of tokens to be distributed per epoch
@@ -22,7 +22,6 @@ interface ITwabRewards {
      */
     struct Promotion {
         address creator;
-        address ticket;
         IERC20 token;
         uint128 startTimestamp;
         uint256 tokensPerEpoch;
@@ -37,7 +36,6 @@ interface ITwabRewards {
         So the first promotion will have id 1, the second 2, etc.
         @dev The transaction will revert if the amount of reward tokens provided is not equal to `_tokensPerEpoch * _numberOfEpochs`.
         This scenario could happen if the token supplied is a fee on transfer one.
-        @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
         @param _startTimestamp Timestamp at which the promotion starts
         @param _tokensPerEpoch Number of tokens to be distributed per epoch
@@ -46,7 +44,6 @@ interface ITwabRewards {
         @return Id of the newly created promotion
     */
     function createPromotion(
-        address _ticket,
         IERC20 _token,
         uint128 _startTimestamp,
         uint256 _tokensPerEpoch,

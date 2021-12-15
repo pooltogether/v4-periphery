@@ -43,9 +43,9 @@ describe('TwabRewards', () => {
 
     beforeEach(async () => {
         rewardToken = await erc20MintableFactory.deploy('Reward', 'REWA');
-        twabRewards = await twabRewardsFactory.deploy();
 
         ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, wallet1.address);
+        twabRewards = await twabRewardsFactory.deploy(ticket.address);
 
         mockRewardToken = await deployMockContract(wallet1, ERC20MintableInterface);
         mockTicket = await deployMockContract(wallet1, TicketInterface);
@@ -57,7 +57,6 @@ describe('TwabRewards', () => {
     let promotionAmount: BigNumber;
 
     const createPromotion = async (
-        ticketAddress: string = ticket.address,
         token: Contract | MockContract = rewardToken,
         epochTokens: BigNumber = tokensPerEpoch,
         epochTimestamp: number = epochDuration,
@@ -86,7 +85,6 @@ describe('TwabRewards', () => {
         }
 
         return await twabRewards.createPromotion(
-            ticketAddress,
             token.address,
             createPromotionTimestamp,
             epochTokens,
@@ -94,6 +92,26 @@ describe('TwabRewards', () => {
             epochsNumber,
         );
     };
+
+    describe('constructor()', () => {
+        it('should deploy contract', async () => {
+            expect(await twabRewards.callStatic.ticket()).to.equal(ticket.address);
+        });
+
+        it('should fail to deploy contract if ticket is address zero', async () => {
+            await expect(twabRewardsFactory.deploy(AddressZero)).to.be.revertedWith(
+                'TwabRewards/ticket-not-zero-addr',
+            );
+        });
+
+        it('should fail to deploy contract if ticket is not an actual ticket', async () => {
+            const randomWallet = Wallet.createRandom();
+
+            await expect(twabRewardsFactory.deploy(randomWallet.address)).to.be.revertedWith(
+                'TwabRewards/invalid-ticket',
+            );
+        });
+    });
 
     describe('createPromotion()', async () => {
         it('should create a new promotion', async () => {
@@ -106,7 +124,6 @@ describe('TwabRewards', () => {
             const promotion = await twabRewards.callStatic.getPromotion(promotionId);
 
             expect(promotion.creator).to.equal(wallet1.address);
-            expect(promotion.ticket).to.equal(ticket.address);
             expect(promotion.token).to.equal(rewardToken.address);
             expect(promotion.tokensPerEpoch).to.equal(tokensPerEpoch);
             expect(promotion.startTimestamp).to.equal(createPromotionTimestamp);
@@ -125,7 +142,6 @@ describe('TwabRewards', () => {
             const firstPromotion = await twabRewards.callStatic.getPromotion(promotionIdOne);
 
             expect(firstPromotion.creator).to.equal(wallet1.address);
-            expect(firstPromotion.ticket).to.equal(ticket.address);
             expect(firstPromotion.token).to.equal(rewardToken.address);
             expect(firstPromotion.tokensPerEpoch).to.equal(tokensPerEpoch);
             expect(firstPromotion.startTimestamp).to.equal(createPromotionTimestamp);
@@ -139,7 +155,6 @@ describe('TwabRewards', () => {
             const secondPromotion = await twabRewards.callStatic.getPromotion(promotionIdTwo);
 
             expect(secondPromotion.creator).to.equal(wallet1.address);
-            expect(secondPromotion.ticket).to.equal(ticket.address);
             expect(secondPromotion.token).to.equal(rewardToken.address);
             expect(secondPromotion.tokensPerEpoch).to.equal(tokensPerEpoch);
             expect(secondPromotion.startTimestamp).to.equal(createPromotionTimestamp);
@@ -152,7 +167,6 @@ describe('TwabRewards', () => {
 
             await expect(
                 createPromotion(
-                    ticket.address,
                     rewardToken,
                     tokensPerEpoch,
                     epochDuration,
@@ -165,101 +179,32 @@ describe('TwabRewards', () => {
         });
 
         it('should fail to create a new promotion if reward token is a fee on transfer token', async () => {
-            await expect(createPromotion(ticket.address, mockRewardToken)).to.be.revertedWith(
+            await expect(createPromotion(mockRewardToken)).to.be.revertedWith(
                 'TwabRewards/promo-amount-diff',
             );
         });
 
-        it('should fail to create a new promotion if ticket is address zero', async () => {
-            await expect(createPromotion(AddressZero)).to.be.revertedWith(
-                'TwabRewards/ticket-not-zero-addr',
+        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
+            await expect(createPromotion(rewardToken, toWei('0'))).to.be.revertedWith(
+                'TwabRewards/tokens-not-zero',
             );
         });
 
-        it('should fail to create a new promotion if ticket is not an actual ticket', async () => {
-            const randomWallet = Wallet.createRandom();
-
-            await expect(createPromotion(randomWallet.address)).to.be.revertedWith(
-                'TwabRewards/invalid-ticket',
+        it('should fail to create a new promotion if epoch duration is zero', async () => {
+            await expect(createPromotion(rewardToken, tokensPerEpoch, 0)).to.be.revertedWith(
+                'TwabRewards/duration-not-zero',
             );
         });
 
-        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, toWei('0')),
-            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
-        });
-
-        it('should fail to create a new promotion if epoch duration is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
-            ).to.be.revertedWith('TwabRewards/duration-not-zero');
-        });
-
         it('should fail to create a new promotion if number of epochs is zero', async () => {
             await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
-            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
-        });
-
-        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, toWei('0')),
-            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
-        });
-
-        it('should fail to create a new promotion if epoch duration is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
-            ).to.be.revertedWith('TwabRewards/duration-not-zero');
-        });
-
-        it('should fail to create a new promotion if number of epochs is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
-            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
-        });
-
-        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, toWei('0')),
-            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
-        });
-
-        it('should fail to create a new promotion if epoch duration is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
-            ).to.be.revertedWith('TwabRewards/duration-not-zero');
-        });
-
-        it('should fail to create a new promotion if number of epochs is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
-            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
-        });
-
-        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, toWei('0')),
-            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
-        });
-
-        it('should fail to create a new promotion if epoch duration is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
-            ).to.be.revertedWith('TwabRewards/duration-not-zero');
-        });
-
-        it('should fail to create a new promotion if number of epochs is zero', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
+                createPromotion(rewardToken, tokensPerEpoch, epochDuration, 0),
             ).to.be.revertedWith('TwabRewards/epochs-not-zero');
         });
 
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {
-            await expect(
-                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 256),
-            ).to.be.reverted;
+            await expect(createPromotion(rewardToken, tokensPerEpoch, epochDuration, 256)).to.be
+                .reverted;
         });
     });
 
@@ -304,7 +249,6 @@ describe('TwabRewards', () => {
             const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 60;
 
             await createPromotion(
-                ticket.address,
                 rewardToken,
                 tokensPerEpoch,
                 epochDuration,
@@ -468,7 +412,6 @@ describe('TwabRewards', () => {
             const promotion = await twabRewards.callStatic.getPromotion(1);
 
             expect(promotion.creator).to.equal(wallet1.address);
-            expect(promotion.ticket).to.equal(ticket.address);
             expect(promotion.token).to.equal(rewardToken.address);
             expect(promotion.tokensPerEpoch).to.equal(tokensPerEpoch);
             expect(promotion.startTimestamp).to.equal(createPromotionTimestamp);
@@ -533,7 +476,6 @@ describe('TwabRewards', () => {
             const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 60;
 
             await createPromotion(
-                ticket.address,
                 rewardToken,
                 tokensPerEpoch,
                 epochDuration,
@@ -963,7 +905,7 @@ describe('TwabRewards', () => {
             await ticket.mint(wallet2.address, wallet2Amount);
             await ticket.mint(wallet3.address, wallet3Amount);
 
-            await createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 255);
+            await createPromotion(rewardToken, tokensPerEpoch, epochDuration, 255);
 
             await increaseTime(epochDuration * 256);
 

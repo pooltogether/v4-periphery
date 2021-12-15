@@ -272,8 +272,7 @@ contract TwabRewards is ITwabRewards {
         unchecked {
             // promotionEndTimestamp > block.timestamp
             require(
-                (_promotion.startTimestamp +
-                    (_promotion.epochDuration * _promotion.numberOfEpochs)) > block.timestamp,
+                _getPromotionEndTimestamp(_promotion) >= block.timestamp,
                 "TwabRewards/promotion-inactive"
             );
         }
@@ -292,21 +291,43 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
+        @notice Compute promotion end timestamp.
+        @param _promotion Promotion to compute end timestamp for
+        @return Promotion end timestamp
+    */
+    function _getPromotionEndTimestamp(Promotion memory _promotion)
+        internal
+        pure
+        returns (uint256)
+    {
+        return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+    }
+
+    /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
-        @dev We calculate the current epoch id if the promotion has started. Otherwise, we return 0.
+        @dev We return the current epoch id if the promotion has not ended.
+        Otherwise, we return the last epoch id or 0 if the promotion has not started.
         @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
+
+        uint256 _currentEpochId;
+
         if (block.timestamp > _promotion.startTimestamp) {
-            unchecked {
-                // elapsedTimestamp / epochDurationTimestamp
-                return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
-            }
+            _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
         }
 
-        return 0;
+        if (_currentEpochId > 0) {
+            if (_currentEpochId >= _promotion.numberOfEpochs) {
+                _currentEpochId = _promotion.numberOfEpochs - uint8(1);
+            }
+        } else {
+            _currentEpochId = 0;
+        }
+
+        return _currentEpochId;
     }
 
     /**
@@ -360,9 +381,7 @@ contract TwabRewards is ITwabRewards {
         @return Amount of tokens left to be rewarded
      */
     function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
-        uint256 _currentEpochId = _getCurrentEpochId(_promotion);
-
-        if (_currentEpochId >= _promotion.numberOfEpochs) {
+        if (block.timestamp > _getPromotionEndTimestamp(_promotion)) {
             return 0;
         }
 
@@ -370,7 +389,7 @@ contract TwabRewards is ITwabRewards {
             // _tokensPerEpoch * _numberOfEpochsLeft
             return
                 _promotion.tokensPerEpoch *
-                (_promotion.numberOfEpochs - _currentEpochId);
+                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
         }
     }
 

@@ -229,9 +229,16 @@ describe('TwabRewards', () => {
 
                 expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
 
-                expect(
-                    (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
-                ).to.equal(await twabRewards.callStatic.getCurrentEpochId(promotionId));
+                let latestEpochId = (await twabRewards.callStatic.getPromotion(promotionId))
+                    .numberOfEpochs;
+
+                if (latestEpochId !== 0) {
+                    latestEpochId--;
+                }
+
+                expect(latestEpochId).to.equal(
+                    await twabRewards.callStatic.getCurrentEpochId(promotionId),
+                );
 
                 // We burn tokens from wallet1 to reset balance
                 await rewardToken.burn(wallet1.address, transferredAmount);
@@ -297,8 +304,9 @@ describe('TwabRewards', () => {
                 .withArgs(promotionId, wallet1.address, transferredAmount);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
+
             expect(
-                (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs,
+                (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs - 1,
             ).to.equal(await twabRewards.callStatic.getCurrentEpochId(promotionId));
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
@@ -467,6 +475,30 @@ describe('TwabRewards', () => {
             await increaseTime(epochDuration * 3);
 
             expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(3);
+        });
+
+        it('should return the first epoch id if the promotion has not started yet', async () => {
+            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 60;
+
+            await createPromotion(
+                ticket.address,
+                rewardToken,
+                tokensPerEpoch,
+                epochDuration,
+                numberOfEpochs,
+                startTimestamp,
+            ),
+
+            expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(0);
+        });
+
+        it('should return the last active epoch id if the promotion is inactive', async () => {
+            await createPromotion();
+            await increaseTime(epochDuration * 12);
+
+            expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(
+                numberOfEpochs - 1,
+            );
         });
 
         it('should revert if promotion id passed is inexistent', async () => {

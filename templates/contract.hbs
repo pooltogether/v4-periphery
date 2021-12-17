@@ -1,5 +1,27 @@
 {{{natspec.userdoc}}}
 {{{natspec.devdoc}}}
+
+{{#if structs}}
+## Structs
+{{/if}}
+{{#each structs}}
+### `{{name}}`
+{{#each members}}
+  - {{type}} {{name}}
+{{/each}}
+{{/each}}
+
+{{#if enums}}
+## Enums
+{{/if}}
+{{#each enums}}
+### `{{name}}`
+All members: {{members}}
+{{#each members}}
+  - {{.}}
+{{/each}}
+{{/each}}
+
 {{#if functions}}
 ## Functions
 {{/if}}

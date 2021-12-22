@@ -33,13 +33,17 @@ contract TwabRewards is ITwabRewards {
     /// @notice Settings of each promotion.
     mapping(uint256 => Promotion) internal _promotions;
 
-    /// @notice Latest recorded promotion id.
-    /// @dev Starts at 0 and is incremented by 1 for each new promotion. So the first promotion will have id 1, the second 2, etc.
+    /**
+     * @notice Latest recorded promotion id.
+     * @dev Starts at 0 and is incremented by 1 for each new promotion. So the first promotion will have id 1, the second 2, etc.
+     */
     uint256 internal _latestPromotionId;
 
-    /// @notice Keeps track of claimed rewards per user.
-    /// @dev _claimedEpochs[promotionId][user] => claimedEpochs
-    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
+    /**
+     * @notice Keeps track of claimed rewards per user.
+     * @dev _claimedEpochs[promotionId][user] => claimedEpochs
+     * @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
+     */
     mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */
@@ -51,12 +55,12 @@ contract TwabRewards is ITwabRewards {
     event PromotionCreated(uint256 indexed promotionId);
 
     /**
-        @notice Emitted when a promotion is ended.
-        @param promotionId Id of the promotion being ended
-        @param recipient Address of the recipient that will receive the remaining rewards
-        @param amount Amount of tokens transferred to the recipient
-        @param epochNumber Epoch number at which the promotion ended
-    */
+     * @notice Emitted when a promotion is ended.
+     * @param promotionId Id of the promotion being ended
+     * @param recipient Address of the recipient that will receive the remaining rewards
+     * @param amount Amount of tokens transferred to the recipient
+     * @param epochNumber Epoch number at which the promotion ended
+     */
     event PromotionEnded(
         uint256 indexed promotionId,
         address indexed recipient,
@@ -355,10 +359,10 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
-        @notice Compute promotion end timestamp.
-        @param _promotion Promotion to compute end timestamp for
-        @return Promotion end timestamp
-    */
+     * @notice Compute promotion end timestamp.
+     * @param _promotion Promotion to compute end timestamp for
+     * @return Promotion end timestamp
+     */
     function _getPromotionEndTimestamp(Promotion memory _promotion)
         internal
         pure
@@ -371,13 +375,13 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
-        @notice Get the current epoch id of a promotion.
-        @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
-        @dev We return the current epoch id if the promotion has not ended.
-        If the current time is before the promotion start timestamp, we return 0.
-        Otherwise, we return the epoch id at the current timestamp. This could be greater than the number of epochs of the promotion.
-        @param _promotion Promotion to get current epoch for
-        @return Epoch id
+     * @notice Get the current epoch id of a promotion.
+     * @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
+     * @dev We return the current epoch id if the promotion has not ended.
+     * If the current timestamp is before the promotion start timestamp, we return 0.
+     * Otherwise, we return the epoch id at the current timestamp. This could be greater than the number of epochs of the promotion.
+     * @param _promotion Promotion to get current epoch for
+     * @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
         uint256 _currentEpochId;

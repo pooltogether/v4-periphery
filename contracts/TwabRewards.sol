@@ -46,9 +46,14 @@ contract TwabRewards is ITwabRewards {
     /**
         @notice Emitted when a promotion is cancelled.
         @param promotionId Id of the promotion being cancelled
-        @param amount Amount of tokens transferred to the promotion creator
+        @param recipient Address of the recipient that will receive the remaining rewards
+        @param amount Amount of tokens transferred to the recipient
     */
-    event PromotionCancelled(uint256 indexed promotionId, uint256 amount);
+    event PromotionCancelled(
+        uint256 indexed promotionId,
+        address indexed recipient,
+        uint256 amount
+    );
 
     /**
         @notice Emitted when a promotion is extended.
@@ -140,7 +145,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
         _promotion.token.safeTransfer(_to, _remainingRewards);
 
-        emit PromotionCancelled(_promotionId, _remainingRewards);
+        emit PromotionCancelled(_promotionId, _to, _remainingRewards);
 
         return true;
     }

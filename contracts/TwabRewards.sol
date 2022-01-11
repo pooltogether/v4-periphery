@@ -320,7 +320,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint256 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
-        require(block.timestamp > _epochEndTimestamp, "TwabRewards/epoch-not-over");
+        require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
 
         ITicket _ticket = ITicket(_promotion.ticket);
 

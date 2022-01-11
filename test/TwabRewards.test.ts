@@ -417,6 +417,18 @@ describe('TwabRewards', () => {
             }
         });
 
+        it('should return 0 if promotion has ended', async () => {
+            await createPromotion();
+
+            const promotionId = 1;
+            const { epochDuration } =
+                await twabRewards.callStatic.getPromotion(promotionId);
+
+            await increaseTime(epochDuration * 13);
+
+            expect(await twabRewards.getRemainingRewards(promotionId)).to.equal(0);
+        });
+
         it('should revert if promotion id passed is inexistent', async () => {
             await expect(twabRewards.callStatic.getPromotion(1)).to.be.revertedWith(
                 'TwabRewards/invalid-promotion',

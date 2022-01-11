@@ -361,11 +361,17 @@ contract TwabRewards is ITwabRewards {
         @return Amount of tokens left to be rewarded
      */
     function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
+        uint256 _currentEpochId = _getCurrentEpochId(_promotion);
+
+        if (_currentEpochId >= _promotion.numberOfEpochs) {
+            return 0;
+        }
+
         unchecked {
             // _tokensPerEpoch * _numberOfEpochsLeft
             return
                 _promotion.tokensPerEpoch *
-                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
+                (_promotion.numberOfEpochs - _currentEpochId);
         }
     }
 

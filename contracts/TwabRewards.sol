@@ -135,9 +135,9 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         _requirePromotionActive(_promotion);
 
-        uint256 _remainingRewards = _getRemainingRewards(_promotion);
+        _promotions[_promotionId].numberOfEpochs = uint8(_getCurrentEpochId(_promotion));
 
-        delete _promotions[_promotionId];
+        uint256 _remainingRewards = _getRemainingRewards(_promotion);
         _promotion.token.safeTransfer(_to, _remainingRewards);
 
         emit PromotionCancelled(_promotionId, _remainingRewards);

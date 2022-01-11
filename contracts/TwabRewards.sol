@@ -231,17 +231,14 @@ contract TwabRewards is ITwabRewards {
     function _requireTicket(address _ticket) internal view {
         require(_ticket != address(0), "TwabRewards/ticket-not-zero-addr");
 
-        (bool succeeded, bytes memory data) = address(_ticket).staticcall(
+        (bool succeeded, bytes memory data) = _ticket.staticcall(
             abi.encodePacked(ITicket(_ticket).controller.selector)
         );
 
-        address controllerAddress;
-
-        if (data.length > 0) {
-            controllerAddress = abi.decode(data, (address));
-        }
-
-        require(succeeded && controllerAddress != address(0), "TwabRewards/invalid-ticket");
+        require(
+            succeeded && data.length > 0 && abi.decode(data, (uint160)) != 0,
+            "TwabRewards/invalid-ticket"
+        );
     }
 
     /**

@@ -122,10 +122,10 @@ contract TwabRewards is ITwabRewards {
         onlyPromotionCreator(_promotionId)
         returns (bool)
     {
-        Promotion memory _promotion = _getPromotion(_promotionId);
-
-        _requirePromotionActive(_promotion);
         require(_to != address(0), "TwabRewards/payee-not-zero-addr");
+
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        _requirePromotionActive(_promotion);
 
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
 

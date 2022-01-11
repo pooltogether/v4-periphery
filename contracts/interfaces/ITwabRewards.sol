@@ -85,7 +85,7 @@ interface ITwabRewards {
     function claimRewards(
         address _user,
         uint256 _promotionId,
-        uint256[] calldata _epochIds
+        uint8[] calldata _epochIds
     ) external returns (uint256);
 
     /**
@@ -121,6 +121,6 @@ interface ITwabRewards {
     function getRewardsAmount(
         address _user,
         uint256 _promotionId,
-        uint256[] calldata _epochIds
+        uint8[] calldata _epochIds
     ) external view returns (uint256[] memory);
 }

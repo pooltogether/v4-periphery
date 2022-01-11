@@ -76,18 +76,6 @@ contract TwabRewards is ITwabRewards {
         uint256 amount
     );
 
-    /* ============ Modifiers ============ */
-
-    /// @dev Ensure that the caller is the creator of the promotion.
-    /// @param _promotionId Id of the promotion to check
-    modifier onlyPromotionCreator(uint256 _promotionId) {
-        require(
-            msg.sender == _getPromotion(_promotionId).creator,
-            "TwabRewards/only-promo-creator"
-        );
-        _;
-    }
-
     /* ============ External Functions ============ */
 
     /// @inheritdoc ITwabRewards
@@ -133,15 +121,11 @@ contract TwabRewards is ITwabRewards {
     }
 
     /// @inheritdoc ITwabRewards
-    function cancelPromotion(uint256 _promotionId, address _to)
-        external
-        override
-        onlyPromotionCreator(_promotionId)
-        returns (bool)
-    {
+    function cancelPromotion(uint256 _promotionId, address _to) external override returns (bool) {
         require(_to != address(0), "TwabRewards/payee-not-zero-addr");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
+        require(msg.sender == _promotion.creator, "TwabRewards/only-promo-creator");
         _requirePromotionActive(_promotion);
 
         _promotions[_promotionId].numberOfEpochs = uint8(_getCurrentEpochId(_promotion));

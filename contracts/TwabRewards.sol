@@ -32,7 +32,7 @@ contract TwabRewards is ITwabRewards {
 
     /// @notice Keeps track of claimed rewards per user.
     /// @dev _claimedEpochs[promotionId][user] => claimedEpochs
-    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 255 epochs.
+    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
     mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */

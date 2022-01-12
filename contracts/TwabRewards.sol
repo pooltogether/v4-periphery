@@ -96,9 +96,9 @@ contract TwabRewards is ITwabRewards {
     /// @inheritdoc ITwabRewards
     function createPromotion(
         IERC20 _token,
-        uint128 _startTimestamp,
+        uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint56 _epochDuration,
+        uint64 _epochDuration,
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
         require(_tokensPerEpoch > 0, "TwabRewards/tokens-not-zero");
@@ -110,11 +110,11 @@ contract TwabRewards is ITwabRewards {
 
         _promotions[_nextPromotionId] = Promotion(
             msg.sender,
-            _token,
             _startTimestamp,
-            _tokensPerEpoch,
+            _numberOfEpochs,
             _epochDuration,
-            _numberOfEpochs
+            _token,
+            _tokensPerEpoch
         );
 
         uint256 _amount;
@@ -181,11 +181,7 @@ contract TwabRewards is ITwabRewards {
             _extendedAmount = _numberOfEpochs * _promotion.tokensPerEpoch;
         }
 
-        _promotion.token.safeTransferFrom(
-            msg.sender,
-            address(this),
-            _extendedAmount
-        );
+        _promotion.token.safeTransferFrom(msg.sender, address(this), _extendedAmount);
 
         emit PromotionExtended(_promotionId, _numberOfEpochs);
 
@@ -361,8 +357,8 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion,
         uint8 _epochId
     ) internal view returns (uint256) {
-        uint56 _epochDuration = _promotion.epochDuration;
-        uint64 _epochStartTimestamp = uint64(_promotion.startTimestamp) + (_epochDuration * _epochId);
+        uint64 _epochDuration = _promotion.epochDuration;
+        uint64 _epochStartTimestamp = _promotion.startTimestamp + (_epochDuration * _epochId);
         uint64 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
         require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
@@ -370,8 +366,8 @@ contract TwabRewards is ITwabRewards {
 
         uint256 _averageBalance = ticket.getAverageBalanceBetween(
             _user,
-            uint64(_epochStartTimestamp),
-            uint64(_epochEndTimestamp)
+            _epochStartTimestamp,
+            _epochEndTimestamp
         );
 
         if (_averageBalance > 0) {

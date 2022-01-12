@@ -13,20 +13,19 @@ interface ITwabRewards {
     /**
         @notice Struct to keep track of each promotion's settings.
         @param creator Addresss of the promotion creator
-        @param ticket Prize Pool ticket address
-        @param token Address of the token to be distributed as reward
         @param startTimestamp Timestamp at which the promotion starts
-        @param tokensPerEpoch Number of tokens to be distributed per epoch
-        @param epochDuration Duration of one epoch in seconds
         @param numberOfEpochs Number of epochs the promotion will last for
+        @param epochDuration Duration of one epoch in seconds
+        @param token Address of the token to be distributed as reward
+        @param tokensPerEpoch Number of tokens to be distributed per epoch
      */
     struct Promotion {
         address creator;
-        IERC20 token;
-        uint128 startTimestamp;
-        uint256 tokensPerEpoch;
-        uint56 epochDuration;
+        uint64 startTimestamp;
         uint8 numberOfEpochs;
+        uint64 epochDuration;
+        IERC20 token;
+        uint256 tokensPerEpoch;
     }
 
     /**
@@ -45,9 +44,9 @@ interface ITwabRewards {
     */
     function createPromotion(
         IERC20 _token,
-        uint128 _startTimestamp,
+        uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint56 _epochDuration,
+        uint64 _epochDuration,
         uint8 _numberOfEpochs
     ) external returns (uint256);
 

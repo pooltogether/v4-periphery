@@ -374,7 +374,9 @@ describe('TwabRewards', () => {
         it('should fail to extend a promotion over the epochs limit', async () => {
             await createPromotion();
 
-            await expect(twabRewards.extendPromotion(1, 244)).to.be.reverted;
+            await expect(twabRewards.extendPromotion(1, 244)).to.be.revertedWith(
+                'TwabRewards/epochs-over-limit',
+            );
         });
     });
 

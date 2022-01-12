@@ -148,7 +148,14 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         _requirePromotionActive(_promotion);
 
-        uint8 _extendedNumberOfEpochs = _promotion.numberOfEpochs + _numberOfEpochs;
+        uint8 _currentNumberOfEpochs = _promotion.numberOfEpochs;
+
+        require(
+            _numberOfEpochs < (type(uint8).max - _currentNumberOfEpochs),
+            "TwabRewards/epochs-over-limit"
+        );
+
+        uint8 _extendedNumberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
         _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
 
         uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;

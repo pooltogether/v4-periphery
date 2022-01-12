@@ -130,6 +130,14 @@ describe('TwabRewards', () => {
             expect(secondPromotion.numberOfEpochs).to.equal(numberOfEpochs);
         });
 
+        it('should succeed to create a new promotion even if start timestamp is before block timestamp', async () => {
+            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
+
+            await expect(createPromotion(ticket.address, numberOfEpochs, startTimestamp))
+                .to.emit(twabRewards, 'PromotionCreated')
+                .withArgs(1);
+        });
+
         it('should fail to create a new promotion if ticket is address zero', async () => {
             await expect(createPromotion(AddressZero)).to.be.revertedWith(
                 'TwabRewards/ticket-not-zero-address',
@@ -142,14 +150,6 @@ describe('TwabRewards', () => {
             await expect(createPromotion(randomWallet.address)).to.be.revertedWith(
                 'TwabRewards/invalid-ticket',
             );
-        });
-
-        it('should fail to create a new promotion if start timestamp is before block timestamp', async () => {
-            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
-
-            await expect(
-                createPromotion(ticket.address, numberOfEpochs, startTimestamp),
-            ).to.be.revertedWith('TwabRewards/past-start-timestamp');
         });
 
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {

@@ -272,10 +272,6 @@ describe('TwabRewards', () => {
                 let latestEpochId = (await twabRewards.callStatic.getPromotion(promotionId))
                     .numberOfEpochs;
 
-                if (latestEpochId !== 0) {
-                    latestEpochId--;
-                }
-
                 expect(latestEpochId).to.equal(
                     await twabRewards.callStatic.getCurrentEpochId(promotionId),
                 );
@@ -344,10 +340,6 @@ describe('TwabRewards', () => {
                 .withArgs(promotionId, wallet1.address, transferredAmount);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
-
-            expect(
-                (await twabRewards.callStatic.getPromotion(promotionId)).numberOfEpochs - 1,
-            ).to.equal(await twabRewards.callStatic.getCurrentEpochId(promotionId));
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
@@ -534,11 +526,11 @@ describe('TwabRewards', () => {
             expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(0);
         });
 
-        it('should return the last active epoch id if the promotion is inactive', async () => {
+        it('should return the epoch id for the current timestamp', async () => {
             await createPromotion();
-            await increaseTime(epochDuration * 12);
+            await increaseTime(epochDuration * 13);
 
-            expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(numberOfEpochs - 1);
+            expect(await twabRewards.callStatic.getCurrentEpochId(1)).to.equal(13);
         });
 
         it('should revert if promotion id passed is inexistent', async () => {

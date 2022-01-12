@@ -282,7 +282,7 @@ contract TwabRewards is ITwabRewards {
         unchecked {
             // promotionEndTimestamp > block.timestamp
             require(
-                _getPromotionEndTimestamp(_promotion) >= block.timestamp,
+                _getPromotionEndTimestamp(_promotion) > block.timestamp,
                 "TwabRewards/promotion-inactive"
             );
         }
@@ -317,24 +317,19 @@ contract TwabRewards is ITwabRewards {
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
         @dev We return the current epoch id if the promotion has not ended.
-        Otherwise, we return the last epoch id or 0 if the promotion has not started.
+        If the current time is before the promotion start timestamp, we return 0.
+        Otherwise, we return the epoch id at the current timestamp. This could be greater than the number of epochs of the promotion.
         @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
-
         uint256 _currentEpochId;
 
         if (block.timestamp > _promotion.startTimestamp) {
-            _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
-        }
-
-        if (_currentEpochId > 0) {
-            if (_currentEpochId >= _promotion.numberOfEpochs) {
-                _currentEpochId = _promotion.numberOfEpochs - uint8(1);
+            unchecked {
+                // elapsedTimestamp / epochDurationTimestamp
+                _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
             }
-        } else {
-            _currentEpochId = 0;
         }
 
         return _currentEpochId;

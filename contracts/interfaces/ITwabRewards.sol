@@ -13,21 +13,19 @@ interface ITwabRewards {
     /**
         @notice Struct to keep track of each promotion's settings.
         @param creator Addresss of the promotion creator
-        @param ticket Prize Pool ticket address for which the promotion has been created
-        @param token Address of the token to be distributed as reward
         @param startTimestamp Timestamp at which the promotion starts
-        @param tokensPerEpoch Number of tokens to be distributed per epoch
-        @param epochDuration Duration of one epoch in seconds
         @param numberOfEpochs Number of epochs the promotion will last for
+        @param epochDuration Duration of one epoch in seconds
+        @param token Address of the token to be distributed as reward
+        @param tokensPerEpoch Number of tokens to be distributed per epoch
      */
     struct Promotion {
         address creator;
-        address ticket;
-        IERC20 token;
-        uint128 startTimestamp;
-        uint256 tokensPerEpoch;
-        uint56 epochDuration;
+        uint64 startTimestamp;
         uint8 numberOfEpochs;
+        uint64 epochDuration;
+        IERC20 token;
+        uint256 tokensPerEpoch;
     }
 
     /**
@@ -37,7 +35,6 @@ interface ITwabRewards {
         So the first promotion will have id 1, the second 2, etc.
         @dev The transaction will revert if the amount of reward tokens provided is not equal to `_tokensPerEpoch * _numberOfEpochs`.
         This scenario could happen if the token supplied is a fee on transfer one.
-        @param _ticket Prize Pool ticket address for which the promotion is created
         @param _token Address of the token to be distributed
         @param _startTimestamp Timestamp at which the promotion starts
         @param _tokensPerEpoch Number of tokens to be distributed per epoch
@@ -46,11 +43,10 @@ interface ITwabRewards {
         @return Id of the newly created promotion
     */
     function createPromotion(
-        address _ticket,
         IERC20 _token,
-        uint128 _startTimestamp,
+        uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint56 _epochDuration,
+        uint64 _epochDuration,
         uint8 _numberOfEpochs
     ) external returns (uint256);
 

@@ -202,7 +202,7 @@ contract TwabRewards is ITwabRewards {
         uint8 _currentNumberOfEpochs = _promotion.numberOfEpochs;
 
         require(
-            _numberOfEpochs < (type(uint8).max - _currentNumberOfEpochs),
+            _numberOfEpochs <= (type(uint8).max - _currentNumberOfEpochs),
             "TwabRewards/epochs-over-limit"
         );
 

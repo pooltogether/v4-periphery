@@ -132,22 +132,6 @@ describe('TwabRewards', () => {
             expect(promotion.rewardsUnclaimed).to.equal(tokensPerEpoch.mul(numberOfEpochs));
         });
 
-        it('should succeed to create a new promotion even if start timestamp is before block timestamp', async () => {
-            const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
-
-            await expect(
-                createPromotion(
-                    rewardToken,
-                    tokensPerEpoch,
-                    epochDuration,
-                    numberOfEpochs,
-                    startTimestamp,
-                ),
-            )
-                .to.emit(twabRewards, 'PromotionCreated')
-                .withArgs(1);
-        });
-
         it('should fail to create a new promotion if reward token is a fee on transfer token', async () => {
             await expect(createPromotion(mockRewardToken)).to.be.revertedWith(
                 'TwabRewards/promo-amount-diff',
@@ -376,21 +360,28 @@ describe('TwabRewards', () => {
             ).to.be.revertedWith('TwabRewards/only-promo-creator');
         });
 
-        it('should fail if grace period is not over', async () => {
-            await createPromotion();
-
-            await increaseTime(epochDuration * 12);
-
-            await expect(
-                twabRewards.connect(wallet2).destroyPromotion(1, wallet1.address),
-            ).to.be.revertedWith('TwabRewards/only-promo-creator');
-        });
-
         it('should fail if promotion is still active', async () => {
             await createPromotion();
 
             await expect(twabRewards.destroyPromotion(1, wallet1.address)).to.be.revertedWith(
                 'TwabRewards/promotion-active',
+            );
+        });
+
+        it('should fail if trying to destroy a promotion that was just created', async () => {
+            const startTimestamp =
+                (await ethers.provider.getBlock('latest')).timestamp - (epochDuration * 21);
+
+            await createPromotion(
+                rewardToken,
+                tokensPerEpoch,
+                epochDuration,
+                numberOfEpochs,
+                startTimestamp,
+            );
+
+            await expect(twabRewards.destroyPromotion(1, wallet1.address)).to.be.revertedWith(
+                'TwabRewards/grace-period-active',
             );
         });
     });
@@ -483,7 +474,7 @@ describe('TwabRewards', () => {
 
             for (let index = 0; index < numberOfEpochs; index++) {
                 if (index > 0) {
-                    await increaseTime(epochDuration.toNumber());
+                    await increaseTime(epochDuration);
                 }
 
                 expect(await twabRewards.getRemainingRewards(promotionId)).to.equal(
@@ -501,12 +492,6 @@ describe('TwabRewards', () => {
             await increaseTime(epochDuration * 13);
 
             expect(await twabRewards.getRemainingRewards(promotionId)).to.equal(0);
-        });
-
-        it('should revert if promotion id passed is inexistent', async () => {
-            await expect(twabRewards.callStatic.getPromotion(1)).to.be.revertedWith(
-                'TwabRewards/invalid-promotion',
-            );
         });
     });
 

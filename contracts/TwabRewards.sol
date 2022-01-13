@@ -109,7 +109,7 @@ contract TwabRewards is ITwabRewards {
         IERC20 _token,
         uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint64 _epochDuration,
+        uint48 _epochDuration,
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
         require(_tokensPerEpoch > 0, "TwabRewards/tokens-not-zero");
@@ -130,6 +130,7 @@ contract TwabRewards is ITwabRewards {
             _startTimestamp,
             _numberOfEpochs,
             _epochDuration,
+            uint48(block.timestamp),
             _token,
             _tokensPerEpoch,
             _amount
@@ -176,6 +177,11 @@ contract TwabRewards is ITwabRewards {
         require(
             (_getPromotionEndTimestamp(_promotion) + _gracePeriod) < block.timestamp,
             "TwabRewards/promotion-active"
+        );
+
+        require(
+            (_promotion.createdAt + _gracePeriod) < block.timestamp,
+            "TwabRewards/grace-period-active"
         );
 
         uint256 _rewardsUnclaimed = _promotion.rewardsUnclaimed;
@@ -360,7 +366,8 @@ contract TwabRewards is ITwabRewards {
         returns (uint256)
     {
         unchecked {
-            return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+            return
+                _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
         }
     }
 
@@ -379,7 +386,9 @@ contract TwabRewards is ITwabRewards {
         if (block.timestamp > _promotion.startTimestamp) {
             unchecked {
                 // elapsedTimestamp / epochDurationTimestamp
-                _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+                _currentEpochId =
+                    (block.timestamp - _promotion.startTimestamp) /
+                    _promotion.epochDuration;
             }
         }
 

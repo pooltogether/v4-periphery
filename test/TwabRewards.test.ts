@@ -3,7 +3,7 @@ import TicketInterface from '@pooltogether/v4-core/abis/ITicket.json';
 import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { Contract, ContractFactory } from 'ethers';
+import { BigNumber, Contract, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
@@ -44,7 +44,6 @@ describe('TwabRewards', () => {
     beforeEach(async () => {
         rewardToken = await erc20MintableFactory.deploy('Reward', 'REWA');
         twabRewards = await twabRewardsFactory.deploy();
-        ticket = await erc20MintableFactory.deploy('Ticket', 'TICK');
 
         ticket = await ticketFactory.deploy('Ticket', 'TICK', 18, wallet1.address);
 
@@ -59,8 +58,10 @@ describe('TwabRewards', () => {
 
     const createPromotion = async (
         ticketAddress: string = ticket.address,
-        epochsNumber: number = numberOfEpochs,
         token: Contract | MockContract = rewardToken,
+        epochTokens: BigNumber = tokensPerEpoch,
+        epochTimestamp: number = epochDuration,
+        epochsNumber: number = numberOfEpochs,
         startTimestamp?: number,
     ) => {
         if (token.mock) {
@@ -86,8 +87,8 @@ describe('TwabRewards', () => {
             ticketAddress,
             token.address,
             createPromotionTimestamp,
-            tokensPerEpoch,
-            epochDuration,
+            epochTokens,
+            epochTimestamp,
             epochsNumber,
         );
     };
@@ -147,15 +148,24 @@ describe('TwabRewards', () => {
         it('should succeed to create a new promotion even if start timestamp is before block timestamp', async () => {
             const startTimestamp = (await ethers.provider.getBlock('latest')).timestamp - 1;
 
-            await expect(createPromotion(ticket.address, numberOfEpochs, rewardToken, startTimestamp))
+            await expect(
+                createPromotion(
+                    ticket.address,
+                    rewardToken,
+                    tokensPerEpoch,
+                    epochDuration,
+                    numberOfEpochs,
+                    startTimestamp,
+                ),
+            )
                 .to.emit(twabRewards, 'PromotionCreated')
                 .withArgs(1);
         });
 
         it('should fail to create a new promotion if reward token is a fee on transfer token', async () => {
-            await expect(
-                createPromotion(ticket.address, numberOfEpochs, mockRewardToken),
-            ).to.be.revertedWith('TwabRewards/promo-amount-diff');
+            await expect(createPromotion(ticket.address, mockRewardToken)).to.be.revertedWith(
+                'TwabRewards/promo-amount-diff',
+            );
         });
 
         it('should fail to create a new promotion if ticket is address zero', async () => {
@@ -172,8 +182,28 @@ describe('TwabRewards', () => {
             );
         });
 
+        it('should fail to create a new promotion if tokens per epoch is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, toWei('0')),
+            ).to.be.revertedWith('TwabRewards/tokens-not-zero');
+        });
+
+        it('should fail to create a new promotion if epoch duration is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, 0),
+            ).to.be.revertedWith('TwabRewards/duration-not-zero');
+        });
+
+        it('should fail to create a new promotion if number of epochs is zero', async () => {
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 0),
+            ).to.be.revertedWith('TwabRewards/epochs-not-zero');
+        });
+
         it('should fail to create a new promotion if number of epochs exceeds limit', async () => {
-            await expect(createPromotion(ticket.address, 256)).to.be.reverted;
+            await expect(
+                createPromotion(ticket.address, rewardToken, tokensPerEpoch, epochDuration, 256),
+            ).to.be.reverted;
         });
     });
 
@@ -212,7 +242,7 @@ describe('TwabRewards', () => {
         it('should cancel promotion and still allow users to claim their rewards', async () => {
             const promotionId = 1;
             const epochNumber = 6;
-            const epochIds = ['0', '1', '2', '3', '4', '5'];
+            const epochIds = [0, 1, 2, 3, 4, 5];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -265,7 +295,7 @@ describe('TwabRewards', () => {
             await createPromotion();
 
             await expect(
-                twabRewards.connect(wallet2).cancelPromotion(1, AddressZero),
+                twabRewards.connect(wallet2).cancelPromotion(1, wallet1.address),
             ).to.be.revertedWith('TwabRewards/only-promo-creator');
         });
 
@@ -329,6 +359,12 @@ describe('TwabRewards', () => {
             );
         });
 
+        it('should fail to extend a promotion by zero epochs', async () => {
+            await expect(twabRewards.extendPromotion(1, 0)).to.be.revertedWith(
+                'TwabRewards/epochs-not-zero',
+            );
+        });
+
         it('should fail to extend an inexistent promotion', async () => {
             await expect(twabRewards.extendPromotion(1, 6)).to.be.revertedWith(
                 'TwabRewards/invalid-promotion',
@@ -338,7 +374,9 @@ describe('TwabRewards', () => {
         it('should fail to extend a promotion over the epochs limit', async () => {
             await createPromotion();
 
-            await expect(twabRewards.extendPromotion(1, 244)).to.be.reverted;
+            await expect(twabRewards.extendPromotion(1, 244)).to.be.revertedWith(
+                'TwabRewards/epochs-over-limit',
+            );
         });
     });
 
@@ -408,7 +446,7 @@ describe('TwabRewards', () => {
     describe('getRewardsAmount()', async () => {
         it('should get rewards amount for one or more epochs', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -448,7 +486,7 @@ describe('TwabRewards', () => {
 
         it('should decrease rewards amount if user delegate in the middle of an epoch', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const halfEpoch = epochDuration / 2;
 
             const wallet2Amount = toWei('750');
@@ -554,7 +592,7 @@ describe('TwabRewards', () => {
         it('should claim rewards for one or more epochs', async () => {
             const promotionId = 1;
             const epochNumber = 3;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
 
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
@@ -597,7 +635,7 @@ describe('TwabRewards', () => {
         it('should decrease rewards amount claimed if user delegate in the middle of an epoch', async () => {
             const promotionId = 1;
             const epochNumber = 3;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const halfEpoch = epochDuration / 2;
 
             const wallet2Amount = toWei('750');
@@ -651,7 +689,7 @@ describe('TwabRewards', () => {
 
         it('should claim 0 rewards if user has no tickets delegated to him', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const wallet2Amount = toWei('750');
             const zeroAmount = toWei('0');
 
@@ -669,7 +707,7 @@ describe('TwabRewards', () => {
 
         it('should return 0 if ticket average total supplies is 0', async () => {
             const promotionId = 1;
-            const epochIds = ['0', '1', '2'];
+            const epochIds = [0, 1, 2];
             const zeroAmount = toWei('0');
 
             await createPromotion();

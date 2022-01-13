@@ -32,7 +32,7 @@ contract TwabRewards is ITwabRewards {
 
     /// @notice Keeps track of claimed rewards per user.
     /// @dev _claimedEpochs[promotionId][user] => claimedEpochs
-    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 255 epochs.
+    /// @dev We pack epochs claimed by a user into a uint256. So we can't store more than 256 epochs.
     mapping(uint256 => mapping(address => uint256)) internal _claimedEpochs;
 
     /* ============ Events ============ */
@@ -237,7 +237,11 @@ contract TwabRewards is ITwabRewards {
         uint256[] memory _rewardsAmount = new uint256[](_epochIdsLength);
 
         for (uint256 index = 0; index < _epochIdsLength; index++) {
-            _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);
+            if (_isClaimedEpoch(_claimedEpochs[_promotionId][_user], uint8(index))) {
+                _rewardsAmount[index] = 0;
+            } else {
+                _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);
+            }
         }
 
         return _rewardsAmount;
@@ -278,8 +282,7 @@ contract TwabRewards is ITwabRewards {
         unchecked {
             // promotionEndTimestamp > block.timestamp
             require(
-                (_promotion.startTimestamp +
-                    (_promotion.epochDuration * _promotion.numberOfEpochs)) > block.timestamp,
+                _getPromotionEndTimestamp(_promotion) > block.timestamp,
                 "TwabRewards/promotion-inactive"
             );
         }
@@ -298,26 +301,45 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
+        @notice Compute promotion end timestamp.
+        @param _promotion Promotion to compute end timestamp for
+        @return Promotion end timestamp
+    */
+    function _getPromotionEndTimestamp(Promotion memory _promotion)
+        internal
+        pure
+        returns (uint256)
+    {
+        return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+    }
+
+    /**
         @notice Get the current epoch id of a promotion.
         @dev Epoch ids and their boolean values are tightly packed and stored in a uint256, so epoch id starts at 0.
-        @dev We calculate the current epoch id if the promotion has started. Otherwise, we return 0.
+        @dev We return the current epoch id if the promotion has not ended.
+        If the current time is before the promotion start timestamp, we return 0.
+        Otherwise, we return the epoch id at the current timestamp. This could be greater than the number of epochs of the promotion.
         @param _promotion Promotion to get current epoch for
         @return Epoch id
      */
     function _getCurrentEpochId(Promotion memory _promotion) internal view returns (uint256) {
+        uint256 _currentEpochId;
+
         if (block.timestamp > _promotion.startTimestamp) {
             unchecked {
                 // elapsedTimestamp / epochDurationTimestamp
-                return (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+                _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
             }
         }
 
-        return 0;
+        return _currentEpochId;
     }
 
     /**
         @notice Get reward amount for a specific user.
-        @dev Rewards can only be claimed once the epoch is over.
+        @dev Rewards can only be calculated once the epoch is over.
+        @dev Will revert if `_epochId` is over the total number of epochs or if epoch is not over.
+        @dev Will return 0 if the user average balance of tickets is 0.
         @param _user User to get reward amount for
         @param _promotion Promotion from which the epoch is
         @param _epochId Epoch id to get reward amount for
@@ -333,6 +355,7 @@ contract TwabRewards is ITwabRewards {
         uint64 _epochEndTimestamp = _epochStartTimestamp + _epochDuration;
 
         require(block.timestamp >= _epochEndTimestamp, "TwabRewards/epoch-not-over");
+        require(_epochId < _promotion.numberOfEpochs, "TwabRewards/invalid-epoch-id");
 
         ITicket _ticket = ITicket(_promotion.ticket);
 
@@ -366,9 +389,7 @@ contract TwabRewards is ITwabRewards {
         @return Amount of tokens left to be rewarded
      */
     function _getRemainingRewards(Promotion memory _promotion) internal view returns (uint256) {
-        uint256 _currentEpochId = _getCurrentEpochId(_promotion);
-
-        if (_currentEpochId >= _promotion.numberOfEpochs) {
+        if (block.timestamp > _getPromotionEndTimestamp(_promotion)) {
             return 0;
         }
 
@@ -376,7 +397,7 @@ contract TwabRewards is ITwabRewards {
             // _tokensPerEpoch * _numberOfEpochsLeft
             return
                 _promotion.tokensPerEpoch *
-                (_promotion.numberOfEpochs - _currentEpochId);
+                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
         }
     }
 

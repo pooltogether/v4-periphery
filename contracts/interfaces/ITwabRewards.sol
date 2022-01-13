@@ -109,6 +109,9 @@ interface ITwabRewards {
 
     /**
         @notice Get amount of tokens to be rewarded for a given epoch.
+        @dev Rewards amount can only be retrieved for epochs that are over.
+        @dev Will revert if `_epochId` is over the total number of epochs or if epoch is not over.
+        @dev Will return 0 if the user average balance of tickets is 0.
         @dev Will be 0 if user has already claimed rewards for the epoch.
         @param _user Address of the user to get amount of rewards for
         @param _promotionId Promotion id from which the epoch is

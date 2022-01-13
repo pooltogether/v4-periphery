@@ -370,7 +370,7 @@ describe('TwabRewards', () => {
 
         it('should fail if trying to destroy a promotion that was just created', async () => {
             const startTimestamp =
-                (await ethers.provider.getBlock('latest')).timestamp - (epochDuration * 21);
+                (await ethers.provider.getBlock('latest')).timestamp - epochDuration * 21;
 
             await createPromotion(
                 rewardToken,

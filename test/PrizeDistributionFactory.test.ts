@@ -14,7 +14,6 @@ const { parseEther: toWei } = utils;
 describe('PrizeDistributionFactory', () => {
     let wallet1: SignerWithAddress;
     let wallet2: SignerWithAddress;
-    let wallet3: SignerWithAddress;
 
     let prizeDistributionFactory: Contract;
     let maxPickCost: BigNumber;
@@ -27,7 +26,7 @@ describe('PrizeDistributionFactory', () => {
     let ticket: MockContract;
 
     before(async () => {
-        [wallet1, wallet2, wallet3] = await getSigners();
+        [wallet1, wallet2] = await getSigners();
         prizeDistributionFactoryFactory = await ethers.getContractFactory(
             'PrizeDistributionFactory',
         );
@@ -234,43 +233,57 @@ describe('PrizeDistributionFactory', () => {
     describe('calculatePrizeDistribution()', () => {
         it('should require that the passed total supply is gte ticket total supply', async () => {
             await setupMocks({}, {}, toWei('100'));
+
             await expect(
                 prizeDistributionFactory.calculatePrizeDistribution(1, toWei('10')),
-            ).be.revertedWith('PDF/invalid-network-supply');
+            ).to.be.revertedWith('PDF/invalid-network-supply');
         });
 
         it('should copy in all of the prize tier values', async () => {
             await setupMocks();
-            expect(
-                toObject(
-                    await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('1000')),
-                ),
-            ).to.deep.include(createPrizeDistribution({ matchCardinality: 4 }));
+
+            const prizeDistributionObject = toObject(
+                await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('1000')),
+            );
+
+            const prizeDistribution = createPrizeDistribution({ matchCardinality: 4 });
+
+            expect(JSON.stringify(prizeDistributionObject)).to.equal(
+                JSON.stringify(prizeDistribution),
+            );
         });
 
         it('ensure minimum cardinality is 1', async () => {
             await setupMocks({}, {}, toWei('0'));
-            expect(
-                toObject(await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('0'))),
-            ).to.deep.include(
-                createPrizeDistribution({
-                    matchCardinality: 1,
-                    numberOfPicks: toWei('0'),
-                }),
+
+            const prizeDistributionObject = toObject(
+                await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('0')),
+            );
+
+            const prizeDistribution = createPrizeDistribution({
+                matchCardinality: 1,
+                numberOfPicks: toWei('0'),
+            });
+
+            expect(JSON.stringify(prizeDistributionObject)).to.equal(
+                JSON.stringify(prizeDistribution),
             );
         });
 
         it('should handle when tickets equal total supply', async () => {
             await setupMocks({}, {}, toWei('100'));
-            expect(
-                toObject(
-                    await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('100')),
-                ),
-            ).to.deep.include(
-                createPrizeDistribution({
-                    matchCardinality: 3,
-                    numberOfPicks: BigNumber.from(64),
-                }),
+
+            const prizeDistributionObject = toObject(
+                await prizeDistributionFactory.calculatePrizeDistribution(1, toWei('100')),
+            );
+
+            const prizeDistribution = createPrizeDistribution({
+                matchCardinality: 3,
+                numberOfPicks: BigNumber.from(64),
+            });
+
+            expect(JSON.stringify(prizeDistributionObject)).to.equal(
+                JSON.stringify(prizeDistribution),
             );
         });
     });
@@ -286,7 +299,7 @@ describe('PrizeDistributionFactory', () => {
 
         it('requires the manager or owner', async () => {
             await expect(
-                prizeDistributionFactory.connect(wallet3).pushPrizeDistribution(1, toWei('1000')),
+                prizeDistributionFactory.connect(wallet2).pushPrizeDistribution(1, toWei('1000')),
             ).to.be.revertedWith('Manageable/caller-not-manager-or-owner');
         });
     });
@@ -302,7 +315,7 @@ describe('PrizeDistributionFactory', () => {
 
         it('requires the owner', async () => {
             await expect(
-                prizeDistributionFactory.connect(wallet3).setPrizeDistribution(1, toWei('1000')),
+                prizeDistributionFactory.connect(wallet2).setPrizeDistribution(1, toWei('1000')),
             ).to.be.revertedWith('Ownable/caller-not-owner');
         });
     });

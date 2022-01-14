@@ -56,7 +56,7 @@ interface ITwabRewards {
 
     /**
         @notice End currently active promotion and send promotion tokens back to the creator.
-        @dev Will only send back tokens from the epochs that have not yet started.
+        @dev Will only send back tokens from the epochs that have not completed.
         @param _promotionId Promotion id to end
         @param _to Address that will receive the remaining tokens if there are any left
         @return true if operation was successful

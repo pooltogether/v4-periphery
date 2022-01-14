@@ -182,7 +182,7 @@ describe('TwabRewards', () => {
 
                 await expect(twabRewards.endPromotion(promotionId, wallet1.address))
                     .to.emit(twabRewards, 'PromotionEnded')
-                    .withArgs(promotionId, wallet1.address, transferredAmount);
+                    .withArgs(promotionId, wallet1.address, transferredAmount, index);
 
                 expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
 
@@ -212,7 +212,7 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.endPromotion(promotionId, wallet1.address))
                 .to.emit(twabRewards, 'PromotionEnded')
-                .withArgs(promotionId, wallet1.address, promotionAmount);
+                .withArgs(promotionId, wallet1.address, promotionAmount, 0);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(promotionAmount);
 
@@ -253,7 +253,7 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.endPromotion(promotionId, wallet1.address))
                 .to.emit(twabRewards, 'PromotionEnded')
-                .withArgs(promotionId, wallet1.address, transferredAmount);
+                .withArgs(promotionId, wallet1.address, transferredAmount, epochNumber);
 
             expect(await rewardToken.balanceOf(wallet1.address)).to.equal(transferredAmount);
 

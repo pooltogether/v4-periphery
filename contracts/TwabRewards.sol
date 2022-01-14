@@ -55,8 +55,14 @@ contract TwabRewards is ITwabRewards {
         @param promotionId Id of the promotion being ended
         @param recipient Address of the recipient that will receive the remaining rewards
         @param amount Amount of tokens transferred to the recipient
+        @param epochNumber Epoch number at which the promotion ended
     */
-    event PromotionEnded(uint256 indexed promotionId, address indexed recipient, uint256 amount);
+    event PromotionEnded(
+        uint256 indexed promotionId,
+        address indexed recipient,
+        uint256 amount,
+        uint8 epochNumber
+    );
 
     /**
         @notice Emitted when a promotion is destroyed.
@@ -157,12 +163,13 @@ contract TwabRewards is ITwabRewards {
         _requirePromotionCreator(_promotion);
         _requirePromotionActive(_promotion);
 
-        _promotions[_promotionId].numberOfEpochs = uint8(_getCurrentEpochId(_promotion));
+        uint8 _epochNumber = uint8(_getCurrentEpochId(_promotion));
+        _promotions[_promotionId].numberOfEpochs = _epochNumber;
 
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
         _promotion.token.safeTransfer(_to, _remainingRewards);
 
-        emit PromotionEnded(_promotionId, _to, _remainingRewards);
+        emit PromotionEnded(_promotionId, _to, _remainingRewards, _epochNumber);
 
         return true;
     }

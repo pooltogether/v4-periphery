@@ -6,10 +6,9 @@ import { expect } from 'chai';
 import { BigNumber, Contract, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { increaseTime as increaseTimeUtil } from './utils/increaseTime';
+import { increaseTime as increaseTimeUtil, setTime as setTimeUtil } from './utils/increaseTime';
 
-// We add 1 cause promotion starts a latest timestamp + 1
-const increaseTime = (time: number) => increaseTimeUtil(provider, time + 1);
+const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { parseEther: toWei } = utils;
@@ -32,6 +31,8 @@ describe('TwabRewards', () => {
     let mockTicket: MockContract;
 
     let createPromotionTimestamp: number;
+
+    const setTime = (time: number) => setTimeUtil(provider, createPromotionTimestamp + time);
 
     before(async () => {
         [wallet1, wallet2, wallet3] = await getSigners();
@@ -81,7 +82,7 @@ describe('TwabRewards', () => {
         if (startTimestamp) {
             createPromotionTimestamp = startTimestamp;
         } else {
-            createPromotionTimestamp = (await ethers.provider.getBlock('latest')).timestamp + 1;
+            createPromotionTimestamp = (await provider.getBlock('latest')).timestamp;
         }
 
         return await twabRewards.createPromotion(
@@ -602,15 +603,12 @@ describe('TwabRewards', () => {
 
             await createPromotion();
 
-            const timestampAfterCreate = (await ethers.provider.getBlock('latest')).timestamp;
-            const elapsedTimeCreate = timestampAfterCreate - timestampBeforeCreate;
-
             // We adjust time to delegate right in the middle of epoch 3
-            await increaseTime(epochDuration * 2 + halfEpoch - (elapsedTimeCreate - 1));
+            await setTime(epochDuration * 2 + halfEpoch - 1);
 
             await ticket.connect(wallet3).delegate(wallet2.address);
 
-            await increaseTime(halfEpoch + 1);
+            await increaseTime(halfEpoch);
 
             const wallet2RewardsAmount = await twabRewards.callStatic.getRewardsAmount(
                 wallet2.address,
@@ -852,11 +850,11 @@ describe('TwabRewards', () => {
             await createPromotion();
 
             // We adjust time to delegate right in the middle of epoch 3
-            await increaseTime(epochDuration * 2 + halfEpoch - 2);
+            await setTime((epochDuration * 2) + halfEpoch - 1)
 
             await ticket.connect(wallet3).delegate(wallet2.address);
 
-            await increaseTime(halfEpoch + 1);
+            await increaseTime(halfEpoch);
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')

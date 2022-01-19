@@ -131,16 +131,16 @@ contract TwabRewards is ITwabRewards {
             _amount = _tokensPerEpoch * _numberOfEpochs;
         }
 
-        _promotions[_nextPromotionId] = Promotion(
-            msg.sender,
-            _startTimestamp,
-            _numberOfEpochs,
-            _epochDuration,
-            uint48(block.timestamp),
-            _token,
-            _tokensPerEpoch,
-            _amount
-        );
+        _promotions[_nextPromotionId] = Promotion({
+            creator: msg.sender,
+            startTimestamp: _startTimestamp,
+            numberOfEpochs: _numberOfEpochs,
+            epochDuration: _epochDuration,
+            createdAt: uint48(block.timestamp),
+            token: _token,
+            tokensPerEpoch: _tokensPerEpoch,
+            rewardsUnclaimed: _amount
+        });
 
         uint256 _beforeBalance = _token.balanceOf(address(this));
 

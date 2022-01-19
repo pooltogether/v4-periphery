@@ -364,7 +364,7 @@ describe('TwabRewards', () => {
             await createPromotion();
 
             await expect(twabRewards.destroyPromotion(1, wallet1.address)).to.be.revertedWith(
-                'TwabRewards/promotion-active',
+                'TwabRewards/grace-period-active',
             );
         });
 

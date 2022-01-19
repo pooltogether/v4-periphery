@@ -181,15 +181,16 @@ contract TwabRewards is ITwabRewards {
         Promotion memory _promotion = _getPromotion(_promotionId);
         _requirePromotionCreator(_promotion);
 
-        require(
-            (_getPromotionEndTimestamp(_promotion) + GRACE_PERIOD) < block.timestamp,
-            "TwabRewards/promotion-active"
-        );
+        uint256 _promotionEndTimestamp = _getPromotionEndTimestamp(_promotion);
+        uint256 _promotionCreatedAt = _promotion.createdAt;
 
-        require(
-            (_promotion.createdAt + GRACE_PERIOD) < block.timestamp,
-            "TwabRewards/grace-period-active"
-        );
+        uint256 _gracePeriodEndTimestamp = (
+            _promotionEndTimestamp < _promotionCreatedAt
+                ? _promotionCreatedAt
+                : _promotionEndTimestamp
+        ) + GRACE_PERIOD;
+
+        require(block.timestamp >= _gracePeriodEndTimestamp, "TwabRewards/grace-period-active");
 
         uint256 _rewardsUnclaimed = _promotion.rewardsUnclaimed;
         delete _promotions[_promotionId];

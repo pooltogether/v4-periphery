@@ -219,8 +219,7 @@ contract TwabRewards is ITwabRewards {
             "TwabRewards/epochs-over-limit"
         );
 
-        uint8 _extendedNumberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
-        _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
+        _promotions[_promotionId].numberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
 
         uint256 _amount;
 
@@ -392,7 +391,6 @@ contract TwabRewards is ITwabRewards {
 
         if (block.timestamp > _promotion.startTimestamp) {
             unchecked {
-                // elapsedTimestamp / epochDurationTimestamp
                 _currentEpochId =
                     (block.timestamp - _promotion.startTimestamp) /
                     _promotion.epochDuration;
@@ -459,7 +457,6 @@ contract TwabRewards is ITwabRewards {
         }
 
         unchecked {
-            // _tokensPerEpoch * _numberOfEpochsLeft
             return
                 _promotion.tokensPerEpoch *
                 (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));

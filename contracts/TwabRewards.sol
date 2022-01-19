@@ -125,11 +125,7 @@ contract TwabRewards is ITwabRewards {
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
-        uint256 _amount;
-
-        unchecked {
-            _amount = _tokensPerEpoch * _numberOfEpochs;
-        }
+        uint256 _amount = _tokensPerEpoch * _numberOfEpochs;
 
         _promotions[_nextPromotionId] = Promotion({
             creator: msg.sender,
@@ -222,11 +218,7 @@ contract TwabRewards is ITwabRewards {
 
         _promotions[_promotionId].numberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
 
-        uint256 _amount;
-
-        unchecked {
-            _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
-        }
+        uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
 
         _promotions[_promotionId].rewardsUnclaimed += _amount;
         _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
@@ -457,11 +449,9 @@ contract TwabRewards is ITwabRewards {
             return 0;
         }
 
-        unchecked {
-            return
-                _promotion.tokensPerEpoch *
-                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
-        }
+        return
+            _promotion.tokensPerEpoch *
+            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
     }
 
     /**

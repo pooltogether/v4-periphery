@@ -850,7 +850,7 @@ describe('TwabRewards', () => {
             await createPromotion();
 
             // We adjust time to delegate right in the middle of epoch 3
-            await setTime((epochDuration * 2) + halfEpoch - 1)
+            await setTime(epochDuration * 2 + halfEpoch - 1);
 
             await ticket.connect(wallet3).delegate(wallet2.address);
 

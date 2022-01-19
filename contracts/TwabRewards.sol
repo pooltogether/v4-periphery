@@ -27,8 +27,8 @@ contract TwabRewards is ITwabRewards {
     /// @notice Prize pool ticket for which the promotions are created.
     ITicket public immutable ticket;
 
-    /// @notice Period during which the promotion owner can't destroy an inactive promotion.
-    uint32 internal _gracePeriod = 5184000; // 60 days in seconds
+    /// @notice Period during which the promotion owner can't destroy a promotion.
+    uint32 public constant GRACE_PERIOD = 60 days;
 
     /// @notice Settings of each promotion.
     mapping(uint256 => Promotion) internal _promotions;
@@ -182,12 +182,12 @@ contract TwabRewards is ITwabRewards {
         _requirePromotionCreator(_promotion);
 
         require(
-            (_getPromotionEndTimestamp(_promotion) + _gracePeriod) < block.timestamp,
+            (_getPromotionEndTimestamp(_promotion) + GRACE_PERIOD) < block.timestamp,
             "TwabRewards/promotion-active"
         );
 
         require(
-            (_promotion.createdAt + _gracePeriod) < block.timestamp,
+            (_promotion.createdAt + GRACE_PERIOD) < block.timestamp,
             "TwabRewards/grace-period-active"
         );
 

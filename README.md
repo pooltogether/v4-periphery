@@ -43,7 +43,7 @@ $ yarn
 We use [direnv](https://direnv.net/) to manage environment variables.  You'll likely need to install it.
 
 ```sh
-cp .envrc.example .envrv
+cp .envrc.example .envrc
 ```
 
 # Testing

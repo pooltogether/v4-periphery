@@ -45,10 +45,10 @@ All members: {{members}}
 |`{{param}}` | {{#lookup ../args.types @index}}{{/lookup}} | {{ description }}{{/natspec.params}}{{/if}}
 {{#if natspec.returns}}
 #### Return Values:
-| Name                           | Type          | Description                                                                  |
-| :----------------------------- | :------------ | :--------------------------------------------------------------------------- |
+| Type          | Description                                                                  |
+| :------------ | :--------------------------------------------------------------------------- |
 {{#natspec.returns}}
-|`{{param}}`| {{#lookup ../args.types @index}}{{/lookup}} | {{{description}}}{{/natspec.returns}}{{/if}}
+| {{#lookup ../outputs.types @index}}{{/lookup}} | {{param}} {{{description}}}{{/natspec.returns}}{{/if}}
 {{/unless}}
 {{/functions}}
 {{#if events}}

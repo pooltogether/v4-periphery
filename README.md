@@ -11,31 +11,23 @@
 [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/JFBPMxv5tr)
 [![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/PoolTogether_)
 
-**Documention**<br>
-https://docs.pooltogether.com
+**Documentation**<br>
+- [PrizeDistributionFactory](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeDistributionFactory)
+- [PrizeFlush](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeFlush)
+- [PrizeTierHistory](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeTierHistory)
+- [TwabRewards](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/TwabRewards)
 
-**Deplyoments**<br>
-- [Ethereum](https://docs.pooltogether.com/resources/networks/ethereum)
-- [Matic](https://docs.pooltogether.com/resources/networks/matic)
-
-# Overview
-- [PrizeFlush](/contracts/PrizeFlush.sol)
-
-The `PrizeFlush` contract wraps multiple draw completion steps: capturing/distributing interest, and automatically transferring the captured interest to PrizeDistributor. The contract is **simple in nature** and is expeced to evolve with the V4 rollout and governance requirements.
-
-As the draw and prize distribution params are optimized with continual hypothesis and testing, the PoolTogether Community and Governance process can "codify" the rules for an optimal interest distribution - adding intermediary steps to fine-tuning prize models and optimal interes allocation.
-
-**Core and Timelock contracts:**
-
-- https://github.com/pooltogether/v4-core
-- https://github.com/pooltogether/v4-timelocks
+**Deployments**<br>
+- [Ethereum](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#mainnet)
+- [Polygon](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#polygon)
+- [Avalanche](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#avalanche)
 
 # Getting Started
 
 The project is made available as a NPM package.
 
 ```sh
-$ yarn add @pooltogether/pooltogether-contracts
+$ yarn add @pooltogether/v4-periphery
 ```
 
 The repo can be cloned from Github for contributions.
@@ -54,13 +46,11 @@ We use [direnv](https://direnv.net/) to manage environment variables.  You'll li
 cp .envrc.example .envrv
 ```
 
-To run fork scripts, deploy or perform any operation with a mainnet/testnet node you will need an Infura API key.
-
 # Testing
 
 We use [Hardhat](https://hardhat.dev) and [hardhat-deploy](https://github.com/wighawag/hardhat-deploy)
 
-To run unit & integration tests:
+To run unit tests:
 
 ```sh
 $ yarn test
@@ -71,30 +61,3 @@ To run coverage:
 ```sh
 $ yarn coverage
 ```
-
-# Fork Testing
-
-Ensure your environment variables are set up.  Make sure your Alchemy URL is set.  Now start a local fork:
-
-```sh
-$ yarn start-fork
-```
-
-Setup account impersonation and transfer eth:
-
-```sh
-$ ./scripts/setup.sh
-```
-
-# Deployment
-
-## Deploy Locally
-
-Start a local node and deploy the top-level contracts:
-
-```bash
-$ yarn start
-```
-
-NOTE: When you run this command it will reset the local blockchain.
-

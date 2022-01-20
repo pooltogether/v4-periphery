@@ -22,11 +22,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     /* ============ External Functions ============ */
 
     // @inheritdoc IPrizeTierHistory
-    function push(PrizeTier calldata _nextPrizeTier)
-        external
-        override
-        onlyManagerOrOwner
-    {
+    function push(PrizeTier calldata _nextPrizeTier) external override onlyManagerOrOwner {
         PrizeTier[] memory _history = history;
 
         if (_history.length > 0) {

@@ -16,16 +16,20 @@ interface ITwabRewards {
         @param startTimestamp Timestamp at which the promotion starts
         @param numberOfEpochs Number of epochs the promotion will last for
         @param epochDuration Duration of one epoch in seconds
+        @param createdAt Timestamp at which the promotion was created
         @param token Address of the token to be distributed as reward
         @param tokensPerEpoch Number of tokens to be distributed per epoch
+        @param rewardsUnclaimed Amount of rewards that have not been claimed yet
      */
     struct Promotion {
         address creator;
         uint64 startTimestamp;
         uint8 numberOfEpochs;
-        uint64 epochDuration;
+        uint48 epochDuration;
+        uint48 createdAt;
         IERC20 token;
         uint256 tokensPerEpoch;
+        uint256 rewardsUnclaimed;
     }
 
     /**
@@ -46,17 +50,29 @@ interface ITwabRewards {
         IERC20 _token,
         uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint64 _epochDuration,
+        uint48 _epochDuration,
         uint8 _numberOfEpochs
     ) external returns (uint256);
 
     /**
-        @notice Cancel currently active promotion and send promotion tokens back to the creator.
-        @param _promotionId Promotion id to cancel
+        @notice End currently active promotion and send promotion tokens back to the creator.
+        @dev Will only send back tokens from the epochs that have not completed.
+        @param _promotionId Promotion id to end
         @param _to Address that will receive the remaining tokens if there are any left
-        @return true if cancelation was successful
+        @return true if operation was successful
      */
-    function cancelPromotion(uint256 _promotionId, address _to) external returns (bool);
+    function endPromotion(uint256 _promotionId, address _to) external returns (bool);
+
+    /**
+        @notice Delete an inactive promotion and send promotion tokens back to the creator.
+        @dev Will send back all the tokens that have not been claimed yet by users.
+        @dev This function will revert if the promotion is still active.
+        @dev This function will revert if the grace period is not over yet.
+        @param _promotionId Promotion id to destroy
+        @param _to Address that will receive the remaining tokens if there are any left
+        @return true if operation was successful
+     */
+    function destroyPromotion(uint256 _promotionId, address _to) external returns (bool);
 
     /**
         @notice Extend promotion by adding more epochs.

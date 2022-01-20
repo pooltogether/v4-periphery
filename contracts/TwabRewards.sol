@@ -27,6 +27,9 @@ contract TwabRewards is ITwabRewards {
     /// @notice Prize pool ticket for which the promotions are created.
     ITicket public immutable ticket;
 
+    /// @notice Period during which the promotion owner can't destroy a promotion.
+    uint32 public constant GRACE_PERIOD = 60 days;
+
     /// @notice Settings of each promotion.
     mapping(uint256 => Promotion) internal _promotions;
 
@@ -48,12 +51,26 @@ contract TwabRewards is ITwabRewards {
     event PromotionCreated(uint256 indexed promotionId);
 
     /**
-        @notice Emitted when a promotion is cancelled.
-        @param promotionId Id of the promotion being cancelled
+        @notice Emitted when a promotion is ended.
+        @param promotionId Id of the promotion being ended
         @param recipient Address of the recipient that will receive the remaining rewards
         @param amount Amount of tokens transferred to the recipient
+        @param epochNumber Epoch number at which the promotion ended
     */
-    event PromotionCancelled(
+    event PromotionEnded(
+        uint256 indexed promotionId,
+        address indexed recipient,
+        uint256 amount,
+        uint8 epochNumber
+    );
+
+    /**
+        @notice Emitted when a promotion is destroyed.
+        @param promotionId Id of the promotion being destroyed
+        @param recipient Address of the recipient that will receive the unclaimed rewards
+        @param amount Amount of tokens transferred to the recipient
+    */
+    event PromotionDestroyed(
         uint256 indexed promotionId,
         address indexed recipient,
         uint256 amount
@@ -98,7 +115,7 @@ contract TwabRewards is ITwabRewards {
         IERC20 _token,
         uint64 _startTimestamp,
         uint256 _tokensPerEpoch,
-        uint64 _epochDuration,
+        uint48 _epochDuration,
         uint8 _numberOfEpochs
     ) external override returns (uint256) {
         require(_tokensPerEpoch > 0, "TwabRewards/tokens-not-zero");
@@ -108,20 +125,18 @@ contract TwabRewards is ITwabRewards {
         uint256 _nextPromotionId = _latestPromotionId + 1;
         _latestPromotionId = _nextPromotionId;
 
-        _promotions[_nextPromotionId] = Promotion(
-            msg.sender,
-            _startTimestamp,
-            _numberOfEpochs,
-            _epochDuration,
-            _token,
-            _tokensPerEpoch
-        );
+        uint256 _amount = _tokensPerEpoch * _numberOfEpochs;
 
-        uint256 _amount;
-
-        unchecked {
-            _amount = _tokensPerEpoch * _numberOfEpochs;
-        }
+        _promotions[_nextPromotionId] = Promotion({
+            creator: msg.sender,
+            startTimestamp: _startTimestamp,
+            numberOfEpochs: _numberOfEpochs,
+            epochDuration: _epochDuration,
+            createdAt: uint48(block.timestamp),
+            token: _token,
+            tokensPerEpoch: _tokensPerEpoch,
+            rewardsUnclaimed: _amount
+        });
 
         uint256 _beforeBalance = _token.balanceOf(address(this));
 
@@ -137,19 +152,48 @@ contract TwabRewards is ITwabRewards {
     }
 
     /// @inheritdoc ITwabRewards
-    function cancelPromotion(uint256 _promotionId, address _to) external override returns (bool) {
+    function endPromotion(uint256 _promotionId, address _to) external override returns (bool) {
         require(_to != address(0), "TwabRewards/payee-not-zero-addr");
 
         Promotion memory _promotion = _getPromotion(_promotionId);
-        require(msg.sender == _promotion.creator, "TwabRewards/only-promo-creator");
+        _requirePromotionCreator(_promotion);
         _requirePromotionActive(_promotion);
 
-        _promotions[_promotionId].numberOfEpochs = uint8(_getCurrentEpochId(_promotion));
+        uint8 _epochNumber = uint8(_getCurrentEpochId(_promotion));
+        _promotions[_promotionId].numberOfEpochs = _epochNumber;
 
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
         _promotion.token.safeTransfer(_to, _remainingRewards);
 
-        emit PromotionCancelled(_promotionId, _to, _remainingRewards);
+        emit PromotionEnded(_promotionId, _to, _remainingRewards, _epochNumber);
+
+        return true;
+    }
+
+    /// @inheritdoc ITwabRewards
+    function destroyPromotion(uint256 _promotionId, address _to) external override returns (bool) {
+        require(_to != address(0), "TwabRewards/payee-not-zero-addr");
+
+        Promotion memory _promotion = _getPromotion(_promotionId);
+        _requirePromotionCreator(_promotion);
+
+        uint256 _promotionEndTimestamp = _getPromotionEndTimestamp(_promotion);
+        uint256 _promotionCreatedAt = _promotion.createdAt;
+
+        uint256 _gracePeriodEndTimestamp = (
+            _promotionEndTimestamp < _promotionCreatedAt
+                ? _promotionCreatedAt
+                : _promotionEndTimestamp
+        ) + GRACE_PERIOD;
+
+        require(block.timestamp >= _gracePeriodEndTimestamp, "TwabRewards/grace-period-active");
+
+        uint256 _rewardsUnclaimed = _promotion.rewardsUnclaimed;
+        delete _promotions[_promotionId];
+
+        _promotion.token.safeTransfer(_to, _rewardsUnclaimed);
+
+        emit PromotionDestroyed(_promotionId, _to, _rewardsUnclaimed);
 
         return true;
     }
@@ -168,20 +212,16 @@ contract TwabRewards is ITwabRewards {
         uint8 _currentNumberOfEpochs = _promotion.numberOfEpochs;
 
         require(
-            _numberOfEpochs < (type(uint8).max - _currentNumberOfEpochs),
+            _numberOfEpochs <= (type(uint8).max - _currentNumberOfEpochs),
             "TwabRewards/epochs-over-limit"
         );
 
-        uint8 _extendedNumberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
-        _promotions[_promotionId].numberOfEpochs = _extendedNumberOfEpochs;
+        _promotions[_promotionId].numberOfEpochs = _currentNumberOfEpochs + _numberOfEpochs;
 
-        uint256 _extendedAmount;
+        uint256 _amount = _numberOfEpochs * _promotion.tokensPerEpoch;
 
-        unchecked {
-            _extendedAmount = _numberOfEpochs * _promotion.tokensPerEpoch;
-        }
-
-        _promotion.token.safeTransferFrom(msg.sender, address(this), _extendedAmount);
+        _promotions[_promotionId].rewardsUnclaimed += _amount;
+        _promotion.token.safeTransferFrom(msg.sender, address(this), _amount);
 
         emit PromotionExtended(_promotionId, _numberOfEpochs);
 
@@ -210,6 +250,7 @@ contract TwabRewards is ITwabRewards {
         }
 
         _claimedEpochs[_promotionId][_user] = _userClaimedEpochs;
+        _promotions[_promotionId].rewardsUnclaimed -= _rewardsAmount;
 
         _promotion.token.safeTransfer(_user, _rewardsAmount);
 
@@ -294,6 +335,14 @@ contract TwabRewards is ITwabRewards {
     }
 
     /**
+        @notice Determine if msg.sender is the promotion creator.
+        @param _promotion Promotion to check
+    */
+    function _requirePromotionCreator(Promotion memory _promotion) internal view {
+        require(msg.sender == _promotion.creator, "TwabRewards/only-promo-creator");
+    }
+
+    /**
         @notice Get settings for a specific promotion.
         @dev Will revert if the promotion does not exist.
         @param _promotionId Promotion id to get settings for
@@ -316,7 +365,8 @@ contract TwabRewards is ITwabRewards {
         returns (uint256)
     {
         unchecked {
-            return _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
+            return
+                _promotion.startTimestamp + (_promotion.epochDuration * _promotion.numberOfEpochs);
         }
     }
 
@@ -334,8 +384,9 @@ contract TwabRewards is ITwabRewards {
 
         if (block.timestamp > _promotion.startTimestamp) {
             unchecked {
-                // elapsedTimestamp / epochDurationTimestamp
-                _currentEpochId = (block.timestamp - _promotion.startTimestamp) / _promotion.epochDuration;
+                _currentEpochId =
+                    (block.timestamp - _promotion.startTimestamp) /
+                    _promotion.epochDuration;
             }
         }
 
@@ -398,12 +449,9 @@ contract TwabRewards is ITwabRewards {
             return 0;
         }
 
-        unchecked {
-            // _tokensPerEpoch * _numberOfEpochsLeft
-            return
-                _promotion.tokensPerEpoch *
-                (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
-        }
+        return
+            _promotion.tokensPerEpoch *
+            (_promotion.numberOfEpochs - _getCurrentEpochId(_promotion));
     }
 
     /**

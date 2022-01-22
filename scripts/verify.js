@@ -1,14 +1,11 @@
 #!/usr/bin/env node
-const chalk = require("chalk");
 const util = require("util");
 const find = require("find");
 const fs = require("fs");
 const exec = util.promisify(require("child_process").exec);
 const hardhat = require("hardhat");
 
-const info = (msg) => console.log(chalk.dim(msg));
-const success = (msg) => console.log(chalk.green(msg));
-const error = (msg) => console.error(chalk.red(msg));
+const { info, success, warning, error } = require("../helpers");
 
 const getContract = async (name) => {
     const { deployments } = hardhat;
@@ -137,15 +134,14 @@ async function run() {
         const { stdout, stderr } = await exec(
             `hardhat --network ${network} etherscan-verify --solc-input --api-key ${process.env.ETHERSCAN_API_KEY}`
         );
-        console.log(chalk.yellow(stdout));
-        console.log(chalk.red(stderr));
+
+        warning(stdout);
+        error(stderr);
     }
 
     info(`Done top-level contracts`);
 
     info(`Verifying proxy factory instances...`);
-
-    // await verifyProxyFactoryInstance('CompoundPrizePoolProxyFactory')
 
     success("Done!");
 }

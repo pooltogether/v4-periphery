@@ -16,6 +16,6 @@
         "./scripts",
         "./test",
         "types/**/*",
-        "Constant.ts"
+        "Constants.ts"
     ]
 }

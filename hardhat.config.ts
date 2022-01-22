@@ -10,6 +10,7 @@ import 'solidity-coverage';
 
 import { HardhatUserConfig } from 'hardhat/config';
 
+import * as forkTasks from './scripts/fork';
 import networks from './hardhat.network';
 
 const optimizerEnabled = !process.env.OPTIMIZER_DISABLED;
@@ -51,6 +52,18 @@ const config: HardhatUserConfig = {
             '@pooltogether/v4-core/contracts/test/TicketHarness.sol',
         ],
     },
+    external: {
+        contracts: [
+            {
+                artifacts:
+                    'node_modules/@pooltogether/aave-yield-source/artifacts/contracts/yield-source/ATokenYieldSource.sol/',
+            },
+            {
+                artifacts:
+                    'node_modules/@pooltogether/v4-core/artifacts/contracts/prize-pool/YieldSourcePrizePool.sol',
+            },
+        ],
+    },
     solidity: {
         compilers: [
             {
@@ -76,5 +89,7 @@ const config: HardhatUserConfig = {
         ],
     },
 };
+
+forkTasks;
 
 export default config;

@@ -27,14 +27,14 @@
         "prepack": "yarn compile"
     },
     "peerDependencies": {
-        "@openzeppelin/contracts": "4.3.3",
+        "@openzeppelin/contracts": "4.4.2",
         "@pooltogether/v4-core": "1.2.0"
     },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "2.0.2",
         "@nomiclabs/hardhat-etherscan": "2.1.3",
         "@nomiclabs/hardhat-waffle": "2.0.1",
-        "@openzeppelin/contracts": "4.3.3",
+        "@openzeppelin/contracts": "4.4.2",
         "@openzeppelin/hardhat-upgrades": "1.6.0",
         "@pooltogether/v4-core": "1.2.0",
         "@types/chai": "4.2.15",

@@ -1035,10 +1035,10 @@
     proper-lockfile "^4.1.1"
     solidity-ast "^0.4.15"
 
-"@pooltogether/aave-yield-source@2.0.0-beta.1":
-  version "2.0.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@pooltogether/aave-yield-source/-/aave-yield-source-2.0.0-beta.1.tgz#76d3fd02e7b2fcd625565eb7fd2173423fbc461d"
-  integrity sha512-fEnbQJCYa0n25nJQ7+1gULNiqHTCCUaEmO6DPDTAe3O24gqA/QFTBI4sp2x9CrhH7ALCPSJMzHALn5IQKLhaZg==
+"@pooltogether/aave-yield-source@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@pooltogether/aave-yield-source/-/aave-yield-source-1.1.0.tgz#3ca045d82b587e5a08bfc7cf0d46a3eff6445b19"
+  integrity sha512-gZnd6Z0aZJEk5opDeVhw/KprCk9G3PA2trNTRyjXDoNM45BvoY7Hkd9ZSdupVMGHWhj+dRQ5lnO1Ug3A0CbL/Q==
   dependencies:
     "@openzeppelin/contracts" "4.3.2"
     "@pooltogether/fixed-point" "1.0.0"

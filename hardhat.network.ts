@@ -1,5 +1,7 @@
 import { HardhatUserConfig } from 'hardhat/config';
 
+import { FORK_START_BLOCK_NUMBER } from './Constants';
+
 const alchemyUrl = process.env.ALCHEMY_URL;
 const infuraApiKey = process.env.INFURA_API_KEY;
 const mnemonic = process.env.HDWALLET_MNEMONIC;
@@ -17,11 +19,12 @@ const networks: HardhatUserConfig['networks'] = {
     },
 };
 
-if (alchemyUrl && process.env.FORK_ENABLED && mnemonic) {
+if (alchemyUrl && Boolean(process.env.FORK_ENABLED) && mnemonic) {
     networks.hardhat = {
         chainId: 1,
         forking: {
             url: alchemyUrl,
+            blockNumber: FORK_START_BLOCK_NUMBER,
         },
         accounts: {
             mnemonic,
@@ -81,13 +84,6 @@ if (infuraApiKey && mnemonic) {
 
     networks.rinkeby = {
         url: `https://rinkeby.infura.io/v3/${infuraApiKey}`,
-        accounts: {
-            mnemonic,
-        },
-    };
-
-    networks.mainnet = {
-        url: alchemyUrl,
         accounts: {
             mnemonic,
         },

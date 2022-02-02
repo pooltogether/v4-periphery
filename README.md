@@ -1,5 +1,6 @@
 # PoolTogether V4 Periphery Contracts
 
+![Fork](https://github.com/pooltogether/v4-periphery/actions/workflows/fork.yml/badge.svg)
 ![Tests](https://github.com/pooltogether/v4-periphery/actions/workflows/main.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/pooltogether/v4-periphery/badge.svg?branch=master)](https://coveralls.io/github/pooltogether/v4-periphery?branch=master)
 [![built-with openzeppelin](https://img.shields.io/badge/built%20with-OpenZeppelin-3677FF)](https://docs.openzeppelin.com/)
@@ -61,3 +62,27 @@ To run coverage:
 ```sh
 $ yarn coverage
 ```
+
+# Forking
+
+Mainnet fork tests have been implemented to test the functionalities of the TWAB Rewards contract.
+
+To start the mainnet fork RPC server, run:
+
+```sh
+$ yarn start-fork
+```
+
+To run the mainnet fork tests for the TWAB Rewards contract, run:
+
+```sh
+$ yarn twab-rewards-fork
+```
+
+If you wish to run both at the same time, run:
+
+```sh
+$ yarn run-twab-rewards-fork
+```
+
+This command is used in the Github Actions workflow located in `.github/workflows/fork.yml`.

@@ -1,0 +1,23 @@
+name: Mainnet fork tests
+
+on: ["push", "pull_request"]
+
+jobs:
+  fork:
+    runs-on: ubuntu-latest
+    environment: fork
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+      - name: yarn, yarn compile, run-twab-rewards-fork
+        env:
+          ALCHEMY_URL: ${{ secrets.ALCHEMY_URL }}
+          FORK_ENABLED: ${{ secrets.FORK_ENABLED }}
+          HDWALLET_MNEMONIC: ${{ secrets.HDWALLET_MNEMONIC }}
+        run: |
+          yarn
+          yarn compile
+          yarn run-twab-rewards-fork

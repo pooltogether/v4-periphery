@@ -13,15 +13,18 @@
 [![Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/PoolTogether_)
 
 **Documentation**<br>
-- [PrizeDistributionFactory](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeDistributionFactory)
-- [PrizeFlush](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeFlush)
-- [PrizeTierHistory](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/PrizeTierHistory)
-- [TwabRewards](https://v4.docs.pooltogether.com/protocol/reference/v4-periphery/TwabRewards)
+https://v4.docs.pooltogether.com
 
 **Deployments**<br>
-- [Ethereum](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#mainnet)
-- [Polygon](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#polygon)
-- [Avalanche](https://v4.docs.pooltogether.com/protocol/reference/deployments/mainnet#avalanche)
+- [Ethereum](https://v4.docs.pooltogether.com/protocol/deployments/mainnet#mainnet)
+- [Polygon](https://v4.docs.pooltogether.com/protocol/deployments/mainnet#polygon)
+- [Avalanche](https://v4.docs.pooltogether.com/protocol/deployments/mainnet#avalanche)
+
+# Overview
+- [PrizeDistributionFactory](/contracts/PrizeDistributionFactory.sol)
+- [PrizeFlush](/contracts/PrizeFlush.sol)
+- [PrizeTierHistory](/contracts/PrizeTierHistory.sol)
+- [TwabRewards](/contracts/TwabRewards.sol)
 
 # Getting Started
 
@@ -86,3 +89,12 @@ $ yarn run-twab-rewards-fork
 ```
 
 This command is used in the Github Actions workflow located in `.github/workflows/fork.yml`.
+
+
+# Deployment
+
+## Testnets
+Deployment is maintained in a different [repo](https://github.com/pooltogether/v4-testnet).
+
+## Mainnet
+Deployment is maintained in a different [repo](https://github.com/pooltogether/v4-mainnet).

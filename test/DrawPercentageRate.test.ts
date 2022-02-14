@@ -5,6 +5,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Contract, ContractFactory } from 'ethers';
 import DrawBuffer from '@pooltogether/v4-core/artifacts/contracts/DrawBuffer.sol/DrawBuffer.json';
 import { BigNumber } from 'ethereum-waffle/node_modules/ethers';
+import { parseEther } from 'ethers/lib/utils';
 
 const { getSigners } = ethers;
 
@@ -29,7 +30,7 @@ describe('DrawPercentageRate', () => {
         ticket = await deployMockContract(wallet1, Ticket.abi);
         prizeTierHistory = await deployMockContract(wallet1, PrizeTierHistory.abi);
         drawBuffer = await deployMockContract(wallet1, DrawBuffer.abi);
-        drawPercentageRateFactory = await ethers.getContractFactory('DrawPercentageRate');
+        drawPercentageRateFactory = await ethers.getContractFactory('DrawPercentageRateHarness');
     });
 
     beforeEach(async () => {
@@ -53,6 +54,44 @@ describe('DrawPercentageRate', () => {
         describe('getPrizeDistributionList()', () => {
             it('should correctly calculate a list of valid PrizeDistrubtions', async () => {
                 expect(true).to.eq(true);
+            });
+        });
+    });
+    
+    describe('Internals', () => {
+        
+        describe('calculatePrizeDistribution()', () => {
+            it('should succesfully calculate a PrizeDistribution using mock historical Draw parameters', async () => {
+                const DRAW_ID = 1;
+                const DRAW_PERCENTAGE_RATE = '1';
+                // expect(await drawPercentageRate.calculatePrizeDistribution(DRAW_ID, DRAW_PERCENTAGE_RATE)).to.eq(true);
+                expect(true).to.eq(true);
+            });
+        });
+
+        describe('calculateDrawPeriodTimestampOffsets()', () => {
+            it('should succesfully calculate the Draw timestamp offests', async () => {
+                const TIMESTAMP = BigNumber.from('1000');
+                const START_OFFSET = BigNumber.from('990');
+                const END_OFFSET = BigNumber.from('10');
+                const offsets = await drawPercentageRate.calculateDrawPeriodTimestampOffsets(TIMESTAMP, START_OFFSET, END_OFFSET)
+                expect(offsets[0][0]).to.equal(BigNumber.from('10'));
+                expect(offsets[1][0]).to.equal(BigNumber.from('990'));
+            });
+        });
+        
+        describe('calculateCardinality()', () => {
+            it('should succesfully calculate the cardinality', async () => {
+                expect(await drawPercentageRate.calculateCardinality(4, 1000) ).to.eq(2);
+            });
+        });
+
+        describe('caclulateFractionOfOdds()', () => {
+            it('should succesfully calculate the fracion of odds', async () => {
+                const DRAW_PERCENTAGE_RATE = BigNumber.from('100000');
+                const TOTAL_SUPPLY = BigNumber.from('100000');
+                const PRIZE = parseEther('1');
+                expect(await drawPercentageRate.caclulateFractionOfOdds(DRAW_PERCENTAGE_RATE, TOTAL_SUPPLY, PRIZE)).to.eq(BigNumber.from('0'));
             });
         });
     });

@@ -17,7 +17,7 @@ contract DrawPercentageRate {
     /* =================================================== */
     /* Constructor ======================================= */
     /* =================================================== */
-    
+
     /**
     * Constructor
     * @param _ticket - ITicket
@@ -46,7 +46,7 @@ contract DrawPercentageRate {
 
     /**
      * @notice Get a PrizeDistribution using a historical Draw ID
-     * @param drawId drawId
+     * @param drawId - uint32
      * @return prizeDistribution
      */
     function getPrizeDistribution(uint32 drawId)
@@ -59,7 +59,7 @@ contract DrawPercentageRate {
 
     /**
      * @notice Get a list of PrizeDistributions using historical Draw IDs
-     * @param drawIds array of drawId(s)
+     * @param drawIds - uint32[]
      * @return prizeDistribution
      */
     function getPrizeDistributionList(uint32[] calldata drawIds)
@@ -155,7 +155,7 @@ contract DrawPercentageRate {
 
     /**
      * @notice Internal function to get a PrizeDistribution using a historical Draw ID
-     * @param _drawId drawId
+     * @param _drawId - uint32
      * @return prizeDistribution
      */
     function _getPrizeDistribution(uint32 _drawId)
@@ -163,14 +163,14 @@ contract DrawPercentageRate {
         view
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
-        uint256 __dpr = dpr; // Replace with ring buffer or simple alternative to map drawIds <> dpr
+        uint256 __dpr = dpr; // Replace with ring buffer or a more simple alternative to map drawIds <> dpr over time.
         return _calculatePrizeDistribution(_drawId, __dpr);
     }
 
     /**
      * @notice Calculate a PrizeDistribution using Draw, PrizeTier and DrawPercentageRate parameters
-     * @param _drawId drawId
-     * @param _dpr the Draw Percentage Rate associated with the Draw ID
+     * @param _drawId - uint32
+     * @param _dpr - uint256 Draw Percentage Rate associated with the Draw ID
      * @return prizeDistribution
      */
     function _calculatePrizeDistribution(uint32 _drawId, uint256 _dpr)
@@ -218,10 +218,12 @@ contract DrawPercentageRate {
         uint64 _timestamp,
         uint32 _startOffset,
         uint32 _endOffset
-    ) internal pure returns (uint64[] memory startTimestamps, uint64[] memory endTimestamps) {
-        startTimestamps[0] = _timestamp - _startOffset;
-        endTimestamps[0] = _timestamp - _endOffset;
-        return (startTimestamps, endTimestamps);
+    ) internal pure returns (uint64[] memory, uint64[] memory) {
+        uint64[] memory _startTimestamps = new uint64[](1);
+        uint64[] memory _endTimestamps = new uint64[](1);
+        _startTimestamps[0] = _timestamp - _startOffset;
+        _endTimestamps[0] = _timestamp - _endOffset;
+        return (_startTimestamps, _endTimestamps);
     }
 
     function _calculateCardinality(uint32 _bitRangeSize, uint256 _maxPicks)

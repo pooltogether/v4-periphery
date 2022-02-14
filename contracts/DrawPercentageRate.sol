@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity 0.8.6;
+import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
+import "@pooltogether/v4-core/contracts/interfaces/IDrawBuffer.sol";
+import "@pooltogether/v4-core/contracts/interfaces/IDrawBeacon.sol";
+import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
+import "./interfaces/IPrizeTierHistory.sol";
+
+contract DrawPercentageRate {
+    uint256 public dpr;
+    uint256 public immutable minPickCost;
+
+    ITicket public ticket;
+    IDrawBuffer public drawBuffer;
+    IPrizeTierHistory public prizeTierHistory;
+
+    constructor(
+        ITicket _ticket,
+        IPrizeTierHistory _prizeTierHistory,
+        IDrawBuffer _drawBuffer,
+        uint256 _minPickCost,
+        uint256 _dpr
+    ) {
+        ticket = _ticket;
+        prizeTierHistory = _prizeTierHistory;
+        drawBuffer = _drawBuffer;
+        minPickCost = _minPickCost;
+        dpr = _dpr;
+    }
+
+    /**
+     * @notice Get a PrizeDistribution using a historical Draw ID
+     * @param drawId drawId
+     * @return prizeDistribution
+     */
+    function getPrizeDistribution(uint32 drawId)
+        external
+        view
+        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
+    {
+        return _getPrizeDistribution(drawId);
+    }
+
+    /**
+     * @notice Get a list of PrizeDistributions using historical Draw IDs
+     * @param drawIds array of drawId(s)
+     * @return prizeDistribution
+     */
+    function getPrizeDistributionList(uint32[] calldata drawIds)
+        external
+        view
+        returns (IPrizeDistributionBuffer.PrizeDistribution[] memory)
+    {
+        IPrizeDistributionBuffer.PrizeDistribution[]
+            memory _prizeDistributions = new IPrizeDistributionBuffer.PrizeDistribution[](
+                drawIds.length
+            );
+        for (uint256 index = 0; index < drawIds.length; index++) {
+            _prizeDistributions[index] = _getPrizeDistribution(drawIds[index]);
+        }
+        return _prizeDistributions;
+    }
+
+    /**
+     * @notice Internal function to get a PrizeDistribution using a historical Draw ID
+     * @param _drawId drawId
+     * @return prizeDistribution
+     */
+    function _getPrizeDistribution(uint32 _drawId)
+        internal
+        view
+        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
+    {
+        uint256 __dpr = dpr; // Replace with ring buffer or simple alternative to map drawIds <> dpr
+        return _calculatePrizeDistribution(_drawId, __dpr);
+    }
+
+    /**
+     * @notice Calculate a PrizeDistribution using Draw, PrizeTier and DrawPercentageRate parameters
+     * @param _drawId drawId
+     * @param _dpr the Draw Percentage Rate associated with the Draw ID
+     * @return prizeDistribution
+     */
+    function _calculatePrizeDistribution(uint32 _drawId, uint256 _dpr)
+        internal
+        view
+        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
+    {
+        IPrizeTierHistory.PrizeTier memory PrizeTier = prizeTierHistory.getPrizeTier(_drawId);
+        IDrawBeacon.Draw memory Draw = drawBuffer.getDraw(_drawId);
+
+        (uint64[] memory start, uint64[] memory end) = _calculateDrawPeriodTimestampOffsets(
+            Draw.timestamp,
+            Draw.beaconPeriodSeconds,
+            PrizeTier.endTimestampOffset
+        );
+
+        uint256[] memory _totalSupplies = ticket.getAverageTotalSuppliesBetween(start, end);
+        uint256 _maxPicks = _totalSupplies[0] / minPickCost;
+        uint8 _cardinality = _calculateCardinality(PrizeTier.bitRangeSize, _maxPicks);
+        uint256 _fractionOfOdds = _caclulateFractionOfOdds(
+            _dpr,
+            _totalSupplies[0],
+            PrizeTier.prize
+        );
+        uint256 _totalPicks = uint256((2**PrizeTier.bitRangeSize)**_cardinality); // .toUint104(); - TODO: Convert to uint104 and optimize stoarge/loading
+        uint32 _numberOfPicks = uint32(_totalPicks) * uint32(_fractionOfOdds);
+
+        IPrizeDistributionBuffer.PrizeDistribution
+            memory prizeDistribution = IPrizeDistributionBuffer.PrizeDistribution({
+                bitRangeSize: PrizeTier.bitRangeSize,
+                matchCardinality: _cardinality,
+                startTimestampOffset: Draw.beaconPeriodSeconds,
+                endTimestampOffset: PrizeTier.endTimestampOffset,
+                maxPicksPerUser: PrizeTier.maxPicksPerUser,
+                expiryDuration: PrizeTier.expiryDuration,
+                numberOfPicks: _numberOfPicks,
+                tiers: PrizeTier.tiers,
+                prize: PrizeTier.prize
+            });
+
+        return prizeDistribution;
+    }
+
+    function _calculateDrawPeriodTimestampOffsets(
+        uint64 _timestamp,
+        uint32 _startOffset,
+        uint32 _endOffset
+    ) internal pure returns (uint64[] memory startTimestamps, uint64[] memory endTimestamps) {
+        startTimestamps[0] = _timestamp - _startOffset;
+        endTimestamps[0] = _timestamp - _endOffset;
+        return (startTimestamps, endTimestamps);
+    }
+
+    function _calculateCardinality(uint32 _bitRangeSize, uint256 _maxPicks)
+        internal
+        pure
+        returns (uint8 cardinality)
+    {
+        do {
+            cardinality++;
+        } while ((2**_bitRangeSize)**(cardinality + 1) < _maxPicks);
+    }
+
+    function _caclulateFractionOfOdds(
+        uint256 _dpr,
+        uint256 _totalSupply,
+        uint256 _prize
+    ) internal pure returns (uint256) {
+        // TODO: Normalize things and do math
+        return (_dpr * _totalSupply) / _prize;
+    }
+}

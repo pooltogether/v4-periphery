@@ -43,8 +43,15 @@ describe('DrawPercentageRate', () => {
     });
 
     describe('Core', () => {
+        
         describe('getPrizeDistribution()', () => {
             it('should correctly calculate a valid PrizeDistrubtion', async () => {
+                expect(true).to.eq(true);
+            });
+        });
+
+        describe('getPrizeDistributionList()', () => {
+            it('should correctly calculate a list of valid PrizeDistrubtions', async () => {
                 expect(true).to.eq(true);
             });
         });

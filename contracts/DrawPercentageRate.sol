@@ -14,6 +14,18 @@ contract DrawPercentageRate {
     IDrawBuffer public drawBuffer;
     IPrizeTierHistory public prizeTierHistory;
 
+    /* =================================================== */
+    /* Constructor ======================================= */
+    /* =================================================== */
+    
+    /**
+    * Constructor
+    * @param _ticket - ITicket
+    * @param _drawBuffer - IDrawBuffer
+    * @param _prizeTierHistory - IPrizeTierHistory
+    * @param _dpr - uint256
+    * @param _minPickCost - uint256
+     */
     constructor(
         ITicket _ticket,
         IPrizeTierHistory _prizeTierHistory,
@@ -27,6 +39,10 @@ contract DrawPercentageRate {
         minPickCost = _minPickCost;
         dpr = _dpr;
     }
+
+    /* =================================================== */
+    /* Core Functions ==================================== */
+    /* =================================================== */
 
     /**
      * @notice Get a PrizeDistribution using a historical Draw ID
@@ -60,6 +76,82 @@ contract DrawPercentageRate {
         }
         return _prizeDistributions;
     }
+
+    /* =================================================== */
+    /* Getter Functions ================================== */
+    /* =================================================== */
+
+    function getDpr()
+        external
+        view
+        returns (uint256)
+    {
+        return dpr;
+    }
+
+    function getMinPickCost()
+        external
+        view
+        returns (uint256)
+    {
+        return minPickCost;
+    }
+
+    function getTicket()
+        external
+        view
+        returns (ITicket)
+    {
+        return ticket;
+    }
+
+    function getDrawBuffer()
+        external
+        view
+        returns (IDrawBuffer)
+    {
+        return drawBuffer;
+    }
+
+    function getPrizeTierHistory()
+        external
+        view
+        returns (IPrizeTierHistory)
+    {
+        return prizeTierHistory;
+    }
+
+    /* =================================================== */
+    /* Setter Functions ================================== */
+    /* =================================================== */
+
+    function setDpr(uint256 _dpr)
+        external
+    {
+        dpr = _dpr;
+    }
+
+    function setTicket(ITicket _ticket)
+        external
+    {
+        ticket = _ticket;
+    }
+
+    function setDrawBuffer(IDrawBuffer _drawBuffer)
+        external
+    {
+        drawBuffer = _drawBuffer;
+    }
+
+    function setPrizeTierHistory(IPrizeTierHistory _prizeTierHistory)
+        external
+    {
+        prizeTierHistory = _prizeTierHistory;
+    }
+
+    /* =================================================== */
+    /* Internal Functions ================================ */
+    /* =================================================== */
 
     /**
      * @notice Internal function to get a PrizeDistribution using a historical Draw ID

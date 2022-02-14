@@ -195,6 +195,7 @@ contract DrawPercentageRate {
             _totalSupplies[0],
             PrizeTier.prize
         );
+        
         uint256 _totalPicks = uint256((2**PrizeTier.bitRangeSize)**_cardinality); // .toUint104(); - TODO: Convert to uint104 and optimize stoarge/loading
         uint32 _numberOfPicks = uint32(_totalPicks) * uint32(_fractionOfOdds);
 

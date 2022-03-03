@@ -2,15 +2,10 @@ import { getContractFactory } from "@nomiclabs/hardhat-ethers/types";
 import { usdc } from "@studydefi/money-legos/erc20";
 import { subtask, task, types } from "hardhat/config";
 
-import {
-    POOL_TOKEN_ADDRESS_MAINNET,
-    POOL_TOKEN_DECIMALS,
-} from "../../Constants";
+import { POOL_TOKEN_ADDRESS_MAINNET, POOL_TOKEN_DECIMALS } from "../../Constants";
 
 import { action, info, success } from "../../helpers";
-import {
-    increaseTime as increaseTimeUtil,
-} from "../../test/utils/increaseTime";
+import { increaseTime as increaseTimeUtil } from "../../test/utils/increaseTime";
 
 export default task("fork:twab-rewards", "Run TWAB Rewards fork").setAction(
     async (taskArguments, hre) => {
@@ -31,7 +26,7 @@ export default task("fork:twab-rewards", "Run TWAB Rewards fork").setAction(
         const ticketAddress = await prizePool.getTicket();
 
         const twabRewardsAddress = await run("deploy-twab-rewards", { ticketAddress });
-        const promotionId =  (await run("create-promotion", { twabRewardsAddress })).toNumber();
+        const promotionId = (await run("create-promotion", { twabRewardsAddress })).toNumber();
 
         await run("deposit-into-prize-pool", { prizePoolAddress });
 
@@ -82,7 +77,9 @@ subtask("create-promotion", "Create TWAB Rewards promotion")
 
         const createPromotionTx = await twabRewards.createPromotion(
             POOL_TOKEN_ADDRESS_MAINNET,
-            (await provider.getBlock('latest')).timestamp,
+            (
+                await provider.getBlock("latest")
+            ).timestamp,
             parseUnits("1000", POOL_TOKEN_DECIMALS),
             604800,
             12
@@ -104,7 +101,7 @@ subtask("create-promotion", "Create TWAB Rewards promotion")
 
         success("TWAB Rewards promotion created!");
 
-        return promotionCreatedEvent?.args['promotionId'];
+        return promotionCreatedEvent?.args["promotionId"];
     });
 
 subtask("deposit-into-prize-pool", "Deposit into prize pool")
@@ -125,8 +122,12 @@ subtask("deposit-into-prize-pool", "Deposit into prize pool")
         const depositAmountWallet2 = parseUnits("250", usdc.decimals);
         await usdcContract.connect(wallet2).approve(prizePoolAddress, depositAmountWallet2);
 
-        await prizePool.connect(deployer).depositToAndDelegate(deployer.address, depositAmountDeployer, deployer.address);
-        await prizePool.connect(wallet2).depositToAndDelegate(wallet2.address, depositAmountWallet2, wallet2.address);
+        await prizePool
+            .connect(deployer)
+            .depositToAndDelegate(deployer.address, depositAmountDeployer, deployer.address);
+        await prizePool
+            .connect(wallet2)
+            .depositToAndDelegate(wallet2.address, depositAmountWallet2, wallet2.address);
 
         success("Successfully deposited into the prize pool!");
     });
@@ -164,7 +165,7 @@ subtask("claim-rewards", "Claim rewards")
             (event: any) => event && event.name === "RewardsClaimed"
         );
 
-        const rewardsClaimedAmount = formatEther(rewardsClaimedEvent?.args['amount']);
+        const rewardsClaimedAmount = formatEther(rewardsClaimedEvent?.args["amount"]);
 
         success(`Successfully claimed ${rewardsClaimedAmount} POOL!`);
     });
@@ -184,7 +185,7 @@ subtask("destroy-promotion", "Destroy promotion")
 
         const destroyPromotionTx = await twabRewards.destroyPromotion(
             promotionId,
-            deployer.address,
+            deployer.address
         );
 
         const destroyPromotionReceipt = await getTransactionReceipt(destroyPromotionTx.hash);
@@ -201,7 +202,9 @@ subtask("destroy-promotion", "Destroy promotion")
             (event: any) => event && event.name === "PromotionDestroyed"
         );
 
-        const promotionDestroyedAmount = formatEther(promotionDestroyedEvent?.args['amount']);
+        const promotionDestroyedAmount = formatEther(promotionDestroyedEvent?.args["amount"]);
 
-        success(`Successfully destroyed promotion and received ${promotionDestroyedAmount} POOL back!`);
+        success(
+            `Successfully destroyed promotion and received ${promotionDestroyedAmount} POOL back!`
+        );
     });

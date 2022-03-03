@@ -3,20 +3,13 @@ pragma solidity 0.8.6;
 import "../DrawPercentageRate.sol";
 
 contract DrawPercentageRateHarness is DrawPercentageRate {
-
     constructor(
         ITicket _ticket,
         IPrizeTierHistory _prizeTierHistory,
         IDrawBuffer _drawBuffer,
         uint256 _minPickCost,
         uint256 _dpr
-    ) DrawPercentageRate(
-        _ticket,
-        _prizeTierHistory,
-        _drawBuffer,
-        _minPickCost,
-        _dpr
-    ) {}
+    ) DrawPercentageRate(_ticket, _prizeTierHistory, _drawBuffer, _minPickCost, _dpr) {}
 
     function calculatePrizeDistribution(uint32 _drawId, uint256 _dpr)
         external
@@ -34,19 +27,69 @@ contract DrawPercentageRateHarness is DrawPercentageRate {
         return _calculateDrawPeriodTimestampOffsets(_timestamp, _startOffset, _endOffset);
     }
 
-    function calculateCardinality(uint32 _bitRangeSize, uint256 _maxPicks)
+    function calculateCardinality(
+        uint256 _totalSupply,
+        uint256 _prize,
+        uint32 _bitRangeSize,
+        uint256 _dpr,
+        uint256 _minPickCost
+    ) public pure returns (uint8 cardinality) {
+        return _calculateCardinality(_totalSupply, _prize, _bitRangeSize, _dpr, _minPickCost);
+    }
+
+    function calculateNumberOfPicks(
+        uint256 _totalSupply,
+        uint256 _prize,
+        uint32 _bitRangeSize,
+        uint256 _dpr,
+        uint256 _minPickCost
+    ) public pure returns (uint256 numberOfPicks) {
+        return _calculateNumberOfPicks(_totalSupply, _prize, _bitRangeSize, _dpr, _minPickCost);
+    }
+
+    function calculateNumberOfPicksWithCardinalityAndFraction(
+        uint32 _bitRangeSize,
+        uint256 _cardinality,
+        uint256 _fractionOfOdds
+    ) public pure returns (uint256 cardinality) {
+        return
+            _calculateNumberOfPicksWithCardinalityAndFraction(
+                _bitRangeSize,
+                _cardinality,
+                _fractionOfOdds
+            );
+    }
+
+    function calculateCardinalityCeiling(uint32 _bitRangeSize, uint256 _maxPicks)
         public
         pure
         returns (uint8 cardinality)
     {
-        return _calculateCardinality(_bitRangeSize, _maxPicks);
+        return _calculateCardinalityCeiling(_bitRangeSize, _maxPicks);
     }
 
-    function caclulateFractionOfOdds(
+    function calculateFractionOfOdds(
         uint256 _dpr,
         uint256 _totalSupply,
         uint256 _prize
     ) public pure returns (uint256) {
-        return _caclulateFractionOfOdds(_dpr, _totalSupply, _prize);
+        return _calculateFractionOfOdds(_dpr, _totalSupply, _prize);
+    }
+
+    function calculateCardinalityAndNumberOfPicks(
+        uint256 _totalSupply,
+        uint256 _prize,
+        uint32 _bitRangeSize,
+        uint256 _dpr,
+        uint256 _minPickCost
+    ) public pure returns (uint8 cardinality, uint256 numberOfPicks) {
+        return
+            _calculateCardinalityAndNumberOfPicks(
+                _totalSupply,
+                _prize,
+                _bitRangeSize,
+                _dpr,
+                _minPickCost
+            );
     }
 }

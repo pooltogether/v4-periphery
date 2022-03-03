@@ -7,29 +7,19 @@ pragma solidity 0.8.6;
  * @notice DrawBinarySearch handles finding a historical Draw ID references
  */
 
-contract DrawBinarySearch {
-    
-    function _binarySearch(
-        uint32 _drawId,
-        uint32 leftSide,
-        uint32 rightSide,
-        uint32[] memory _history
-    ) internal pure returns (uint32) {
-        return _history[_binarySearchIndex(_drawId, leftSide, rightSide, _history)];
-    }
+abstract contract DrawBinarySearch {
 
-    function _binarySearchIndex(
-        uint32 _drawId,
-        uint32 _leftSide,
-        uint32 _rightSide,
-        uint32[] memory _history
-    ) internal pure returns (uint32) {
+    function getNewestIndex() internal view virtual returns (uint32);
+
+    function getDrawIdForIndex(uint index) internal view virtual returns (uint32);
+
+    function _binarySearch(uint32 _drawId) internal view returns (uint32) {
         uint32 index;
-        uint32 leftSide = _leftSide;
-        uint32 rightSide = _rightSide;
+        uint32 leftSide = 0;
+        uint32 rightSide = getNewestIndex();
         while (true) {
             uint32 center = leftSide + (rightSide - leftSide) / 2;
-            uint32 centerID = _history[center];
+            uint32 centerID = getDrawIdForIndex(center);
 
             if (centerID == _drawId) {
                 index = center;

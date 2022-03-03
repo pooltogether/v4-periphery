@@ -46,7 +46,7 @@ library BinarySearchLib {
                 }
                 break;
             }
-            
+
             if (centerID < _drawId) {
                 leftSide = center;
             } else {

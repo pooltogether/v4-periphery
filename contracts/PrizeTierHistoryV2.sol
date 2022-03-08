@@ -48,7 +48,7 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, DrawIDBinarySearch, Manageab
         override
         returns (PrizeTierV2 memory prizeTier)
     {
-        require(drawId > 0, "PrizeTierHistory/draw-id-not-zero");
+        require(drawId > 0, "PrizeTierHistoryV2/draw-id-not-zero");
         return _getPrizeTier(drawId);
     }
 
@@ -108,24 +108,26 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, DrawIDBinarySearch, Manageab
             require(_prizeTier.drawId > _newestDpr.drawId, "PrizeTierHistoryV2/non-sequential-dpr");
         }
         history.push(_prizeTier);
+        emit PrizeTierPushed(_prizeTier.drawId, _prizeTier);
     }
 
     function _replace(PrizeTierV2 calldata _prizeTier) internal {
         uint256 cardinality = history.length;
-        require(cardinality > 0, "DrawPercentageRate/no-prize-tiers");
+        require(cardinality > 0, "PrizeTierHistoryV2/no-prize-tiers");
         uint32 oldestDrawId = history[0].drawId;
-        require(_prizeTier.drawId >= oldestDrawId, "DrawPercentageRate/draw-id-out-of-range");
+        require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistoryV2/draw-id-out-of-range");
         uint256 index = _binarySearch(_prizeTier.drawId);
         require(
             history[index].drawId == _prizeTier.drawId,
-            "DrawPercentageRate/draw-id-must-match"
+            "PrizeTierHistoryV2/draw-id-must-match"
         );
         history[index] = _prizeTier;
+        emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
     }
 
     function _injectTimeline(PrizeTierV2[] memory _timeline) internal {
-        require(history.length == 0, "PrizeTierHistory/history-not-empty");
-        require(_timeline.length > 0, "PrizeTierHistory/timeline-empty");
+        require(history.length == 0, "PrizeTierHistoryV2/history-not-empty");
+        require(_timeline.length > 0, "PrizeTierHistoryV2/timeline-empty");
         for (uint256 i = 0; i < _timeline.length; i++) {
             _push(_timeline[i]);
         }

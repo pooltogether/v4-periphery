@@ -84,7 +84,7 @@ describe('PrizeTierHistory', () => {
             expect(prizeTierFromHistory[2].drawId).to.equal(9);
         });
         
-        it.only('should fail to get prize tiers from history', async () => {
+        it.skip('should fail to get prize tiers from history', async () => {
             const prizeTiersTest = [
                 {
                     bitRangeSize: 5,

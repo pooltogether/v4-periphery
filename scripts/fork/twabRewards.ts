@@ -7,7 +7,7 @@ import { action, info, success } from "../../helpers";
 import { increaseTime as increaseTimeUtil } from "../../test/utils/increaseTime";
 
 export default task("fork:twab-rewards", "Run TWAB Rewards fork").setAction(
-    async (taskArguments, hre) => {
+    async (taskArguments, hre:any) => {
         action("Run TWAB Rewards fork...");
 
         const { ethers, run } = hre;
@@ -76,7 +76,7 @@ export default task("fork:twab-rewards", "Run TWAB Rewards fork").setAction(
 
 subtask("deploy-twab-rewards", "Deploy TWAB Rewards")
     .addParam("ticketAddress", "Prize pool ticket address")
-    .setAction(async ({ ticketAddress }, hre) => {
+    .setAction(async ({ ticketAddress }, hre: any) => {
         action("Deploy TWAB Rewards...");
 
         const {
@@ -153,7 +153,7 @@ subtask("create-promotion", "Create TWAB Rewards promotion")
 
 subtask("deposit-into-prize-pool", "Deposit into prize pool")
     .addParam("prizePoolAddress", "Prize pool address")
-    .setAction(async ({ prizePoolAddress }, { ethers }) => {
+    .setAction(async ({ prizePoolAddress }, { ethers }: any) => {
         action("Deposit into prize pool...");
 
         const { getContractAt, getSigners, utils } = ethers;
@@ -183,7 +183,7 @@ subtask("deposit-into-prize-pool", "Deposit into prize pool")
 subtask("claim-rewards", "Claim rewards")
     .addParam("twabRewardsAddress", "TWAB Rewards address")
     .addParam("promotionId", "Id of the promotion", null, types.float)
-    .setAction(async ({ twabRewardsAddress, promotionId }, { ethers }) => {
+    .setAction(async ({ twabRewardsAddress, promotionId }, { ethers }: any) => {
         action("Claim rewards...");
 
         const { getContractAt, getSigners, provider, utils } = ethers;

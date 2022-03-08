@@ -1,3 +1,4 @@
+
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import 'hardhat-abi-exporter';
@@ -15,7 +16,7 @@ import networks from './hardhat.network';
 
 const optimizerEnabled = !process.env.OPTIMIZER_DISABLED;
 
-const config: HardhatUserConfig = {
+const config: HardhatUserConfig | any = {
     abiExporter: {
         path: './abis',
         clear: true,

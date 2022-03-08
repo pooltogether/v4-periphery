@@ -10,7 +10,7 @@ import {
 
 import { action, info, success } from "../../helpers";
 
-export default task("fork:create-pool", "Create pool").setAction(async (taskArguments, hre) => {
+export default task("fork:create-pool", "Create pool").setAction(async (taskArguments, hre:any) => {
     action("Create pool...");
 
     const {

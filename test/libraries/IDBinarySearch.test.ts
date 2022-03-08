@@ -1,4 +1,4 @@
-import { expect } from "chai";
+// @ts-ignore
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract, ContractFactory } from "ethers";

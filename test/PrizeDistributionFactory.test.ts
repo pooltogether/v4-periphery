@@ -1,3 +1,4 @@
+// @ts-ignore
 import { ethers, artifacts } from 'hardhat';
 import { deployMockContract, MockContract } from 'ethereum-waffle';
 import { Signer } from '@ethersproject/abstract-signer';

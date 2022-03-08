@@ -1,10 +1,11 @@
+// @ts-ignore
+import { ethers } from 'hardhat';
 import ERC20MintableInterface from '@pooltogether/v4-core/abis/ERC20Mintable.json';
 import TicketInterface from '@pooltogether/v4-core/abis/ITicket.json';
 import { deployMockContract, MockContract } from '@ethereum-waffle/mock-contract';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, Contract, ContractFactory } from 'ethers';
-import { ethers } from 'hardhat';
 
 import { increaseTime as increaseTimeUtil, setTime as setTimeUtil } from './utils/increaseTime';
 

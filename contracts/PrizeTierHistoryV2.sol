@@ -2,7 +2,7 @@
 pragma solidity 0.8.6;
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "./interfaces/IPrizeTierHistoryV2.sol";
-import "./DrawIDBinarySearch.sol";
+import "./abstract/DrawIDBinarySearch.sol";
 
 /**
  * @title  PoolTogether V4 PrizeTierHistoryV2

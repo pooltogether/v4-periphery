@@ -12,7 +12,7 @@ import {
 import { action, success } from "../../helpers";
 
 export default task("fork:distribute", "Distribute Ether and USDC").setAction(
-    async (taskArguments, hre) => {
+    async (taskArguments, hre: any) => {
         action("Distributing Ether and USDC...");
 
         const { ethers } = hre;

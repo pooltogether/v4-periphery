@@ -8,6 +8,10 @@ import "@pooltogether/v4-core/contracts/DrawBeacon.sol";
  * @notice IPrizeTierHistoryV2 is the base contract for PrizeTierHistoryV2
  */
 interface IPrizeTierHistoryV2 {
+    /**
+     * @notice PrizeTierV2 struct
+     * @dev    Adds the DPR paramater to the PrizeTierStructV1
+    */
     struct PrizeTierV2 {
         uint8 bitRangeSize;
         uint32 drawId;
@@ -19,6 +23,28 @@ interface IPrizeTierHistoryV2 {
         uint32 dpr;
         // @TODO add minPickCost to the new PrizeTierHistoryV2? Semi-linked to DPR
     }
+
+    /* =================================================== */
+    /* Events ============================================ */
+    /* =================================================== */
+
+    /**
+     * @notice Emit when new PrizeTierV2 is added to history
+     * @param drawId    Draw ID
+     * @param prizeTier PrizeTierV2 parameters
+     */
+     event PrizeTierPushed(uint32 indexed drawId, PrizeTierV2 prizeTier);
+
+     /**
+      * @notice Emit when existing PrizeTierV2 is updated in history
+      * @param drawId    Draw ID
+      * @param prizeTier PrizeTierV2 parameters
+      */
+     event PrizeTierSet(uint32 indexed drawId, PrizeTierV2 prizeTier);
+
+    /* =================================================== */
+    /* Functions ========================================= */
+    /* =================================================== */
 
     /**
      * @notice Read oldest Draw ID in history array

@@ -5,7 +5,7 @@ import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol"
 import "@pooltogether/v4-core/contracts/interfaces/IDrawBuffer.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IDrawBeacon.sol";
 import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
-import "./interfaces/IPrizeTierHistory.sol";
+import "./interfaces/IPrizeTierHistoryV2.sol";
 
 /**
  * @title  PoolTogether V4 DrawPercentageRate
@@ -13,56 +13,38 @@ import "./interfaces/IPrizeTierHistory.sol";
  * @notice DrawPercentageRate calculates a PrizePool distributions using a static draw percentage rate
  */
 contract DrawPercentageRate {
-    // Constants
     uint32 public constant RATE_NORMALIZATION = 1e9;
 
     // Immutable (Set by constructor)
     uint256 public immutable minPickCost;
 
-    // Mutable
-    uint256 public dpr;
+    // Mutable (Set by constructor and setters)
     ITicket public ticket;
     IDrawBuffer public drawBuffer;
-    IPrizeTierHistory public prizeTierHistory;
-
-    struct DPRHistory {
-        uint32 drawId;
-        uint256 dpr;
-    }
-
-    DPRHistory[] internal history;
+    IPrizeTierHistoryV2 public prizeTierHistory;
 
     /**
      * Constructor
      * @param _ticket - ITicket
      * @param _drawBuffer - IDrawBuffer
-     * @param _prizeTierHistory - IPrizeTierHistory
-     * @param _dpr - uint256
+     * @param _prizeTierHistory - IPrizeTierHistoryV2
      * @param _minPickCost - uint256
      */
     constructor(
         ITicket _ticket,
-        IPrizeTierHistory _prizeTierHistory,
+        IPrizeTierHistoryV2 _prizeTierHistory,
         IDrawBuffer _drawBuffer,
-        uint256 _minPickCost,
-        uint256 _dpr
+        uint256 _minPickCost
     ) {
         ticket = _ticket;
         prizeTierHistory = _prizeTierHistory;
         drawBuffer = _drawBuffer;
         minPickCost = _minPickCost;
-        dpr = _dpr;
     }
 
     /* =================================================== */
     /* Core ============================================== */
     /* =================================================== */
-
-    function getDpr(uint32 _drawId) external view returns (DPRHistory memory) {
-        require(_drawId > 0, "DrawPercentageRate/draw-id-not-zero");
-        return _getDpr(_drawId);
-    }
-
     /**
      * @notice Get a PrizeDistribution using a historical Draw ID
      * @param drawId - uint32
@@ -73,7 +55,7 @@ contract DrawPercentageRate {
         view
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
-        return _getPrizeDistribution(drawId);
+        return _calculatePrizeDistribution(drawId);
     }
 
     /**
@@ -91,7 +73,7 @@ contract DrawPercentageRate {
                 drawIds.length
             );
         for (uint256 index = 0; index < drawIds.length; index++) {
-            _prizeDistributions[index] = _getPrizeDistribution(drawIds[index]);
+            _prizeDistributions[index] = _calculatePrizeDistribution(drawIds[index]);
         }
         return _prizeDistributions;
     }
@@ -101,31 +83,16 @@ contract DrawPercentageRate {
     /* =================================================== */
 
     /**
-     * @notice Internal function to get a PrizeDistribution using a historical Draw ID
-     * @param _drawId - uint32
-     * @return prizeDistribution
-     */
-    function _getPrizeDistribution(uint32 _drawId)
-        internal
-        view
-        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
-    {
-        DPRHistory memory _history = _getDpr(_drawId);
-        return _calculatePrizeDistribution(_drawId, _history.dpr);
-    }
-
-    /**
      * @notice Calculate a PrizeDistribution using Draw, PrizeTier and DrawPercentageRate parameters
      * @param _drawId - uint32
-     * @param _dpr - uint256 Draw Percentage Rate associated with the Draw ID
      * @return prizeDistribution
      */
-    function _calculatePrizeDistribution(uint32 _drawId, uint256 _dpr)
+    function _calculatePrizeDistribution(uint32 _drawId)
         internal
         view
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
-        IPrizeTierHistory.PrizeTier memory prizeTier = prizeTierHistory.getPrizeTier(_drawId);
+        IPrizeTierHistoryV2.PrizeTierV2 memory prizeTier = prizeTierHistory.getPrizeTier(_drawId);
         IDrawBeacon.Draw memory draw = drawBuffer.getDraw(_drawId);
         (uint64[] memory start, uint64[] memory end) = _calculateDrawPeriodTimestampOffsets(
             draw.timestamp,
@@ -134,11 +101,11 @@ contract DrawPercentageRate {
         );
         uint256[] memory _totalSupplies = ticket.getAverageTotalSuppliesBetween(start, end);
         (uint8 _cardinality, uint104 _numberOfPicks) = _calculateCardinalityAndNumberOfPicks(
-            _totalSupplies[0],
-            prizeTier.prize,
             prizeTier.bitRangeSize,
-            _dpr,
-            minPickCost
+            prizeTier.prize,
+            prizeTier.dpr,
+            minPickCost,
+            _totalSupplies[0]
         );
         IPrizeDistributionBuffer.PrizeDistribution
             memory prizeDistribution = IPrizeDistributionBuffer.PrizeDistribution({
@@ -156,11 +123,11 @@ contract DrawPercentageRate {
     }
 
     function _calculateCardinality(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) internal pure returns (uint8 cardinality) {
         uint256 _maxPicks = _normalizePicks(_totalSupply, _minPickCost);
         uint256 _fractionOfOdds = _calculateFractionOfOdds(_dpr, _totalSupply, _prize);
@@ -172,11 +139,11 @@ contract DrawPercentageRate {
     }
 
     function _calculateNumberOfPicks(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) internal pure returns (uint104) {
         uint256 _maxPicks = _normalizePicks(_totalSupply, _minPickCost);
         uint256 _fractionOfOdds = _calculateFractionOfOdds(_dpr, _totalSupply, _prize);
@@ -203,25 +170,25 @@ contract DrawPercentageRate {
     }
 
     function _calculateCardinalityAndNumberOfPicks(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) internal pure returns (uint8 cardinality, uint104 numberOfPicks) {
         cardinality = _calculateCardinality(
-            _totalSupply,
-            _prize,
             _bitRangeSize,
+            _prize,
             _dpr,
-            _minPickCost
+            _minPickCost,
+            _totalSupply
         );
         numberOfPicks = _calculateNumberOfPicks(
-            _totalSupply,
-            _prize,
             _bitRangeSize,
+            _prize,
             _dpr,
-            _minPickCost
+            _minPickCost,
+            _totalSupply
         );
     }
 
@@ -256,68 +223,6 @@ contract DrawPercentageRate {
         return (_dpr * _totalSupply) / _prize;
     }
 
-    function _getDpr(uint32 _drawId) internal view returns (DPRHistory memory) {
-        uint256 cardinality = history.length;
-        require(cardinality > 0, "DrawPercentageRate/no-prize-tiers");
-
-        uint256 leftSide = 0;
-        uint256 rightSide = cardinality - 1;
-        uint32 oldestDrawId = history[leftSide].drawId;
-        uint32 newestDrawId = history[rightSide].drawId;
-
-        require(_drawId >= oldestDrawId, "DrawPercentageRate/draw-id-out-of-range");
-        if (_drawId >= newestDrawId) return history[rightSide];
-        if (_drawId == oldestDrawId) return history[leftSide];
-
-        return _binarySearch(_drawId, leftSide, rightSide, history);
-    }
-
-    function _binarySearch(
-        uint32 _drawId,
-        uint256 leftSide,
-        uint256 rightSide,
-        DPRHistory[] storage _history
-    ) internal view returns (DPRHistory memory) {
-        return _history[_binarySearchIndex(_drawId, leftSide, rightSide, _history)];
-    }
-
-    function _binarySearchIndex(
-        uint32 _drawId,
-        uint256 _leftSide,
-        uint256 _rightSide,
-        DPRHistory[] storage _history
-    ) internal view returns (uint256) {
-        uint256 index;
-        uint256 leftSide = _leftSide;
-        uint256 rightSide = _rightSide;
-        while (true) {
-            uint256 center = leftSide + (rightSide - leftSide) / 2;
-            uint32 centerID = _history[center].drawId;
-
-            if (centerID == _drawId) {
-                index = center;
-                break;
-            }
-
-            if (centerID < _drawId) {
-                leftSide = center + 1;
-            } else if (centerID > _drawId) {
-                rightSide = center - 1;
-            }
-
-            if (leftSide == rightSide) {
-                if (centerID >= _drawId) {
-                    index = center - 1;
-                    break;
-                } else {
-                    index = center;
-                    break;
-                }
-            }
-        }
-        return index;
-    }
-
     function _normalizePicks(uint256 _dividend, uint256 _denomintor)
         internal
         pure
@@ -329,10 +234,6 @@ contract DrawPercentageRate {
     /* =================================================== */
     /* Getter ============================================ */
     /* =================================================== */
-
-    function getDpr() external view returns (uint256) {
-        return dpr;
-    }
 
     function getMinPickCost() external view returns (uint256) {
         return minPickCost;
@@ -346,7 +247,7 @@ contract DrawPercentageRate {
         return drawBuffer;
     }
 
-    function getPrizeTierHistory() external view returns (IPrizeTierHistory) {
+    function getPrizeTierHistory() external view returns (IPrizeTierHistoryV2) {
         return prizeTierHistory;
     }
 
@@ -354,10 +255,7 @@ contract DrawPercentageRate {
     /* Setter ============================================ */
     /* =================================================== */
 
-    function setDpr(uint256 _dpr) external {
-        dpr = _dpr;
-    }
-
+    // @TODO: We probably don't need this setter. What good reason is there to change a ticket and the totalSupply history !?!?!?
     function setTicket(ITicket _ticket) external {
         ticket = _ticket;
     }
@@ -366,28 +264,7 @@ contract DrawPercentageRate {
         drawBuffer = _drawBuffer;
     }
 
-    function setPrizeTierHistory(IPrizeTierHistory _prizeTierHistory) external {
+    function setPrizeTierHistory(IPrizeTierHistoryV2 _prizeTierHistory) external {
         prizeTierHistory = _prizeTierHistory;
-    }
-
-    function push(DPRHistory calldata _nextDpr) external {
-        DPRHistory[] memory _history = history;
-        if (_history.length > 0) {
-            DPRHistory memory _newestDpr = history[history.length - 1];
-            require(_nextDpr.drawId > _newestDpr.drawId, "DrawPercentageRate/non-sequential-dpr");
-        }
-        history.push(_nextDpr);
-    }
-
-    function replace(DPRHistory calldata _nextDpr) external {
-        uint256 cardinality = history.length;
-        require(cardinality > 0, "DrawPercentageRate/no-prize-tiers");
-        uint256 leftSide = 0;
-        uint256 rightSide = cardinality - 1;
-        uint32 oldestDrawId = history[leftSide].drawId;
-        require(_nextDpr.drawId >= oldestDrawId, "DrawPercentageRate/draw-id-out-of-range");
-        uint256 index = _binarySearchIndex(_nextDpr.drawId, leftSide, rightSide, history);
-        require(history[index].drawId == _nextDpr.drawId, "DrawPercentageRate/draw-id-must-match");
-        history[index] = _nextDpr;
     }
 }

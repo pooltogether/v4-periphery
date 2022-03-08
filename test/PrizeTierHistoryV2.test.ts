@@ -4,11 +4,12 @@ import { Signer } from '@ethersproject/abstract-signer';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Contract, ContractFactory } from 'ethers';
 import { range } from './utils/range';
+import { parseUnits } from 'ethers/lib/utils';
 
 const { getSigners, utils } = ethers;
 const { parseEther: toWei } = utils;
 
-describe('PrizeTierHistory', () => {
+describe('PrizeTierHistoryV2', () => {
     let wallet1: SignerWithAddress;
     let wallet2: SignerWithAddress;
     let wallet3: SignerWithAddress;
@@ -26,6 +27,7 @@ describe('PrizeTierHistory', () => {
             expiryDuration: 10000,
             prize: toWei('10000'),
             endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
         },
         {
             bitRangeSize: 5,
@@ -35,6 +37,7 @@ describe('PrizeTierHistory', () => {
             expiryDuration: 10000,
             prize: toWei('10000'),
             endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
         },
         {
             bitRangeSize: 5,
@@ -44,6 +47,27 @@ describe('PrizeTierHistory', () => {
             expiryDuration: 10000,
             prize: toWei('10000'),
             endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
+        },
+        {
+            bitRangeSize: 5,
+            drawId: 20,
+            maxPicksPerUser: 10,
+            tiers: range(16, 0).map((i) => 0),
+            expiryDuration: 10000,
+            prize: toWei('10000'),
+            endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
+        },
+        {
+            bitRangeSize: 5,
+            drawId: 21,
+            maxPicksPerUser: 10,
+            tiers: range(16, 0).map((i) => 0),
+            expiryDuration: 10000,
+            prize: toWei('10000'),
+            endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
         },
     ];
 
@@ -55,38 +79,20 @@ describe('PrizeTierHistory', () => {
 
     before(async () => {
         [wallet1, wallet2, wallet3, wallet4] = await getSigners();
-        prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory');
+        prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistoryV2');
     });
 
     beforeEach(async () => {
-        prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address);
-    });
-
-    describe('count()', () => {
-        it('should return zero when empty', async () => {
-            expect(await prizeTierHistory.count()).to.equal(0);
-        });
-
-        it('should return correct when pushed', async () => {
-            await pushPrizeTiers();
-            expect(await prizeTierHistory.count()).to.equal(3);
-        });
+        // Deploy PrizeTierHistoryV2 with an empty history for each test
+        prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address, []);
     });
 
     describe('Getters', () => {
-
+        
         it('should succeed to get prize tiers from history', async () => {
             await pushPrizeTiers();
-            const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 9]);
-            expect(prizeTierFromHistory[0].drawId).to.equal(1);
-            expect(prizeTierFromHistory[1].drawId).to.equal(6);
-            expect(prizeTierFromHistory[2].drawId).to.equal(9);
-        });
-        
-        it('should fail to get prize tiers from history', async () => {
-            await pushPrizeTiers();
-            await pushPrizeTiers();
-            const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 9]);
+            // const t2 = await prizeTierHistory.getPrizeTierAtIndex(2);
+            const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 15]);
             expect(prizeTierFromHistory[0].drawId).to.equal(1);
             expect(prizeTierFromHistory[1].drawId).to.equal(6);
             expect(prizeTierFromHistory[2].drawId).to.equal(9);
@@ -109,14 +115,14 @@ describe('PrizeTierHistory', () => {
         it('should fail to get a PrizeTier before history range', async () => {
             await pushPrizeTiers();
             await expect(prizeTierHistory.getPrizeTier(0)).to.revertedWith(
-                'PrizeTierHistory/draw-id-not-zero',
+                'PrizeTierHistoryV2/draw-id-not-zero',
             );
         });
 
         it('should fail to get a PrizeTer after history range', async () => {
             await prizeTierHistory.push(prizeTiers[2]);
             await expect(prizeTierHistory.getPrizeTier(4)).to.be.revertedWith(
-                'PrizeTierHistory/draw-id-out-of-range',
+                'PrizeTierHistoryV2/draw-id-out-of-range',
             );
         });
     });
@@ -180,13 +186,13 @@ describe('PrizeTierHistory', () => {
                     bitRangeSize: 16,
                 };
                 await expect(prizeTierHistory.popAndPush(prizeTier)).to.revertedWith(
-                    'PrizeTierHistory/invalid-draw-id',
+                    'PrizeTierHistoryV2/invalid-draw-id',
                 );
             });
 
             it('should fail to set existing PrizeTier due to empty history', async () => {
                 await expect(prizeTierHistory.popAndPush(prizeTiers[0])).to.revertedWith(
-                    'PrizeTierHistory/history-empty',
+                    'PrizeTierHistoryV2/history-empty',
                 );
             });
 
@@ -229,7 +235,7 @@ describe('PrizeTierHistory', () => {
             await pushPrizeTiers();
 
             await expect(prizeTierHistory.replace(prizeTier)).to.be.revertedWith(
-                'PrizeTierHistory/draw-id-must-match',
+                'PrizeTierHistoryV2/draw-id-must-match',
             );
         });
     });

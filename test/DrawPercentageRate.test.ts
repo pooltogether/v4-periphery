@@ -21,12 +21,11 @@ describe('DrawPercentageRate', () => {
     let drawPercentageRateFactory: ContractFactory;
 
     const MIN_PICK_COST = BigNumber.from('1');
-    const DPR = BigNumber.from('1');
 
     before(async () => {
         [wallet1, wallet2, wallet3] = await getSigners();
         const Ticket = await artifacts.readArtifact('PrizeTierHistory');
-        const PrizeTierHistory = await artifacts.readArtifact('PrizeTierHistory');
+        const PrizeTierHistory = await artifacts.readArtifact('PrizeTierHistoryV2');
         ticket = await deployMockContract(wallet1, Ticket.abi);
         prizeTierHistory = await deployMockContract(wallet1, PrizeTierHistory.abi);
         drawBuffer = await deployMockContract(wallet1, DrawBuffer.abi);
@@ -39,7 +38,6 @@ describe('DrawPercentageRate', () => {
             prizeTierHistory.address,
             drawBuffer.address,
             MIN_PICK_COST,
-            DPR,
         );
     });
 
@@ -67,11 +65,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.01', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateCardinality(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value).to.eq(BigNumber.from('7'));
             });
@@ -83,11 +81,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.1', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateCardinality(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value).to.eq(BigNumber.from('4'));
             });
@@ -102,11 +100,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.01', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateNumberOfPicks(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value).to.eq(BigNumber.from('1638'));
             });
@@ -118,11 +116,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.1', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateNumberOfPicks(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value).to.eq(BigNumber.from('2560'));
             });
@@ -165,11 +163,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.01', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateCardinalityAndNumberOfPicks(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value.cardinality).to.eq(BigNumber.from('7'));
                 expect(value.numberOfPicks).to.eq(BigNumber.from('1638'));
@@ -182,11 +180,11 @@ describe('DrawPercentageRate', () => {
                 const DPR = parseUnits('0.1', '9');
                 const MIN_PICK_COST = BigNumber.from('1');
                 const value = await drawPercentageRate.calculateCardinalityAndNumberOfPicks(
-                    TOTAL_SUPPLY,
-                    PRIZE,
                     BIT_RANGE_SIZE,
+                    PRIZE,
                     DPR,
                     MIN_PICK_COST,
+                    TOTAL_SUPPLY,
                 );
                 expect(value.cardinality).to.eq(BigNumber.from('4'));
                 expect(value.numberOfPicks).to.eq(BigNumber.from('2560'));
@@ -250,19 +248,19 @@ describe('DrawPercentageRate', () => {
         it('should get the destination address', async () => {
             expect(await drawPercentageRate.getTicket()).to.equal(ticket.address);
         });
+
         it('should get the strategy address', async () => {
             expect(await drawPercentageRate.getPrizeTierHistory()).to.equal(
                 prizeTierHistory.address,
             );
         });
+
         it('should get the reserve address', async () => {
             expect(await drawPercentageRate.getDrawBuffer()).to.equal(drawBuffer.address);
         });
+
         it('should get the minPickCost', async () => {
             expect(await drawPercentageRate.getMinPickCost()).to.equal(MIN_PICK_COST);
-        });
-        it('should get the DPR (draw percentage rate)', async () => {
-            expect(await drawPercentageRate.getDpr()).to.equal(DPR);
         });
     });
 
@@ -280,10 +278,6 @@ describe('DrawPercentageRate', () => {
         it('should set the reserve address', async () => {
             drawPercentageRate.setDrawBuffer(drawBuffer.address);
             expect(await drawPercentageRate.getDrawBuffer()).to.equal(drawBuffer.address);
-        });
-        it('should set the DPR (draw percentage rate)', async () => {
-            await drawPercentageRate.setDpr(DPR);
-            expect(await drawPercentageRate.getDpr()).to.equal(DPR);
         });
     });
 });

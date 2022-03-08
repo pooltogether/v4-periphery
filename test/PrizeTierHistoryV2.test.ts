@@ -72,7 +72,6 @@ describe('PrizeTierHistoryV2', () => {
         it('should succeed to get prize tiers from history', async () => {
             await pushPrizeTiers();
             const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 15]);
-            console.log(prizeTierFromHistory, 'prizeTierFromHistory')
             expect(prizeTierFromHistory[0].drawId).to.equal(1);
             expect(prizeTierFromHistory[1].drawId).to.equal(6);
             expect(prizeTierFromHistory[2].drawId).to.equal(9);

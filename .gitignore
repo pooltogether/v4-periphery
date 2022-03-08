@@ -29,3 +29,5 @@ docs
 
 deployments/localhost
 deployments/hardhat
+
+.turbo

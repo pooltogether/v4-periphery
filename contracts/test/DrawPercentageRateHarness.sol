@@ -5,18 +5,17 @@ import "../DrawPercentageRate.sol";
 contract DrawPercentageRateHarness is DrawPercentageRate {
     constructor(
         ITicket _ticket,
-        IPrizeTierHistory _prizeTierHistory,
+        IPrizeTierHistoryV2 _prizeTierHistory,
         IDrawBuffer _drawBuffer,
-        uint256 _minPickCost,
-        uint256 _dpr
-    ) DrawPercentageRate(_ticket, _prizeTierHistory, _drawBuffer, _minPickCost, _dpr) {}
+        uint256 _minPickCost
+    ) DrawPercentageRate(_ticket, _prizeTierHistory, _drawBuffer, _minPickCost) {}
 
-    function calculatePrizeDistribution(uint32 _drawId, uint256 _dpr)
+    function calculatePrizeDistribution(uint32 _drawId)
         external
         view
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
-        return _calculatePrizeDistribution(_drawId, _dpr);
+        return _calculatePrizeDistribution(_drawId);
     }
 
     function calculateDrawPeriodTimestampOffsets(
@@ -28,23 +27,23 @@ contract DrawPercentageRateHarness is DrawPercentageRate {
     }
 
     function calculateCardinality(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) public pure returns (uint8 cardinality) {
-        return _calculateCardinality(_totalSupply, _prize, _bitRangeSize, _dpr, _minPickCost);
+        return _calculateCardinality(_bitRangeSize, _prize, _dpr, _minPickCost, _totalSupply);
     }
 
     function calculateNumberOfPicks(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) public pure returns (uint256 numberOfPicks) {
-        return _calculateNumberOfPicks(_totalSupply, _prize, _bitRangeSize, _dpr, _minPickCost);
+        return _calculateNumberOfPicks(_bitRangeSize, _prize, _dpr, _minPickCost, _totalSupply);
     }
 
     function calculateNumberOfPicksWithCardinalityAndFraction(
@@ -77,19 +76,19 @@ contract DrawPercentageRateHarness is DrawPercentageRate {
     }
 
     function calculateCardinalityAndNumberOfPicks(
-        uint256 _totalSupply,
-        uint256 _prize,
         uint32 _bitRangeSize,
+        uint256 _prize,
         uint256 _dpr,
-        uint256 _minPickCost
+        uint256 _minPickCost,
+        uint256 _totalSupply
     ) public pure returns (uint8 cardinality, uint256 numberOfPicks) {
         return
             _calculateCardinalityAndNumberOfPicks(
-                _totalSupply,
-                _prize,
                 _bitRangeSize,
+                _prize,
                 _dpr,
-                _minPickCost
+                _minPickCost,
+                _totalSupply
             );
     }
 }

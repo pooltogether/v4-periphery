@@ -4,7 +4,8 @@ pragma solidity 0.8.6;
 /**
  * @title  PoolTogether V4 IDBinarySearch
  * @author PoolTogether Inc Team
- * @notice IDBinarySearch handles finding a historical Draw ID references
+ * @notice IDBinarySearch creates a binary search tree for ID values in ordered list
+           Developed as a prototype for simple lookups using just a Draw ID
  */
 
 contract IDBinarySearch {

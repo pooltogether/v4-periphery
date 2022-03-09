@@ -205,7 +205,7 @@ contract PrizeDistributionFactory is Manageable {
         } while ((2**prizeTier.bitRangeSize)**(cardinality + 1) < _maxPicks);
 
         IPrizeDistributionBuffer.PrizeDistribution
-            memory prizeDistribution = IPrizeDistributionBuffer.PrizeDistribution({
+            memory prizeDistribution = IPrizeDistributionSource.PrizeDistribution({
                 bitRangeSize: prizeTier.bitRangeSize,
                 matchCardinality: cardinality,
                 startTimestampOffset: _startTimestampOffset,

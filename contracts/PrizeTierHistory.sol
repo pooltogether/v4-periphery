@@ -154,7 +154,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
             }
 
             if (centerPrizeTierID < _drawId) {
-                leftSide = center + 1;
+                leftSide = center;
             } else if (centerPrizeTierID > _drawId) {
                 rightSide = center - 1;
             }

@@ -49,13 +49,23 @@ describe('PrizeTierHistoryV2', () => {
             prize: toWei('10000'),
             endTimestampOffset: 3000,
             dpr: parseUnits('.1', 9),
+        },
+        {
+            bitRangeSize: 5,
+            drawId: 20,
+            maxPicksPerUser: 10,
+            tiers: range(16, 0).map((i) => 0),
+            expiryDuration: 10000,
+            prize: toWei('10000'),
+            endTimestampOffset: 3000,
+            dpr: parseUnits('.1', 9),
         }
     ];
 
     const pushPrizeTiers = async () => {
-        prizeTiers.map(async (tier) => {
+        Promise.all(prizeTiers.map(async (tier) => {
             await prizeTierHistory.push(tier);
-        });
+        }));
     };
 
     before(async () => {

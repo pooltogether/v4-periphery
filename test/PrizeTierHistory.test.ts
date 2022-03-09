@@ -127,7 +127,7 @@ describe('PrizeTierHistory', () => {
             Promise.all(prizeTiersTest.map(async (tier) => {
                 await prizeTierHistory.push(tier);
             }));
-            const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 9]);
+            const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 15]);
             expect(prizeTierFromHistory[0].drawId).to.equal(1);
             expect(prizeTierFromHistory[1].drawId).to.equal(6);
             expect(prizeTierFromHistory[2].drawId).to.equal(9);

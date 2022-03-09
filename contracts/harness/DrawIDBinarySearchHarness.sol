@@ -12,7 +12,7 @@ contract DrawIDBinarySearchHarness is DrawIDBinarySearch {
 
     constructor(Draw[] memory _history) {
         if (_history.length > 0) {
-            _injectTimeline(_history);
+            injectTimeline(_history);
         }
     }
 
@@ -30,12 +30,24 @@ contract DrawIDBinarySearchHarness is DrawIDBinarySearch {
         return history[_binarySearch(_drawId)];
     }
 
-    function _injectTimeline(Draw[] memory _timeline) internal {
+    function injectTimeline(Draw[] memory _timeline) public {
         require(history.length == 0, "DrawIDBinarySearchHarness/history-not-empty");
         require(_timeline.length > 0, "DrawIDBinarySearchHarness/timeline-empty");
         for (uint256 i = 0; i < _timeline.length; i++) {
             _push(_timeline[i]);
         }
+    }
+
+    function get(uint32 _drawId) external view returns (Draw memory) {
+        return history[_binarySearch(_drawId)];
+    }
+    
+    function list(uint32[] calldata _drawIds) external view returns (Draw[] memory) {
+        Draw[] memory _data = new Draw[](_drawIds.length);
+        for (uint256 index = 0; index < _drawIds.length; index++) {
+            _data[index] = history[_binarySearch(_drawIds[index])];
+        }
+        return _data;
     }
 
     function _push(Draw memory _draw) internal {

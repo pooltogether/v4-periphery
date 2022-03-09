@@ -55,7 +55,7 @@ describe('DrawIDBinarySearchHarness', () => {
             expect(prizeTierFromHistory[0].drawId).to.equal(1);
         });
 
-        it.only('should succeed to get Draw ID list from history with 4 structs', async () => {
+        it('should succeed to get Draw ID list from history with 4 structs', async () => {
             await drawIdBinaryHarness.injectTimeline(structsWithDrawID);
             const prizeTierFromHistory = await drawIdBinaryHarness.list([3, 7, 15]);
             expect(prizeTierFromHistory[0].drawId).to.equal(1);

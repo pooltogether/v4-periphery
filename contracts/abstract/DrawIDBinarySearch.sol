@@ -35,11 +35,6 @@ abstract contract DrawIDBinarySearch {
 
         while (true) {
 
-            if (rightSide <= leftSide) {
-                index = rightSide;
-                break;
-            }
-
             uint32 center = leftSide + (rightSide - leftSide) / 2;
             uint32 centerID = getDrawIdForIndex(center);
 
@@ -49,7 +44,7 @@ abstract contract DrawIDBinarySearch {
             }
 
             if (centerID < _drawId) {
-                leftSide = center + 1;
+                leftSide = center;
             } else if (centerID > _drawId) {
                 rightSide = center - 1;
             }

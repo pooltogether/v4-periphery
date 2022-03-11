@@ -44,6 +44,7 @@ const config: HardhatUserConfig = {
         paths: [
             '@openzeppelin/contracts/token/ERC20/IERC20.sol',
             '@pooltogether/v4-core/contracts/Ticket.sol',
+            '@pooltogether/v4-core/contracts/PrizeDistributionBuffer.sol',
             '@pooltogether/v4-core/contracts/prize-pool/YieldSourcePrizePool.sol',
             '@pooltogether/v4-core/contracts/prize-strategy/PrizeSplitStrategy.sol',
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',

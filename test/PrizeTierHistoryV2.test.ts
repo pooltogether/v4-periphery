@@ -103,7 +103,7 @@ describe('PrizeTierHistoryV2', () => {
         it('should fail to get a PrizeTer after history range', async () => {
             await prizeTierHistory.push(prizeTiers[2]);
             await expect(prizeTierHistory.getPrizeTier(4)).to.be.revertedWith(
-                'IdBinarySearchLib/draw-id-out-of-range',
+                'IdBinarySearch/draw-id-out-of-range',
             );
         });
     });

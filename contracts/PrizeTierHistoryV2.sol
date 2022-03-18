@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
-import "./abstract/IdBinarySearchLib.sol";
+import "./abstract/IdBinarySearch.sol";
 
-contract PrizeTierHistoryV2 is IdBinarySearchLib, Manageable {
+contract PrizeTierHistoryV2 is IdBinarySearch, Manageable {
 
     struct PrizeTier {
         uint8 bitRangeSize;

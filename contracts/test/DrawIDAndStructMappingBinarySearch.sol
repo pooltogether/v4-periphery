@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-import "../abstract/IdBinarySearchLib.sol";
+import "../abstract/IdBinarySearch.sol";
 
-contract DrawIDAndStructMappingBinarySearch is IdBinarySearchLib {
+contract DrawIDAndStructMappingBinarySearch is IdBinarySearch {
     struct Draw {
         uint32 drawId;
         uint256 randomNumber;

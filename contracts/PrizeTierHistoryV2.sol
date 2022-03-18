@@ -65,7 +65,7 @@ contract PrizeTierHistoryV2 is IdBinarySearch, Manageable {
         _push(nextPrizeTier);
     }
     
-    function popAndPush(PrizeTier calldata newPrizeTier) external onlyManagerOrOwner {
+    function popAndPush(PrizeTier calldata newPrizeTier) external onlyOwner {
         uint length = history.length;
         require(length > 0, "PrizeTierHistoryV2/history-empty");
         require(history[length - 1] == newPrizeTier.drawId, "PrizeTierHistoryV2/invalid-draw-id");

@@ -2,11 +2,11 @@
 pragma solidity 0.8.6;
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "./interfaces/IPrizeTierHistory.sol";
-import "./abstract/IdBinarySearchLib.sol";
+import "./abstract/BinarySearchLib.sol";
 
 contract PrizeTierHistory is IPrizeTierHistory, Manageable {
 
-    using IdBinarySearchLib for uint32[];
+    using BinarySearchLib for uint32[];
 
     uint32[] internal history;
     mapping(uint32 => PrizeTier) internal prizeTiers;
@@ -31,8 +31,9 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     }
 
     function getPrizeTierList(uint32[] calldata _drawIds) override external view returns (PrizeTier[] memory) {
-        PrizeTier[] memory _data = new PrizeTier[](_drawIds.length);
-        for (uint256 index = 0; index < _drawIds.length; index++) {
+        uint256 _length = _drawIds.length; 
+        PrizeTier[] memory _data = new PrizeTier[](_length);
+        for (uint256 index = 0; index < _length; index++) {
             _data[index] = prizeTiers[history[history.binarySearch(_drawIds[index])]];
         }
         return _data;

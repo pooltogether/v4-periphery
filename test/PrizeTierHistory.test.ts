@@ -13,9 +13,9 @@ describe('PrizeTierHistory', () => {
     let wallet2: SignerWithAddress;
     let wallet3: SignerWithAddress;
 
-    let idBinarySearchLib: Contract;
+    let BinarySearchLib: Contract;
     let prizeTierHistory: Contract;
-    let idBinarySearchLibFactory: ContractFactory;
+    let BinarySearchLibFactory: ContractFactory;
     let prizeTierHistoryFactory: ContractFactory;
 
     const prizeTiers = [
@@ -65,11 +65,11 @@ describe('PrizeTierHistory', () => {
 
     before(async () => {
         [wallet1, wallet2, wallet3] = await getSigners();
-        idBinarySearchLibFactory = await ethers.getContractFactory('IdBinarySearchLib');
-        idBinarySearchLib = await idBinarySearchLibFactory.deploy();
+        BinarySearchLibFactory = await ethers.getContractFactory('BinarySearchLib');
+        BinarySearchLib = await BinarySearchLibFactory.deploy();
         prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory', {
             libraries: {
-                IdBinarySearchLib: idBinarySearchLib.address,
+                BinarySearchLib: BinarySearchLib.address,
             }
         });
     });
@@ -111,7 +111,7 @@ describe('PrizeTierHistory', () => {
         it('should fail to get a PrizeTer after history range', async () => {
             await prizeTierHistory.push(prizeTiers[2]);
             await expect(prizeTierHistory.getPrizeTier(4)).to.be.revertedWith(
-                'IdBinarySearchLib/draw-id-out-of-range',
+                'BinarySearchLib/draw-id-out-of-range',
             );
         });
     });

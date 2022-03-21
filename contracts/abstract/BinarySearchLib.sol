@@ -2,13 +2,13 @@
 pragma solidity 0.8.6;
 
 /**
- * @title  PoolTogether V4 IdBinarySearchLib
+ * @title  PoolTogether V4 BinarySearchLib
  * @author PoolTogether Inc Team
- * @notice IdBinarySearchLib uses binary search to find a parent contract struct with the drawId parameter
+ * @notice BinarySearchLib uses binary search to find a parent contract struct with the drawId parameter
  * @dev    The implementing contract must provider access to a struct (i.e. PrizeTier) list with is both
  *         sorted and indexed by the drawId field for binary search to work.
  */
-library IdBinarySearchLib {
+library BinarySearchLib {
 
     /**
      * @notice Find ID in array of ordered IDs using Binary Search.
@@ -24,7 +24,7 @@ library IdBinarySearchLib {
         uint32 oldestDrawId = _history[0];
         uint32 newestDrawId = _history[rightSide];
 
-        require(_drawId >= oldestDrawId, "IdBinarySearchLib/draw-id-out-of-range");
+        require(_drawId >= oldestDrawId, "BinarySearchLib/draw-id-out-of-range");
         if (_drawId >= newestDrawId) return rightSide;
         if (_drawId == oldestDrawId) return leftSide;
 

@@ -12,9 +12,10 @@ describe('PrizeTierHistory', () => {
     let wallet1: SignerWithAddress;
     let wallet2: SignerWithAddress;
     let wallet3: SignerWithAddress;
-    let wallet4: SignerWithAddress;
 
+    let idBinarySearchLib: Contract;
     let prizeTierHistory: Contract;
+    let idBinarySearchLibFactory: ContractFactory;
     let prizeTierHistoryFactory: ContractFactory;
 
     const prizeTiers = [
@@ -45,32 +46,36 @@ describe('PrizeTierHistory', () => {
             prize: toWei('10000'),
             endTimestampOffset: 3000,
         },
+        {
+            bitRangeSize: 5,
+            drawId: 20,
+            maxPicksPerUser: 10,
+            tiers: range(16, 0).map((i) => 0),
+            expiryDuration: 10000,
+            prize: toWei('10000'),
+            endTimestampOffset: 3000,
+        },
     ];
 
     const pushPrizeTiers = async () => {
-        prizeTiers.map(async (tier) => {
+        await Promise.all(prizeTiers.map(async (tier) => {
             await prizeTierHistory.push(tier);
-        });
+        }));
     };
 
     before(async () => {
-        [wallet1, wallet2, wallet3, wallet4] = await getSigners();
-        prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory');
+        [wallet1, wallet2, wallet3] = await getSigners();
+        idBinarySearchLibFactory = await ethers.getContractFactory('IdBinarySearchLib');
+        idBinarySearchLib = await idBinarySearchLibFactory.deploy();
+        prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory', {
+            libraries: {
+                IdBinarySearchLib: idBinarySearchLib.address,
+            }
+        });
     });
 
     beforeEach(async () => {
-        prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address);
-    });
-
-    describe('count()', () => {
-        it('should return zero when empty', async () => {
-            expect(await prizeTierHistory.count()).to.equal(0);
-        });
-
-        it('should return correct when pushed', async () => {
-            await pushPrizeTiers();
-            expect(await prizeTierHistory.count()).to.equal(3);
-        });
+        prizeTierHistory = await prizeTierHistoryFactory.deploy(wallet1.address, []);
     });
 
     describe('Getters', () => {
@@ -106,7 +111,7 @@ describe('PrizeTierHistory', () => {
         it('should fail to get a PrizeTer after history range', async () => {
             await prizeTierHistory.push(prizeTiers[2]);
             await expect(prizeTierHistory.getPrizeTier(4)).to.be.revertedWith(
-                'PrizeTierHistory/draw-id-out-of-range',
+                'IdBinarySearchLib/draw-id-out-of-range',
             );
         });
     });
@@ -129,7 +134,7 @@ describe('PrizeTierHistory', () => {
 
             it('should fail to push PrizeTier into history from Unauthorized wallet', async () => {
                 await expect(
-                    prizeTierHistory.connect(wallet4 as unknown as Signer).push(prizeTiers[0]),
+                    prizeTierHistory.connect(wallet3 as unknown as Signer).push(prizeTiers[0]),
                 ).to.be.revertedWith('Manageable/caller-not-manager-or-owner');
             });
         });
@@ -139,6 +144,7 @@ describe('PrizeTierHistory', () => {
                 await pushPrizeTiers();
                 const prizeTier = {
                     ...prizeTiers[2],
+                    drawId: 20,
                     bitRangeSize: 16,
                 };
 
@@ -152,7 +158,7 @@ describe('PrizeTierHistory', () => {
                 await pushPrizeTiers();
                 const prizeTier = {
                     ...prizeTiers[2],
-                    drawId: 10,
+                    drawId: 20,
                     bitRangeSize: 16,
                 };
 
@@ -183,7 +189,7 @@ describe('PrizeTierHistory', () => {
             it('should fail to set existing PrizeTier in history from Manager wallet', async () => {
                 await expect(
                     (
-                        await prizeTierHistory.connect(wallet2 as unknown as Signer)
+                        prizeTierHistory.connect(wallet2 as unknown as Signer)
                     ).popAndPush(prizeTiers[0]),
                 ).to.revertedWith('Ownable/caller-not-owner');
             });
@@ -191,33 +197,38 @@ describe('PrizeTierHistory', () => {
     });
 
     describe('replace()', async () => {
-        it('should replace a tier', async () => {
+        it('should successfully emit PrizeTierSet event when replacing an existing PrizeTier', async () => {
+            await pushPrizeTiers();
             const prizeTier = {
                 ...prizeTiers[1],
                 bitRangeSize: 12,
             };
-
-            await pushPrizeTiers();
-
-            await expect(prizeTierHistory.replace(prizeTier)).to.emit(
+            await expect(await prizeTierHistory.replace(prizeTier)).to.emit(
                 prizeTierHistory,
                 'PrizeTierSet',
             );
-
             const prizeTierVal = await prizeTierHistory.getPrizeTier(prizeTier.drawId);
-
             expect(prizeTierVal.bitRangeSize).to.equal(12);
         });
 
-        it('should not allow replacing a prize tier with a different draw id', async () => {
+        it('should successfully return new values after replacing an existing PrizeTier', async () => {
+            await pushPrizeTiers();
+            const prizeTier = {
+                ...prizeTiers[1],
+                bitRangeSize: 12,
+            };
+            await prizeTierHistory.replace(prizeTier)
+            const prizeTierVal = await prizeTierHistory.getPrizeTier(prizeTier.drawId);
+            expect(prizeTierVal.bitRangeSize).to.equal(12);
+        });
+
+        it('should fail to replace a non-existent PrizeTier', async () => {
+            await pushPrizeTiers();
             const prizeTier = {
                 ...prizeTiers[1],
                 drawId: 4,
                 bitRangeSize: 12,
             };
-
-            await pushPrizeTiers();
-
             await expect(prizeTierHistory.replace(prizeTier)).to.be.revertedWith(
                 'PrizeTierHistory/draw-id-must-match',
             );

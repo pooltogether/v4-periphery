@@ -4,11 +4,34 @@ import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "./interfaces/IPrizeTierHistory.sol";
 import "./abstract/BinarySearchLib.sol";
 
+/**
+ * @title  PoolTogether V4 PrizeTierHistory
+ * @author PoolTogether Inc Team
+ * @notice The PrizeTierHistory smart contract stores a history of PrizeTier structs linked to 
+           a range of valid Draw IDs. 
+ * @dev    If the history param has single PrizeTier struct with a "drawId" of 1 all subsequent
+           Draws will use that PrizeTier struct for PrizeDitribution calculations. The BinarySearchLib
+           will find a PrizeTier using a "atOrBefore" range search when supplied drawId input parameter.
+ */
 contract PrizeTierHistory is IPrizeTierHistory, Manageable {
 
+    // @dev The uint32[] type is extended with a binarySearch(uint32) function.
     using BinarySearchLib for uint32[];
 
+    /**
+     * @notice Ordered array of Draw IDs
+     * @dev The history, with sequentially ordered ids, can be searched using binary search.
+            The binary search will find index of a drawId (atOrBefore) using a specific drawId (at).
+            When a new Draw ID is added to the history, a corresponding mapping of the ID is 
+            updated in the prizeTiers mapping.
+    */
     uint32[] internal history;
+
+    /**
+     * @notice Mapping a Draw ID to a PrizeTier struct.
+     * @dev The prizeTiers mapping links a Draw ID to a PrizeTier struct.
+            The prizeTiers mapping is updated when a new Draw ID is added to the history.
+    */
     mapping(uint32 => PrizeTier) internal prizeTiers;
 
     constructor(address owner, PrizeTier[] memory _history) Ownable(owner) {
@@ -17,32 +40,48 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         }
     }
 
+    // @inheritdoc IPrizeTierHistory
+    function count() external view override returns (uint256) {
+        return history.length;
+    }
+    
+    // @inheritdoc IPrizeTierHistory
     function getOldestDrawId() external view override returns (uint32) {
         return history[0];
     }
 
+    // @inheritdoc IPrizeTierHistory
     function getNewestDrawId() external view override returns (uint32) {
-        return prizeTiers[uint32(history.length - 1)].drawId;
+        return uint32(history[history.length - 1]);
     }
 
+    // @inheritdoc IPrizeTierHistory
     function getPrizeTier(uint32 drawId) override external view returns (PrizeTier memory) {
         require(drawId > 0, "PrizeTierHistory/draw-id-not-zero");
-        return prizeTiers[history[history.binarySearch(drawId)]];
+        return prizeTiers[history.binarySearch(drawId)];
     }
 
+    // @inheritdoc IPrizeTierHistory
     function getPrizeTierList(uint32[] calldata _drawIds) override external view returns (PrizeTier[] memory) {
         uint256 _length = _drawIds.length; 
         PrizeTier[] memory _data = new PrizeTier[](_length);
         for (uint256 index = 0; index < _length; index++) {
-            _data[index] = prizeTiers[history[history.binarySearch(_drawIds[index])]];
+            _data[index] = prizeTiers[history.binarySearch(_drawIds[index])];
         }
         return _data;
     }
 
+    // @inheritdoc IPrizeTierHistory
+    function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
+        return prizeTiers[history[index]];
+    }
+
+    // @inheritdoc IPrizeTierHistory
     function push(PrizeTier calldata nextPrizeTier) override external onlyManagerOrOwner {
         _push(nextPrizeTier);
     }
     
+    // @inheritdoc IPrizeTierHistory
     function popAndPush(PrizeTier calldata newPrizeTier) override external onlyOwner returns (uint32) {
         uint length = history.length;
         require(length > 0, "PrizeTierHistory/history-empty");
@@ -51,24 +90,23 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         return newPrizeTier.drawId;
     }
 
+    // @inheritdoc IPrizeTierHistory
     function replace(PrizeTier calldata newPrizeTier) override external onlyOwner {
         _replace(newPrizeTier);
     }
 
+    /**
+     * @notice Inject a PrizeTier timeline into the history array.
+     * @dev A PrizeTierHistory timeline can only be injected once. The history
+            cannot be injected if a PrizeTier history previously exists.
+     * @param timeline PrizeTier[] - Array of PrizeTier structs
+     */
     function inject(PrizeTier[] memory timeline) public onlyOwner {
         require(history.length == 0, "PrizeTierHistory/history-not-empty");
         require(timeline.length > 0, "PrizeTierHistory/timeline-empty");
         for (uint256 i = 0; i < timeline.length; i++) {
             _push(timeline[i]);
         }
-    }
-
-    function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
-        return prizeTiers[history[index]];
-    }
-
-    function count() external view override returns (uint256) {
-        return history.length;
     }
 
     function _push(PrizeTier memory _prizeTier) internal {

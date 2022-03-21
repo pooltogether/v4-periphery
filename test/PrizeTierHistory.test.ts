@@ -13,9 +13,9 @@ describe('PrizeTierHistory', () => {
     let wallet2: SignerWithAddress;
     let wallet3: SignerWithAddress;
 
-    let BinarySearchLib: Contract;
     let prizeTierHistory: Contract;
-    let BinarySearchLibFactory: ContractFactory;
+    let binarySearchLib: Contract;
+    let binarySearchLibFactory: ContractFactory;
     let prizeTierHistoryFactory: ContractFactory;
 
     const prizeTiers = [
@@ -65,11 +65,11 @@ describe('PrizeTierHistory', () => {
 
     before(async () => {
         [wallet1, wallet2, wallet3] = await getSigners();
-        BinarySearchLibFactory = await ethers.getContractFactory('BinarySearchLib');
-        BinarySearchLib = await BinarySearchLibFactory.deploy();
+        binarySearchLibFactory = await ethers.getContractFactory('BinarySearchLib');
+        binarySearchLib = await binarySearchLibFactory.deploy();
         prizeTierHistoryFactory = await ethers.getContractFactory('PrizeTierHistory', {
             libraries: {
-                BinarySearchLib: BinarySearchLib.address,
+                BinarySearchLib: binarySearchLib.address,
             }
         });
     });

@@ -34,11 +34,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
     */
     mapping(uint32 => PrizeTier) internal prizeTiers;
 
-    constructor(address owner, PrizeTier[] memory _history) Ownable(owner) {
-        if (_history.length > 0) {
-            inject(_history);
-        }
-    }
+    constructor(address owner) Ownable(owner) {}
 
     // @inheritdoc IPrizeTierHistory
     function count() external view override returns (uint256) {
@@ -52,7 +48,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
 
     // @inheritdoc IPrizeTierHistory
     function getNewestDrawId() external view override returns (uint32) {
-        return uint32(history[history.length - 1]);
+        return history[history.length - 1];
     }
 
     // @inheritdoc IPrizeTierHistory
@@ -95,30 +91,17 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         _replace(newPrizeTier);
     }
 
-    /**
-     * @notice Inject a PrizeTier timeline into the history array.
-     * @dev A PrizeTierHistory timeline can only be injected once. The history
-            cannot be injected if a PrizeTier history previously exists.
-     * @param timeline PrizeTier[] - Array of PrizeTier structs
-     */
-    function inject(PrizeTier[] memory timeline) public onlyOwner {
-        require(history.length == 0, "PrizeTierHistory/history-not-empty");
-        require(timeline.length > 0, "PrizeTierHistory/timeline-empty");
-        for (uint256 i = 0; i < timeline.length; i++) {
-            _push(timeline[i]);
-        }
-    }
-
     function _push(PrizeTier memory _prizeTier) internal {
-        if (history.length > 0) {
-            uint32 _id = history[history.length - 1];
+        uint32 _length = uint32(history.length);
+        if (_length > 0) {
+            uint32 _id = history[_length - 1];
             require(
                 _prizeTier.drawId > _id,
                 "PrizeTierHistory/non-sequential-dpr"
             );
         }
         history.push(_prizeTier.drawId);
-        prizeTiers[_prizeTier.drawId] = _prizeTier;
+        prizeTiers[_length] = _prizeTier;
         emit PrizeTierPushed(_prizeTier.drawId, _prizeTier);
     }
 
@@ -129,7 +112,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
         require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
         uint32 index = history.binarySearch(_prizeTier.drawId);
         require(history[index] == _prizeTier.drawId, "PrizeTierHistory/draw-id-must-match");
-        prizeTiers[_prizeTier.drawId] = _prizeTier;
+        prizeTiers[index] = _prizeTier;
         emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
     }
 }

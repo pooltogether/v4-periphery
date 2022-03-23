@@ -13,7 +13,6 @@ describe.only('BinarySearchLibHarness', () => {
     let binarySearchLibHarness: Contract;
     let binarySearchLibHarnessFactory: ContractFactory;
 
-
     before(async () => {
         [wallet1] = await getSigners();
         binarySearchLibFactory = await ethers.getContractFactory('BinarySearchLib');
@@ -75,7 +74,7 @@ describe.only('BinarySearchLibHarness', () => {
             expect(index).to.equal(1);
         });
         
-        it('should succeed to get index [| | S]', async () => {
+        it('should succeed to get index [| | S ]', async () => {
             await binarySearchLibHarness.set([1,2]);
             const index = await binarySearchLibHarness.getIndex(3);
             expect(index).to.equal(1);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-import "../abstract/BinarySearchLib.sol";
+import "../libraries/BinarySearchLib.sol";
 
 contract BinarySearchLibHarness {
     using BinarySearchLib for uint32[];

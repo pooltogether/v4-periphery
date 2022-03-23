@@ -1,182 +1,118 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "./interfaces/IPrizeTierHistory.sol";
+import "./libraries/BinarySearchLib.sol";
 
 /**
- * @title  PoolTogether V4 IPrizeTierHistory
+ * @title  PoolTogether V4 PrizeTierHistory
  * @author PoolTogether Inc Team
- * @notice IPrizeTierHistory is the base contract for PrizeTierHistory
+ * @notice The PrizeTierHistory smart contract stores a history of PrizeTier structs linked to 
+           a range of valid Draw IDs. 
+ * @dev    If the history param has single PrizeTier struct with a "drawId" of 1 all subsequent
+           Draws will use that PrizeTier struct for PrizeDitribution calculations. The BinarySearchLib
+           will find a PrizeTier using a "atOrBefore" range search when supplied drawId input parameter.
  */
 contract PrizeTierHistory is IPrizeTierHistory, Manageable {
-    /* ============ Global Variables ============ */
+
+    // @dev The uint32[] type is extended with a binarySearch(uint32) function.
+    using BinarySearchLib for uint32[];
+
     /**
-     * @notice History of PrizeTier updates
-     */
-    PrizeTier[] internal history;
+     * @notice Ordered array of Draw IDs
+     * @dev The history, with sequentially ordered ids, can be searched using binary search.
+            The binary search will find index of a drawId (atOrBefore) using a specific drawId (at).
+            When a new Draw ID is added to the history, a corresponding mapping of the ID is 
+            updated in the prizeTiers mapping.
+    */
+    uint32[] internal history;
 
-    /* ============ Constructor ============ */
-    constructor(address _owner) Ownable(_owner) {}
+    /**
+     * @notice Mapping a Draw ID to a PrizeTier struct.
+     * @dev The prizeTiers mapping links a Draw ID to a PrizeTier struct.
+            The prizeTiers mapping is updated when a new Draw ID is added to the history.
+    */
+    mapping(uint32 => PrizeTier) internal prizeTiers;
 
-    /* ============ External Functions ============ */
-
-    // @inheritdoc IPrizeTierHistory
-    function push(PrizeTier calldata _nextPrizeTier) external override onlyManagerOrOwner {
-        PrizeTier[] memory _history = history;
-
-        if (_history.length > 0) {
-            // READ the newest PrizeTier struct
-            PrizeTier memory _newestPrizeTier = history[history.length - 1];
-            // New PrizeTier ID must only be 1 greater than the last PrizeTier ID.
-            require(
-                _nextPrizeTier.drawId > _newestPrizeTier.drawId,
-                "PrizeTierHistory/non-sequential-prize-tier"
-            );
-        }
-
-        history.push(_nextPrizeTier);
-
-        emit PrizeTierPushed(_nextPrizeTier.drawId, _nextPrizeTier);
-    }
+    constructor(address owner) Ownable(owner) {}
 
     // @inheritdoc IPrizeTierHistory
-    function replace(PrizeTier calldata _prizeTier) external override onlyOwner {
-        uint256 cardinality = history.length;
-        require(cardinality > 0, "PrizeTierHistory/no-prize-tiers");
-
-        uint256 leftSide = 0;
-        uint256 rightSide = cardinality - 1;
-        uint32 oldestDrawId = history[leftSide].drawId;
-
-        require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
-
-        uint256 index = _binarySearchIndex(_prizeTier.drawId, leftSide, rightSide, history);
-
-        require(history[index].drawId == _prizeTier.drawId, "PrizeTierHistory/draw-id-must-match");
-
-        history[index] = _prizeTier;
-
-        emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
+    function count() external view override returns (uint256) {
+        return history.length;
     }
-
-    /* ============ Setter Functions ============ */
-
-    // @inheritdoc IPrizeTierHistory
-    function popAndPush(PrizeTier calldata _prizeTier)
-        external
-        override
-        onlyOwner
-        returns (uint32)
-    {
-        require(history.length > 0, "PrizeTierHistory/history-empty");
-        PrizeTier memory _newestPrizeTier = history[history.length - 1];
-        require(_prizeTier.drawId >= _newestPrizeTier.drawId, "PrizeTierHistory/invalid-draw-id");
-        history[history.length - 1] = _prizeTier;
-        emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
-
-        return _prizeTier.drawId;
-    }
-
-    /* ============ Getter Functions ============ */
-
-    // @inheritdoc IPrizeTierHistory
-    function getPrizeTier(uint32 _drawId) external view override returns (PrizeTier memory) {
-        require(_drawId > 0, "PrizeTierHistory/draw-id-not-zero");
-        return _getPrizeTier(_drawId);
-    }
-
+    
     // @inheritdoc IPrizeTierHistory
     function getOldestDrawId() external view override returns (uint32) {
-        return history[0].drawId;
+        return history[0];
     }
 
     // @inheritdoc IPrizeTierHistory
     function getNewestDrawId() external view override returns (uint32) {
-        return history[history.length - 1].drawId;
+        return history[history.length - 1];
     }
 
     // @inheritdoc IPrizeTierHistory
-    function getPrizeTierList(uint32[] calldata _drawIds)
-        external
-        view
-        override
-        returns (PrizeTier[] memory)
-    {
-        PrizeTier[] memory _data = new PrizeTier[](_drawIds.length);
-        for (uint256 index = 0; index < _drawIds.length; index++) {
-            _data[index] = _getPrizeTier(_drawIds[index]); // SLOAD each struct instead of the whole array before the FOR loop.
+    function getPrizeTier(uint32 drawId) override external view returns (PrizeTier memory) {
+        require(drawId > 0, "PrizeTierHistory/draw-id-not-zero");
+        return prizeTiers[history.binarySearch(drawId)];
+    }
+
+    // @inheritdoc IPrizeTierHistory
+    function getPrizeTierList(uint32[] calldata _drawIds) override external view returns (PrizeTier[] memory) {
+        uint256 _length = _drawIds.length; 
+        PrizeTier[] memory _data = new PrizeTier[](_length);
+        for (uint256 index = 0; index < _length; index++) {
+            _data[index] = prizeTiers[history.binarySearch(_drawIds[index])];
         }
         return _data;
     }
 
-    function _getPrizeTier(uint32 _drawId) internal view returns (PrizeTier memory) {
+    // @inheritdoc IPrizeTierHistory
+    function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
+        return prizeTiers[uint32(index)];
+    }
+
+    // @inheritdoc IPrizeTierHistory
+    function push(PrizeTier calldata nextPrizeTier) override external onlyManagerOrOwner {
+        _push(nextPrizeTier);
+    }
+    
+    // @inheritdoc IPrizeTierHistory
+    function popAndPush(PrizeTier calldata newPrizeTier) override external onlyOwner returns (uint32) {
+        uint length = history.length;
+        require(length > 0, "PrizeTierHistory/history-empty");
+        require(history[length - 1] == newPrizeTier.drawId, "PrizeTierHistory/invalid-draw-id");
+        _replace(newPrizeTier);
+        return newPrizeTier.drawId;
+    }
+
+    // @inheritdoc IPrizeTierHistory
+    function replace(PrizeTier calldata newPrizeTier) override external onlyOwner {
+        _replace(newPrizeTier);
+    }
+
+    function _push(PrizeTier memory _prizeTier) internal {
+        uint32 _length = uint32(history.length);
+        if (_length > 0) {
+            uint32 _id = history[_length - 1];
+            require(
+                _prizeTier.drawId > _id,
+                "PrizeTierHistory/non-sequential-id"
+            );
+        }
+        history.push(_prizeTier.drawId);
+        prizeTiers[_length] = _prizeTier;
+        emit PrizeTierPushed(_prizeTier.drawId, _prizeTier);
+    }
+
+    function _replace(PrizeTier calldata _prizeTier) internal {
         uint256 cardinality = history.length;
         require(cardinality > 0, "PrizeTierHistory/no-prize-tiers");
-
-        uint256 leftSide = 0;
-        uint256 rightSide = cardinality - 1;
-        uint32 oldestDrawId = history[leftSide].drawId;
-        uint32 newestDrawId = history[rightSide].drawId;
-
-        require(_drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
-        if (_drawId >= newestDrawId) return history[rightSide];
-        if (_drawId == oldestDrawId) return history[leftSide];
-
-        return _binarySearch(_drawId, leftSide, rightSide, history);
-    }
-
-    function _binarySearch(
-        uint32 _drawId,
-        uint256 leftSide,
-        uint256 rightSide,
-        PrizeTier[] storage _history
-    ) internal view returns (PrizeTier memory) {
-        return _history[_binarySearchIndex(_drawId, leftSide, rightSide, _history)];
-    }
-
-    function _binarySearchIndex(
-        uint32 _drawId,
-        uint256 _leftSide,
-        uint256 _rightSide,
-        PrizeTier[] storage _history
-    ) internal view returns (uint256) {
-        uint256 index;
-        uint256 leftSide = _leftSide;
-        uint256 rightSide = _rightSide;
-        while (true) {
-            uint256 center = leftSide + (rightSide - leftSide) / 2;
-            uint32 centerPrizeTierID = _history[center].drawId;
-
-            if (centerPrizeTierID == _drawId) {
-                index = center;
-                break;
-            }
-
-            if (centerPrizeTierID < _drawId) {
-                leftSide = center + 1;
-            } else if (centerPrizeTierID > _drawId) {
-                rightSide = center - 1;
-            }
-
-            if (leftSide == rightSide) {
-                if (centerPrizeTierID >= _drawId) {
-                    index = center - 1;
-                    break;
-                } else {
-                    index = center;
-                    break;
-                }
-            }
-        }
-        return index;
-    }
-
-    function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
-        return history[index];
-    }
-
-    function count() external view override returns (uint256) {
-        return history.length;
+        uint32 oldestDrawId = history[0];
+        require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistory/draw-id-out-of-range");
+        uint32 index = history.binarySearch(_prizeTier.drawId);
+        require(history[index] == _prizeTier.drawId, "PrizeTierHistory/draw-id-must-match");
+        prizeTiers[index] = _prizeTier;
+        emit PrizeTierSet(_prizeTier.drawId, _prizeTier);
     }
 }

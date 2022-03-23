@@ -69,7 +69,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
 
     // @inheritdoc IPrizeTierHistory
     function getPrizeTierAtIndex(uint256 index) external view override returns (PrizeTier memory) {
-        return prizeTiers[history[index]];
+        return prizeTiers[uint32(index)];
     }
 
     // @inheritdoc IPrizeTierHistory
@@ -97,7 +97,7 @@ contract PrizeTierHistory is IPrizeTierHistory, Manageable {
             uint32 _id = history[_length - 1];
             require(
                 _prizeTier.drawId > _id,
-                "PrizeTierHistory/non-sequential-dpr"
+                "PrizeTierHistory/non-sequential-id"
             );
         }
         history.push(_prizeTier.drawId);

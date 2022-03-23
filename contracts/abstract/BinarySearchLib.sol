@@ -38,8 +38,6 @@ library BinarySearchLib {
                 break;
             }
 
-            // IF the search range has been reduced to 2 indexes 
-            // next to each other return matching index
             if (length <= 1) {
                 if(_history[rightSide] <= _drawId) {
                     index = rightSide;

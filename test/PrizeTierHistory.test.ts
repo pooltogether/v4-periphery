@@ -79,20 +79,36 @@ describe('PrizeTierHistory', () => {
     });
 
     describe('Getters', () => {
+        it('should succeed to get history length', async () => {
+            await pushPrizeTiers();
+            const count = await prizeTierHistory.count();
+            expect(count).to.equal(4);
+        });
+        
+        it('should succeed to get oldest Draw Id', async () => {
+            await pushPrizeTiers();
+            const oldestDrawId = await prizeTierHistory.getOldestDrawId();
+            expect(oldestDrawId).to.equal(1);
+        });
+        
+        it('should succeed to get newest Draw Id', async () => {
+            await pushPrizeTiers();
+            const newestDrawId = await prizeTierHistory.getNewestDrawId();
+            expect(newestDrawId).to.equal(20);
+        });
+       
+        it('should succeed to get a PrizeTier using an index position', async () => {
+            await pushPrizeTiers();
+            const prizeTier = await prizeTierHistory.getPrizeTierAtIndex(3);
+            expect(prizeTier.drawId).to.equal(20);
+        });
+
         it('should succeed to get prize tiers from history', async () => {
             await pushPrizeTiers();
             const prizeTierFromHistory = await prizeTierHistory.getPrizeTierList([3, 7, 9]);
             expect(prizeTierFromHistory[0].drawId).to.equal(1);
             expect(prizeTierFromHistory[1].drawId).to.equal(6);
             expect(prizeTierFromHistory[2].drawId).to.equal(9);
-        });
-
-        it('should succeed to get prize tier from history', async () => {
-            await pushPrizeTiers();
-            prizeTiers.map(async (prizeTier) => {
-                const prizeTierFromHistory = await prizeTierHistory.getPrizeTier(prizeTier.drawId);
-                expect(prizeTierFromHistory.drawId).to.equal(prizeTier.drawId);
-            });
         });
 
         it('should return prize tier before our searched draw id', async () => {
@@ -130,6 +146,13 @@ describe('PrizeTierHistory', () => {
                 await expect(
                     prizeTierHistory.connect(wallet2 as unknown as Signer).push(prizeTiers[0]),
                 ).to.emit(prizeTierHistory, 'PrizeTierPushed');
+            });
+
+            it('should fail to push PrizeTier into history because non-sequential-id', async () => {
+                await pushPrizeTiers();
+                await expect(
+                    prizeTierHistory.push({...prizeTiers[3], drawId: 18}),
+                ).to.be.revertedWith('PrizeTierHistory/non-sequential-id');
             });
 
             it('should fail to push PrizeTier into history from Unauthorized wallet', async () => {
@@ -199,16 +222,10 @@ describe('PrizeTierHistory', () => {
     describe('replace()', async () => {
         it('should successfully emit PrizeTierSet event when replacing an existing PrizeTier', async () => {
             await pushPrizeTiers();
-            const prizeTier = {
-                ...prizeTiers[1],
-                bitRangeSize: 12,
-            };
-            await expect(await prizeTierHistory.replace(prizeTier)).to.emit(
+            await expect(await prizeTierHistory.replace(prizeTiers[1])).to.emit(
                 prizeTierHistory,
                 'PrizeTierSet',
             );
-            const prizeTierVal = await prizeTierHistory.getPrizeTier(prizeTier.drawId);
-            expect(prizeTierVal.bitRangeSize).to.equal(12);
         });
 
         it('should successfully return new values after replacing an existing PrizeTier', async () => {
@@ -222,12 +239,24 @@ describe('PrizeTierHistory', () => {
             expect(prizeTierVal.bitRangeSize).to.equal(12);
         });
 
+        it('should fail to replace a PrizeTier because history is empty', async () => {
+            await expect(prizeTierHistory.replace(prizeTiers[1])).to.be.revertedWith(
+                'PrizeTierHistory/no-prize-tiers',
+            );
+        });
+        
+        it('should fail to replace a PrizeTier that is out of rance', async () => {
+            await prizeTierHistory.push(prizeTiers[3]);
+            await expect(prizeTierHistory.replace(prizeTiers[0])).to.be.revertedWith(
+                'PrizeTierHistory/draw-id-out-of-range',
+            );
+        });
+        
         it('should fail to replace a non-existent PrizeTier', async () => {
             await pushPrizeTiers();
             const prizeTier = {
                 ...prizeTiers[1],
                 drawId: 4,
-                bitRangeSize: 12,
             };
             await expect(prizeTierHistory.replace(prizeTier)).to.be.revertedWith(
                 'PrizeTierHistory/draw-id-must-match',

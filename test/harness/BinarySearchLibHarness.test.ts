@@ -5,7 +5,7 @@ import { Contract, ContractFactory } from 'ethers';
 
 const { getSigners } = ethers;
 
-describe.only('BinarySearchLibHarness', () => {
+describe('BinarySearchLibHarness', () => {
     let wallet1: SignerWithAddress;
     let binarySearchLib: Contract;
     let binarySearchLibFactory: ContractFactory;

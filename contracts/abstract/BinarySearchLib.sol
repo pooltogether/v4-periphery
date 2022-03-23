@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
 import "hardhat/console.sol";
-
 /**
  * @title  PoolTogether V4 BinarySearchLib
  * @author PoolTogether Inc Team
@@ -30,19 +29,17 @@ library BinarySearchLib {
         if (_drawId == oldestDrawId) return leftSide;
 
         while (true) {
-
             uint32 length = rightSide - leftSide;
-            uint32 center = leftSide + (length) / 2;
+            uint32 center = leftSide + length / 2;
             uint32 centerID = _history[center];
 
-            // IF the center IDis the target ID, return the index
-            // We have an exact match and can return the index
+            // IF the center ID is the target ID, return the index
             if (centerID == _drawId) {
                 index = center;
                 break;
             }
 
-            // IF the search range has been reduced to 2 indexes return matching index
+            // IF the search range has been reduced to 2 indexes next to each other return matching index
             if (length == 1) {
                 if(_history[rightSide] <= _drawId) {
                     index = rightSide;
@@ -58,7 +55,7 @@ library BinarySearchLib {
                 rightSide = center - 1;
             }
 
-            if (leftSide == rightSide) {
+            if (leftSide >= rightSide) {
                 if (centerID > _drawId) {
                     index = center - 1;
                     break;

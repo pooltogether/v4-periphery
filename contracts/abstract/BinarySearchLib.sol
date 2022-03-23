@@ -33,14 +33,14 @@ library BinarySearchLib {
             uint32 center = leftSide + length / 2;
             uint32 centerID = _history[center];
 
-            // IF the center ID is the target ID, return the index
             if (centerID == _drawId) {
                 index = center;
                 break;
             }
 
-            // IF the search range has been reduced to 2 indexes next to each other return matching index
-            if (length == 1) {
+            // IF the search range has been reduced to 2 indexes 
+            // next to each other return matching index
+            if (length <= 1) {
                 if(_history[rightSide] <= _drawId) {
                     index = rightSide;
                 } else {
@@ -51,18 +51,8 @@ library BinarySearchLib {
             
             if (centerID < _drawId) {
                 leftSide = center;
-            } else if (centerID > _drawId) {
+            } else {
                 rightSide = center - 1;
-            }
-
-            if (leftSide >= rightSide) {
-                if (centerID > _drawId) {
-                    index = center - 1;
-                    break;
-                } else {
-                    index = center;
-                    break;
-                }
             }
         }
 

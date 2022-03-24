@@ -7,22 +7,13 @@ const { getSigners } = ethers;
 
 describe('BinarySearchLibHarness', () => {
     let wallet1: SignerWithAddress;
-    let binarySearchLib: Contract;
-    let binarySearchLibFactory: ContractFactory;
     let binarySearchLibHarness: Contract;
     let binarySearchLibHarnessFactory: ContractFactory;
 
     before(async () => {
         [wallet1] = await getSigners();
-        binarySearchLibFactory = await ethers.getContractFactory('BinarySearchLib');
-        binarySearchLib = await binarySearchLibFactory.deploy();
         binarySearchLibHarnessFactory = await ethers.getContractFactory(
-            'BinarySearchLibHarness',
-            {
-                libraries: {
-                    BinarySearchLib: binarySearchLib.address,
-                }
-            }
+            'BinarySearchLibHarness'
         );
     });
 

@@ -16,7 +16,7 @@ library BinarySearchLib {
         * @param _drawId uint32 - Draw ID to search for
         * @return uint32 - Index of ID in array
      */
-    function binarySearch(uint32[] storage _history, uint32 _drawId) external view returns (uint32) {
+    function binarySearch(uint32[] storage _history, uint32 _drawId) internal view returns (uint32) {
         uint32 index;
         uint32 leftSide = 0;
         uint32 rightSide = uint32(_history.length - 1);

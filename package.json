@@ -1,9 +1,9 @@
 {
     "name": "@pooltogether/v4-periphery",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "PoolTogether V4 Periphery",
     "main": "index.js",
-    "license": "MIT",
+    "license": "GPL-3.0",
     "scripts": {
         "clean": "rm -rf cache/ artifacts/",
         "compile": "mkdir -p abis && hardhat --show-stack-traces --max-memory 8192 compile",

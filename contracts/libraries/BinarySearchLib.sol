@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-import "hardhat/console.sol";
+
 /**
  * @title  PoolTogether V4 BinarySearchLib
  * @author PoolTogether Inc Team
@@ -30,7 +30,7 @@ library BinarySearchLib {
 
         while (true) {
             uint32 length = rightSide - leftSide;
-            uint32 center = leftSide + length / 2;
+            uint32 center = leftSide + (length / 2);
             uint32 centerID = _history[center];
 
             if (centerID == _drawId) {

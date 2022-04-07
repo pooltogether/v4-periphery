@@ -31,3 +31,4 @@ deployments/localhost
 deployments/hardhat
 
 .turbo
+*.dev.md

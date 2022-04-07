@@ -1,4 +1,3 @@
-
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import 'hardhat-abi-exporter';
@@ -50,6 +49,8 @@ const config: HardhatUserConfig | any = {
             '@pooltogether/v4-core/contracts/prize-strategy/PrizeSplitStrategy.sol',
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',
             '@pooltogether/v4-core/contracts/interfaces/IStrategy.sol',
+            '@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol',
+            '@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol',
             '@pooltogether/v4-core/contracts/test/ERC20Mintable.sol',
             '@pooltogether/v4-core/contracts/test/ReserveHarness.sol',
             '@pooltogether/v4-core/contracts/test/TicketHarness.sol',

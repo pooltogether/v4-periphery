@@ -29,27 +29,22 @@ abstract contract DrawIDBinarySearch {
         uint32 oldestDrawId = getDrawIdForIndex(leftSide);
         uint32 newestDrawId = getDrawIdForIndex(rightSide);
 
-        console.log("STARTING ===============");
-        console.log(_drawId, "drawID");
-        console.log(oldestDrawId, "oldestDrawId");
-        console.log(newestDrawId, "newestDrawId");
-
         require(_drawId >= oldestDrawId, "PrizeTierHistoryV2/draw-id-out-of-range");
         if (_drawId >= newestDrawId) return rightSide;
         if (_drawId == oldestDrawId) return leftSide;
 
         while (true) {
-            
-            uint32 center = leftSide + (rightSide - leftSide) / 2;
+            uint32 length = rightSide - leftSide;
+            uint32 center = leftSide + (length) / 2;
             uint32 centerID = getDrawIdForIndex(center);
 
-            if (centerID == _drawId) {
+            if (centerID == _drawId || length == 1) {
                 index = center;
                 break;
             }
 
             if (centerID < _drawId) {
-                leftSide = center + 1;
+                leftSide = center;
             } else if (centerID > _drawId) {
                 rightSide = center - 1;
             }
@@ -64,7 +59,7 @@ abstract contract DrawIDBinarySearch {
                 }
             }
         }
-        
+
         return index;
     }
 }

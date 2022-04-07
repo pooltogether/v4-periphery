@@ -3,7 +3,6 @@ pragma solidity 0.8.6;
 import "../abstract/DrawIDBinarySearch.sol";
 
 contract DrawIDBinarySearchHarness is DrawIDBinarySearch {
-
     struct Draw {
         uint32 drawId;
     }
@@ -41,7 +40,7 @@ contract DrawIDBinarySearchHarness is DrawIDBinarySearch {
     function get(uint32 _drawId) external view returns (Draw memory) {
         return history[_binarySearch(_drawId)];
     }
-    
+
     function list(uint32[] calldata _drawIds) external view returns (Draw[] memory) {
         Draw[] memory _data = new Draw[](_drawIds.length);
         for (uint256 index = 0; index < _drawIds.length; index++) {
@@ -54,9 +53,11 @@ contract DrawIDBinarySearchHarness is DrawIDBinarySearch {
         Draw[] memory _history = history;
         if (_history.length > 0) {
             Draw memory _newestDpr = history[history.length - 1];
-            require(_draw.drawId > _newestDpr.drawId, "DrawIDBinarySearchHarness/non-sequential-dpr");
+            require(
+                _draw.drawId > _newestDpr.drawId,
+                "DrawIDBinarySearchHarness/non-sequential-dpr"
+            );
         }
         history.push(_draw);
     }
-
 }

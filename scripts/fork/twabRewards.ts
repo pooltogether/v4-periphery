@@ -7,7 +7,7 @@ import { action, info, success } from "../../helpers";
 import { increaseTime as increaseTimeUtil } from "../../test/utils/increaseTime";
 
 export default task("fork:twab-rewards", "Run TWAB Rewards fork").setAction(
-    async (taskArguments, hre:any) => {
+    async (taskArguments, hre: any) => {
         action("Run TWAB Rewards fork...");
 
         const { ethers, run } = hre;

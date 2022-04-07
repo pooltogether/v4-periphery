@@ -12,23 +12,16 @@ const { getSigners } = ethers;
 
 describe('DrawPercentageRate', () => {
     let wallet1: SignerWithAddress;
-    let wallet2: SignerWithAddress;
-    let wallet3: SignerWithAddress;
 
     let drawPercentageRate: Contract;
     let ticket: MockContract;
-    let prizeTierHistory: MockContract;
     let drawBuffer: MockContract;
     let drawPercentageRateFactory: ContractFactory;
 
-    const MIN_PICK_COST = BigNumber.from('1');
-
     before(async () => {
-        [wallet1, wallet2, wallet3] = await getSigners();
+        [wallet1] = await getSigners();
         const Ticket = await artifacts.readArtifact('PrizeTierHistory');
-        const PrizeTierHistory = await artifacts.readArtifact('PrizeTierHistoryV2');
         ticket = await deployMockContract(wallet1, Ticket.abi);
-        prizeTierHistory = await deployMockContract(wallet1, PrizeTierHistory.abi);
         drawBuffer = await deployMockContract(wallet1, DrawBuffer.abi);
         drawPercentageRateFactory = await ethers.getContractFactory('DrawPercentageRateHarness');
     });
@@ -36,9 +29,7 @@ describe('DrawPercentageRate', () => {
     beforeEach(async () => {
         drawPercentageRate = await drawPercentageRateFactory.deploy(
             ticket.address,
-            prizeTierHistory.address,
             drawBuffer.address,
-            MIN_PICK_COST,
         );
     });
 
@@ -57,7 +48,6 @@ describe('DrawPercentageRate', () => {
     });
 
     describe('Internal', () => {
-        // Calculate Cardinality
         describe('calculateCardinality()', () => {
             it('should successfully calculate a valid cardinality.', async () => {
                 const TOTAL_SUPPLY = BigNumber.from('1000');
@@ -246,37 +236,17 @@ describe('DrawPercentageRate', () => {
     });
 
     describe('Getters', () => {
-        it('should get the destination address', async () => {
+        it('should get the Ticket address', async () => {
             expect(await drawPercentageRate.getTicket()).to.equal(ticket.address);
         });
 
-        it('should get the strategy address', async () => {
-            expect(await drawPercentageRate.getPrizeTierHistory()).to.equal(
-                prizeTierHistory.address,
-            );
-        });
-
-        it('should get the reserve address', async () => {
+        it('should get the DrawBuffer address', async () => {
             expect(await drawPercentageRate.getDrawBuffer()).to.equal(drawBuffer.address);
-        });
-
-        it('should get the minPickCost', async () => {
-            expect(await drawPercentageRate.getMinPickCost()).to.equal(MIN_PICK_COST);
         });
     });
 
     describe('Setters', () => {
-        it('should set the destination address', async () => {
-            drawPercentageRate.setTicket(ticket.address);
-            expect(await drawPercentageRate.getTicket()).to.equal(ticket.address);
-        });
-        it('should set the strategy address', async () => {
-            drawPercentageRate.setPrizeTierHistory(prizeTierHistory.address);
-            expect(await drawPercentageRate.getPrizeTierHistory()).to.equal(
-                prizeTierHistory.address,
-            );
-        });
-        it('should set the reserve address', async () => {
+        it('should set the DrawBuffer address', async () => {
             drawPercentageRate.setDrawBuffer(drawBuffer.address);
             expect(await drawPercentageRate.getDrawBuffer()).to.equal(drawBuffer.address);
         });

@@ -9,7 +9,7 @@ import {
 import { action, success } from "../../helpers";
 
 export default task("fork:impersonate", "Impersonate accounts").setAction(
-    async (taskArguments, hre:any) => {
+    async (taskArguments, hre: any) => {
         action("Impersonate accounts...");
 
         await hre.network.provider.request({

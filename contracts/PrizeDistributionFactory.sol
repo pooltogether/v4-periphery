@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-
 pragma solidity 0.8.6;
-
 import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
+import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol";
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
-
 import "./interfaces/IPrizeTierHistory.sol";
 
 /**
@@ -205,7 +203,7 @@ contract PrizeDistributionFactory is Manageable {
         } while ((2**prizeTier.bitRangeSize)**(cardinality + 1) < _maxPicks);
 
         IPrizeDistributionBuffer.PrizeDistribution
-            memory prizeDistribution = IPrizeDistributionBuffer.PrizeDistribution({
+            memory prizeDistribution = IPrizeDistributionSource.PrizeDistribution({
                 bitRangeSize: prizeTier.bitRangeSize,
                 matchCardinality: cardinality,
                 startTimestampOffset: _startTimestampOffset,

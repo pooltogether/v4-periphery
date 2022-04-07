@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-import "../DrawPercentageRate.sol";
+import "../PrizeDistributionAdapter.sol";
 
-contract DrawPercentageRateHarness is DrawPercentageRate {
-    constructor(
-        ITicket _ticket,
-        IPrizeTierHistoryV2 _prizeTierHistory,
-        IDrawBuffer _drawBuffer,
-        uint256 _minPickCost
-    ) DrawPercentageRate(_ticket, _prizeTierHistory, _drawBuffer, _minPickCost) {}
+contract PrizeDistributionAdapterHarness is PrizeDistributionAdapter {
+    constructor(ITicket _ticket, IDrawBuffer _drawBuffer)
+        PrizeDistributionAdapter(_ticket, _drawBuffer)
+    {}
 
     function calculatePrizeDistribution(uint32 _drawId)
         external

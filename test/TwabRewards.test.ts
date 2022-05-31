@@ -12,7 +12,7 @@ const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { parseEther: toWei } = utils;
-const { AddressZero } = constants;
+const { AddressZero, Zero } = constants;
 
 describe('TwabRewards', () => {
     let wallet1: SignerWithAddress;
@@ -269,6 +269,26 @@ describe('TwabRewards', () => {
             expect(await rewardToken.balanceOf(twabRewards.address)).to.equal(
                 wallet3TotalRewardsAmount,
             );
+        });
+
+        it('should end promotion and not be able to steal rewards from another promotion through destroyPromotion', async () => {
+            const rewardTokenAmount = tokensPerEpoch.mul(numberOfEpochs);
+
+            await createPromotion();
+            await createPromotion(rewardToken, rewardTokenAmount, 10, 1)
+
+            await expect(twabRewards.endPromotion(2, wallet1.address))
+                .to.emit(twabRewards, 'PromotionEnded')
+                .withArgs(2, wallet1.address, rewardTokenAmount, 0);
+
+            await increaseTime(86400 * 61); // 61 days
+
+            await expect(twabRewards.destroyPromotion(2, wallet1.address))
+                .to.emit(twabRewards, 'PromotionDestroyed')
+                .withArgs(2, wallet1.address, Zero);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(rewardTokenAmount);
+            expect(await rewardToken.balanceOf(twabRewards.address)).to.equal(rewardTokenAmount);
         });
 
         it('should fail to end promotion if not owner', async () => {

@@ -12,7 +12,7 @@ const increaseTime = (time: number) => increaseTimeUtil(provider, time);
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { parseEther: toWei } = utils;
-const { AddressZero } = constants;
+const { AddressZero, Zero } = constants;
 
 describe('TwabRewards', () => {
     let wallet1: SignerWithAddress;
@@ -140,7 +140,7 @@ describe('TwabRewards', () => {
         });
 
         it('should fail to create a new promotion if tokens per epoch is zero', async () => {
-            await expect(createPromotion(rewardToken, toWei('0'))).to.be.revertedWith(
+            await expect(createPromotion(rewardToken, Zero)).to.be.revertedWith(
                 'TwabRewards/tokens-not-zero',
             );
         });
@@ -271,6 +271,26 @@ describe('TwabRewards', () => {
             );
         });
 
+        it('should end promotion and not be able to steal rewards from another promotion through destroyPromotion', async () => {
+            const rewardTokenAmount = tokensPerEpoch.mul(numberOfEpochs);
+
+            await createPromotion();
+            await createPromotion(rewardToken, rewardTokenAmount, 10, 1);
+
+            await expect(twabRewards.endPromotion(2, wallet1.address))
+                .to.emit(twabRewards, 'PromotionEnded')
+                .withArgs(2, wallet1.address, rewardTokenAmount, 0);
+
+            await increaseTime(86400 * 61); // 61 days
+
+            await expect(twabRewards.destroyPromotion(2, wallet1.address))
+                .to.emit(twabRewards, 'PromotionDestroyed')
+                .withArgs(2, wallet1.address, Zero);
+
+            expect(await rewardToken.balanceOf(wallet1.address)).to.equal(rewardTokenAmount);
+            expect(await rewardToken.balanceOf(twabRewards.address)).to.equal(rewardTokenAmount);
+        });
+
         it('should fail to end promotion if not owner', async () => {
             await createPromotion();
 
@@ -308,7 +328,6 @@ describe('TwabRewards', () => {
             const promotionId = 1;
             const epochIds = [0, 1];
 
-            const zeroAmount = toWei('0');
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
 
@@ -599,8 +618,6 @@ describe('TwabRewards', () => {
             await ticket.mint(wallet3.address, wallet3Amount);
             await ticket.connect(wallet3).delegate(wallet3.address);
 
-            const timestampBeforeCreate = (await ethers.provider.getBlock('latest')).timestamp;
-
             await createPromotion();
 
             // We adjust time to delegate right in the middle of epoch 3
@@ -642,8 +659,9 @@ describe('TwabRewards', () => {
         it('should return 0 for epochs that have already been claimed', async () => {
             const promotionId = 1;
             const epochIds = [0, 1, 2];
+            const wallet2ClaimedEpochIds = [0, 2];
+            const wallet3ClaimedEpochIds = [2];
 
-            const zeroAmount = toWei('0');
             const wallet2Amount = toWei('750');
             const wallet3Amount = toWei('250');
 
@@ -663,13 +681,27 @@ describe('TwabRewards', () => {
             await createPromotion();
             await increaseTime(epochDuration * 3);
 
-            await expect(twabRewards.claimRewards(wallet2.address, promotionId, [0, 2]))
+            await expect(
+                twabRewards.claimRewards(wallet2.address, promotionId, wallet2ClaimedEpochIds),
+            )
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, [0, 2], wallet2.address, wallet2RewardAmount.mul(2));
+                .withArgs(
+                    promotionId,
+                    wallet2ClaimedEpochIds,
+                    wallet2.address,
+                    wallet2RewardAmount.mul(2),
+                );
 
-            await expect(twabRewards.claimRewards(wallet3.address, promotionId, [2]))
+            await expect(
+                twabRewards.claimRewards(wallet3.address, promotionId, wallet3ClaimedEpochIds),
+            )
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, [2], wallet3.address, wallet3RewardAmount);
+                .withArgs(
+                    promotionId,
+                    wallet3ClaimedEpochIds,
+                    wallet3.address,
+                    wallet3RewardAmount,
+                );
 
             const wallet2RewardsAmount = await twabRewards.callStatic.getRewardsAmount(
                 wallet2.address,
@@ -677,12 +709,22 @@ describe('TwabRewards', () => {
                 epochIds,
             );
 
+            const wallet2ClaimedRewardsAmount = await twabRewards.callStatic.getRewardsAmount(
+                wallet2.address,
+                promotionId,
+                wallet2ClaimedEpochIds,
+            );
+
             wallet2RewardsAmount.map((rewardAmount: BigNumber, index: number) => {
                 if (index !== 1) {
-                    expect(rewardAmount).to.equal(zeroAmount);
+                    expect(rewardAmount).to.equal(Zero);
                 } else {
                     expect(rewardAmount).to.equal(wallet2RewardAmount);
                 }
+            });
+
+            wallet2ClaimedRewardsAmount.map((rewardAmount: BigNumber) => {
+                expect(rewardAmount).to.equal(Zero);
             });
 
             const wallet3RewardsAmount = await twabRewards.callStatic.getRewardsAmount(
@@ -691,18 +733,27 @@ describe('TwabRewards', () => {
                 epochIds,
             );
 
+            const wallet3ClaimedRewardsAmount = await twabRewards.callStatic.getRewardsAmount(
+                wallet3.address,
+                promotionId,
+                wallet3ClaimedEpochIds,
+            );
+
             wallet3RewardsAmount.map((rewardAmount: BigNumber, index: number) => {
                 if (index !== 2) {
                     expect(rewardAmount).to.equal(wallet3RewardAmount);
                 } else {
-                    expect(rewardAmount).to.equal(zeroAmount);
+                    expect(rewardAmount).to.equal(Zero);
                 }
+            });
+
+            wallet3ClaimedRewardsAmount.map((rewardAmount: BigNumber) => {
+                expect(rewardAmount).to.equal(Zero);
             });
         });
 
         it('should return 0 if user has no tickets delegated to him', async () => {
             const wallet2Amount = toWei('750');
-            const zeroAmount = toWei('0');
 
             await ticket.mint(wallet2.address, wallet2Amount);
 
@@ -716,13 +767,11 @@ describe('TwabRewards', () => {
             );
 
             wallet2RewardsAmount.map((rewardAmount: BigNumber) => {
-                expect(rewardAmount).to.equal(zeroAmount);
+                expect(rewardAmount).to.equal(Zero);
             });
         });
 
         it('should return 0 if ticket average total supplies is 0', async () => {
-            const zeroAmount = toWei('0');
-
             await createPromotion();
             await increaseTime(epochDuration * 3);
 
@@ -733,7 +782,7 @@ describe('TwabRewards', () => {
             );
 
             wallet2RewardsAmount.map((rewardAmount: BigNumber) => {
-                expect(rewardAmount).to.equal(zeroAmount);
+                expect(rewardAmount).to.equal(Zero);
             });
         });
 
@@ -877,7 +926,6 @@ describe('TwabRewards', () => {
             const promotionId = 1;
             const epochIds = [0, 1, 2];
             const wallet2Amount = toWei('750');
-            const zeroAmount = toWei('0');
 
             await ticket.mint(wallet2.address, wallet2Amount);
 
@@ -886,22 +934,21 @@ describe('TwabRewards', () => {
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, Zero);
 
-            expect(await rewardToken.balanceOf(wallet2.address)).to.equal(zeroAmount);
+            expect(await rewardToken.balanceOf(wallet2.address)).to.equal(Zero);
         });
 
         it('should return 0 if ticket average total supplies is 0', async () => {
             const promotionId = 1;
             const epochIds = [0, 1, 2];
-            const zeroAmount = toWei('0');
 
             await createPromotion();
             await increaseTime(epochDuration * 3);
 
             await expect(twabRewards.claimRewards(wallet2.address, promotionId, epochIds))
                 .to.emit(twabRewards, 'RewardsClaimed')
-                .withArgs(promotionId, epochIds, wallet2.address, zeroAmount);
+                .withArgs(promotionId, epochIds, wallet2.address, Zero);
         });
 
         it('should fail to claim rewards for an inexistent promotion', async () => {

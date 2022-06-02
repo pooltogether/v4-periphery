@@ -169,6 +169,8 @@ contract TwabRewards is ITwabRewards {
         uint256 _remainingRewards = _getRemainingRewards(_promotion);
         _promotion.token.safeTransfer(_to, _remainingRewards);
 
+        _promotions[_promotionId].rewardsUnclaimed -= _remainingRewards;
+
         emit PromotionEnded(_promotionId, _to, _remainingRewards, _epochNumber);
 
         return true;
@@ -290,7 +292,7 @@ contract TwabRewards is ITwabRewards {
         uint256[] memory _rewardsAmount = new uint256[](_epochIdsLength);
 
         for (uint256 index = 0; index < _epochIdsLength; index++) {
-            if (_isClaimedEpoch(_claimedEpochs[_promotionId][_user], uint8(index))) {
+            if (_isClaimedEpoch(_claimedEpochs[_promotionId][_user], _epochIds[index])) {
                 _rewardsAmount[index] = 0;
             } else {
                 _rewardsAmount[index] = _calculateRewardAmount(_user, _promotion, _epochIds[index]);

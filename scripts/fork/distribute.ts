@@ -17,7 +17,7 @@ export default task("fork:distribute", "Distribute Ether and USDC").setAction(
 
         const { ethers } = hre;
         const { provider, getContractAt, getSigners } = ethers;
-        const [deployer, wallet2] = await getSigners();
+        const [deployer, attacker] = await getSigners();
 
         const ethHolder = provider.getUncheckedSigner(ETH_HOLDER_ADDRESS_MAINNET);
         const poolHolder = provider.getUncheckedSigner(POOL_HOLDER_ADDRESS_MAINNET);
@@ -28,7 +28,7 @@ export default task("fork:distribute", "Distribute Ether and USDC").setAction(
 
         const recipients: { [key: string]: string } = {
             ["Deployer"]: deployer.address,
-            ["Wallet 2"]: wallet2.address,
+            ["Attacker"]: attacker.address,
         };
 
         const keys = Object.keys(recipients);

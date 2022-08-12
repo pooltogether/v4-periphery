@@ -36,13 +36,19 @@ interface IPrizeTierHistory {
     event PrizeTierSet(uint32 indexed drawId, PrizeTier prizeTier);
 
     /**
-     * @notice Push PrizeTierHistory struct onto history array.
-     * @dev    Callable only by owner or manager,
-     * @param drawPrizeDistribution New PrizeTierHistory struct
+     * @notice Push PrizeTier struct onto `prizeTiers` array.
+     * @dev Callable only by the owner or manager.
+     * @dev `drawId` must be greater than the latest one stored in `history`.
+     * @param nextPrizeTier Next PrizeTier struct
      */
-    function push(PrizeTier calldata drawPrizeDistribution) external;
+    function push(PrizeTier calldata nextPrizeTier) external;
 
-    function replace(PrizeTier calldata _prizeTier) external;
+    /**
+     * @notice Replace PrizeTier struct in `prizeTiers` array.
+     * @dev    Callable only by the owner.
+     * @param newPrizeTier PrizeTier parameters
+     */
+    function replace(PrizeTier calldata newPrizeTier) external;
 
     /**
      * @notice Read PrizeTierHistory struct from history array.
@@ -70,12 +76,12 @@ interface IPrizeTierHistory {
         returns (PrizeTier[] memory prizeTierList);
 
     /**
-     * @notice Push PrizeTierHistory struct onto history array.
-     * @dev    Callable only by owner.
-     * @param prizeTier Updated PrizeTierHistory struct
-     * @return drawId Draw ID linked to PrizeTierHistory
+     * @notice Pop the latest prize tier stored in the `prizeTiers` array and replace it with the new prize tier.
+     * @dev    Callable only by the owner.
+     * @param newPrizeTier Updated PrizeTier struct
+     * @return drawId Draw ID of the PrizeTier that was pushed
      */
-    function popAndPush(PrizeTier calldata prizeTier) external returns (uint32 drawId);
+    function popAndPush(PrizeTier calldata newPrizeTier) external returns (uint32 drawId);
 
     function getPrizeTierAtIndex(uint256 index) external view returns (PrizeTier memory);
 

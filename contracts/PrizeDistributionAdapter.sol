@@ -19,7 +19,7 @@ import "./interfaces/IPrizeTierHistoryV2.sol";
 contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearch, Manageable {
     /**
      * @notice PrizeTierV2 struct
-     * @dev    Adds the DPR and minPickCost paramater to the PrizeTierStructV1
+     * @dev    Adds Draw Percentage Rate (DPR) and minPickCost paramater to PrizeTier struct
      */
     struct PrizeTierV2 {
         uint8 bitRangeSize;
@@ -27,10 +27,10 @@ contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearc
         uint32 maxPicksPerUser;
         uint32 expiryDuration;
         uint32 endTimestampOffset;
-        uint256 prize;
-        uint32[16] tiers;
         uint32 dpr;
         uint256 minPickCost;
+        uint256 prize;
+        uint32[16] tiers;
     }
 
     ITicket internal ticket;
@@ -114,7 +114,7 @@ contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearc
         return _getPrizeTier(drawId);
     }
 
-    function getPrizeTiers(uint32[] calldata drawIds)
+    function getPrizeTierList(uint32[] calldata drawIds)
         external
         view
         returns (PrizeTierV2[] memory prizeTierList)

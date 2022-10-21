@@ -40,7 +40,6 @@ library DrawCalculationLib {
             cardinality++;
         }
 
-        // number of picks = total picks * odds
         numberOfPicks = uint104((_totalPicks * _odds) / RATE_NORMALIZATION);
     }
 

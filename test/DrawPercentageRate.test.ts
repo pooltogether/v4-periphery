@@ -48,104 +48,6 @@ describe('DrawPercentageRate', () => {
     });
 
     describe('Internal', () => {
-        describe('calculateCardinality()', () => {
-            it('should successfully calculate a valid cardinality.', async () => {
-                const TOTAL_SUPPLY = BigNumber.from('1000');
-                const PRIZE = BigNumber.from('100');
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const DPR = parseUnits('0.01', '9');
-                const MIN_PICK_COST = BigNumber.from('1');
-                const value = await drawPercentageRate.calculateCardinality(
-                    BIT_RANGE_SIZE,
-                    PRIZE,
-                    DPR,
-                    MIN_PICK_COST,
-                    TOTAL_SUPPLY,
-                );
-                expect(value).to.eq(BigNumber.from('7'));
-            });
-
-            it('should successfully calculate a valid cardinality and number of picks.', async () => {
-                const TOTAL_SUPPLY = BigNumber.from('1000');
-                const PRIZE = BigNumber.from('10');
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const DPR = parseUnits('0.1', '9');
-                const MIN_PICK_COST = BigNumber.from('1');
-                const value = await drawPercentageRate.calculateCardinality(
-                    BIT_RANGE_SIZE,
-                    PRIZE,
-                    DPR,
-                    MIN_PICK_COST,
-                    TOTAL_SUPPLY,
-                );
-                expect(value).to.eq(BigNumber.from('4'));
-            });
-        });
-
-        // Calculate Number of Picks
-        describe('calculateNumberOfPicks()', () => {
-            it('should successfully calculate a valid cardinality.', async () => {
-                const TOTAL_SUPPLY = BigNumber.from('1000');
-                const PRIZE = BigNumber.from('100');
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const DPR = parseUnits('0.01', '9');
-                const MIN_PICK_COST = BigNumber.from('1');
-                const value = await drawPercentageRate.calculateNumberOfPicks(
-                    BIT_RANGE_SIZE,
-                    PRIZE,
-                    DPR,
-                    MIN_PICK_COST,
-                    TOTAL_SUPPLY,
-                );
-                expect(value).to.eq(BigNumber.from('1638'));
-            });
-
-            it('should successfully calculate a valid cardinality and number of picks.', async () => {
-                const TOTAL_SUPPLY = BigNumber.from('1000');
-                const PRIZE = BigNumber.from('10');
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const DPR = parseUnits('0.1', '9');
-                const MIN_PICK_COST = BigNumber.from('1');
-                const value = await drawPercentageRate.calculateNumberOfPicks(
-                    BIT_RANGE_SIZE,
-                    PRIZE,
-                    DPR,
-                    MIN_PICK_COST,
-                    TOTAL_SUPPLY,
-                );
-                expect(value).to.eq(BigNumber.from('2560'));
-            });
-        });
-
-        // Calculate Number of Picks using Cardinality and Fraction of Odds
-        describe('calculateNumberOfPicksWithCardinalityAndFraction()', () => {
-            it('should successfully calculate number of picks of using cardinality and fraction of odds', async () => {
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const CARDINALITY = BigNumber.from('7');
-                const FRACTION_OF_ODDS = BigNumber.from('100000000');
-                const value =
-                    await drawPercentageRate.calculateNumberOfPicksWithCardinalityAndFraction(
-                        BIT_RANGE_SIZE,
-                        CARDINALITY,
-                        FRACTION_OF_ODDS,
-                    );
-                expect(value).to.eq(BigNumber.from('1638'));
-            });
-
-            it('should successfully calculate number of picks of using cardinality and fraction of odds', async () => {
-                const BIT_RANGE_SIZE = BigNumber.from('2');
-                const CARDINALITY = BigNumber.from('4');
-                const FRACTION_OF_ODDS = BigNumber.from('10000000000');
-                const value =
-                    await drawPercentageRate.calculateNumberOfPicksWithCardinalityAndFraction(
-                        BIT_RANGE_SIZE,
-                        CARDINALITY,
-                        FRACTION_OF_ODDS,
-                    );
-                expect(value).to.eq(BigNumber.from('2560'));
-            });
-        });
-
         describe('calculateCardinalityAndNumberOfPicks()', () => {
             it('should successfully calculate a valid cardinality and number of picks.', async () => {
                 const TOTAL_SUPPLY = BigNumber.from('1000');
@@ -160,6 +62,7 @@ describe('DrawPercentageRate', () => {
                     MIN_PICK_COST,
                     TOTAL_SUPPLY,
                 );
+
                 expect(value.cardinality).to.eq(BigNumber.from('7'));
                 expect(value.numberOfPicks).to.eq(BigNumber.from('1638'));
             });
@@ -177,17 +80,9 @@ describe('DrawPercentageRate', () => {
                     MIN_PICK_COST,
                     TOTAL_SUPPLY,
                 );
+
                 expect(value.cardinality).to.eq(BigNumber.from('4'));
                 expect(value.numberOfPicks).to.eq(BigNumber.from('2560'));
-            });
-        });
-
-        describe('calculatePrizeDistribution()', () => {
-            it('should successfully calculate a PrizeDistribution using mock historical Draw parameters', async () => {
-                const DRAW_ID = 1;
-                const DRAW_PERCENTAGE_RATE = '1';
-                // expect(await drawPercentageRate.calculatePrizeDistribution(DRAW_ID, DRAW_PERCENTAGE_RATE)).to.eq(true);
-                expect(true).to.eq(true);
             });
         });
 
@@ -203,34 +98,6 @@ describe('DrawPercentageRate', () => {
                 );
                 expect(offsets[0][0]).to.equal(BigNumber.from('10'));
                 expect(offsets[1][0]).to.equal(BigNumber.from('990'));
-            });
-        });
-
-        describe('calculateCardinalityCeiling()', () => {
-            it('should successfully calculate the cardinality from max picks', async () => {
-                const BIT_RANGE_SIZE = BigNumber.from('4');
-                const MAX_PICKS = BigNumber.from('1000');
-                const CARDINALITY_EXPECT = BigNumber.from('3');
-                const read = await drawPercentageRate.calculateCardinalityCeiling(
-                    BIT_RANGE_SIZE,
-                    MAX_PICKS,
-                );
-                expect(read).to.eq(CARDINALITY_EXPECT);
-            });
-        });
-
-        describe('calculateFractionOfOdds()', () => {
-            it('should successfully calculate the fracion of odds', async () => {
-                const DRAW_PERCENTAGE_RATE = BigNumber.from('100000');
-                const TOTAL_SUPPLY = BigNumber.from('100000');
-                const PRIZE = parseEther('1');
-                expect(
-                    await drawPercentageRate.calculateFractionOfOdds(
-                        DRAW_PERCENTAGE_RATE,
-                        TOTAL_SUPPLY,
-                        PRIZE,
-                    ),
-                ).to.eq(BigNumber.from('0'));
             });
         });
     });

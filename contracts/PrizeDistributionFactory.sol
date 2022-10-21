@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
+
 import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol";

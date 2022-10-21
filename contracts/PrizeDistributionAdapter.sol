@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.6;
-import "hardhat/console.sol";
+
 import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
@@ -8,7 +8,7 @@ import "@pooltogether/v4-core/contracts/interfaces/IDrawBuffer.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IDrawBeacon.sol";
 import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "./abstract/DrawIDBinarySearch.sol";
-import "./abstract/PoolUtilities.sol";
+import "./libraries/DrawCalculationLib.sol";
 import "./interfaces/IPrizeTierHistoryV2.sol";
 
 /**
@@ -16,13 +16,12 @@ import "./interfaces/IPrizeTierHistoryV2.sol";
  * @author PoolTogether Inc Team
  * @notice PrizeDistributionAdapter dynamically calculates a PrizePool distributions using a static draw percentage rate.
  */
-contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearch, Manageable, PoolUtilities {
-
-     /**
+contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearch, Manageable {
+    /**
      * @notice PrizeTierV2 struct
      * @dev    Adds the DPR and minPickCost paramater to the PrizeTierStructV1
      */
-     struct PrizeTierV2 {
+    struct PrizeTierV2 {
         uint8 bitRangeSize;
         uint32 drawId;
         uint32 maxPicksPerUser;
@@ -111,11 +110,7 @@ contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearc
         return ticket;
     }
 
-    function getPrizeTier(uint32 drawId)
-        external
-        view
-        returns (PrizeTierV2 memory prizeTier)
-    {
+    function getPrizeTier(uint32 drawId) external view returns (PrizeTierV2 memory prizeTier) {
         return _getPrizeTier(drawId);
     }
 
@@ -140,43 +135,50 @@ contract PrizeDistributionAdapter is IPrizeDistributionSource, DrawIDBinarySearc
      * @param _drawId - uint32
      * @return prizeDistribution
      */
-     function _calculatePrizeDistribution(uint32 _drawId)
-     internal
-     view
-     returns (IPrizeDistributionBuffer.PrizeDistribution memory)
- {
-     PrizeTierV2 memory prizeTier = _getPrizeTier(_drawId);
-     IDrawBeacon.Draw memory draw = drawBuffer.getDraw(_drawId);
-     (uint64[] memory start, uint64[] memory end) = _calculateDrawPeriodTimestampOffsets(
-         draw.timestamp,
-         draw.beaconPeriodSeconds,
-         prizeTier.endTimestampOffset
-     );
-     uint256[] memory _totalSupplies = ticket.getAverageTotalSuppliesBetween(start, end);
-     (uint8 _cardinality, uint104 _numberOfPicks) = _calculateCardinalityAndNumberOfPicks(
-         prizeTier.bitRangeSize,
-         prizeTier.prize,
-         prizeTier.dpr,
-         prizeTier.minPickCost,
-         _totalSupplies[0]
-     );
-     IPrizeDistributionBuffer.PrizeDistribution
-         memory prizeDistribution = IPrizeDistributionSource.PrizeDistribution({
-             bitRangeSize: prizeTier.bitRangeSize,
-             matchCardinality: _cardinality,
-             startTimestampOffset: draw.beaconPeriodSeconds,
-             endTimestampOffset: prizeTier.endTimestampOffset,
-             maxPicksPerUser: prizeTier.maxPicksPerUser,
-             expiryDuration: prizeTier.expiryDuration,
-             numberOfPicks: _numberOfPicks,
-             tiers: prizeTier.tiers,
-             prize: prizeTier.prize
-         });
-     return prizeDistribution;
- }
+    function _calculatePrizeDistribution(uint32 _drawId)
+        internal
+        view
+        returns (IPrizeDistributionBuffer.PrizeDistribution memory)
+    {
+        PrizeTierV2 memory prizeTier = _getPrizeTier(_drawId);
 
+        IDrawBeacon.Draw memory draw = drawBuffer.getDraw(_drawId);
 
- function _getPrizeTier(uint32 drawId) internal view returns (PrizeTierV2 memory prizeTier) {
-     return history[_binarySearch(drawId)];
- }
+        (uint64[] memory start, uint64[] memory end) = DrawCalculationLib
+            .calculateDrawPeriodTimestampOffsets(
+                draw.timestamp,
+                draw.beaconPeriodSeconds,
+                prizeTier.endTimestampOffset
+            );
+
+        uint256[] memory _totalSupplies = ticket.getAverageTotalSuppliesBetween(start, end);
+
+        (uint8 _cardinality, uint104 _numberOfPicks) = DrawCalculationLib
+            .calculateCardinalityAndNumberOfPicks(
+                prizeTier.bitRangeSize,
+                prizeTier.prize,
+                prizeTier.dpr,
+                prizeTier.minPickCost,
+                _totalSupplies[0]
+            );
+
+        IPrizeDistributionBuffer.PrizeDistribution
+            memory prizeDistribution = IPrizeDistributionSource.PrizeDistribution({
+                bitRangeSize: prizeTier.bitRangeSize,
+                matchCardinality: _cardinality,
+                startTimestampOffset: draw.beaconPeriodSeconds,
+                endTimestampOffset: prizeTier.endTimestampOffset,
+                maxPicksPerUser: prizeTier.maxPicksPerUser,
+                expiryDuration: prizeTier.expiryDuration,
+                numberOfPicks: _numberOfPicks,
+                tiers: prizeTier.tiers,
+                prize: prizeTier.prize
+            });
+
+        return prizeDistribution;
+    }
+
+    function _getPrizeTier(uint32 drawId) internal view returns (PrizeTierV2 memory prizeTier) {
+        return history[_binarySearch(drawId)];
+    }
 }

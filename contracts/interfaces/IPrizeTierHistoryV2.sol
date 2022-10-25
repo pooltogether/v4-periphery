@@ -20,7 +20,6 @@ interface IPrizeTierHistoryV2 {
         uint32 expiryDuration;
         uint32 endTimestampOffset;
         uint32 dpr;
-        uint256 minPickCost;
         uint256 prize;
         uint32[16] tiers;
     }

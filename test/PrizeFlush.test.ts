@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-// @ts-ignore
 import { ethers, artifacts } from 'hardhat';
 import { deployMockContract, MockContract } from 'ethereum-waffle';
 import { Signer } from '@ethersproject/abstract-signer';
@@ -36,7 +35,7 @@ describe('PrizeFlush', () => {
         prizeSplitStrategyFactory = await ethers.getContractFactory('PrizeSplitStrategy');
 
         let PrizeSplitStrategy = await artifacts.readArtifact('PrizeSplitStrategy');
-        strategy = await deployMockContract(wallet1 as unknown as Signer, PrizeSplitStrategy.abi);
+        strategy = await deployMockContract(wallet1, PrizeSplitStrategy.abi);
     });
 
     beforeEach(async () => {

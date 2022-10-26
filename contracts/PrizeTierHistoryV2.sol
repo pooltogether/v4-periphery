@@ -35,10 +35,10 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
     mapping(uint32 => PrizeTierV2) internal prizeTiers;
 
     /**
-     * @notice Ceiling for the total sum of tiers from the prize distribution. 1e9 = 100%.
+     * @notice Ceiling for the dpr and total sum of tiers from the prize distribution. 1e9 = 100%.
      * @dev It's fixed point 9 because 1e9 is the largest "1" that fits into 2**32
      */
-    uint256 internal constant TIERS_CEILING = 1e9;
+    uint256 internal constant CEILING = 1e9;
 
     /**
      * @notice PrizeTierHistoryV2 constructor
@@ -63,7 +63,7 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
 
     // @inheritdoc IPrizeTierHistoryV2
     function getPrizeTier(uint32 drawId) external view override returns (PrizeTierV2 memory) {
-        require(drawId > 0, "PrizeTierHistoryV2/draw-id-not-zero");
+        require(drawId > 0, "PTH/draw-id-not-zero");
         return prizeTiers[history.binarySearch(drawId)];
     }
 
@@ -105,8 +105,8 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
         returns (uint32)
     {
         uint256 length = history.length;
-        require(length > 0, "PrizeTierHistoryV2/history-empty");
-        require(history[length - 1] == newPrizeTier.drawId, "PrizeTierHistoryV2/invalid-draw-id");
+        require(length > 0, "PTH/history-empty");
+        require(history[length - 1] == newPrizeTier.drawId, "PTH/invalid-draw-id");
         _replace(newPrizeTier);
         return newPrizeTier.drawId;
     }
@@ -114,6 +114,14 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
     // @inheritdoc IPrizeTierHistoryV2
     function replace(PrizeTierV2 calldata newPrizeTier) external override onlyOwner {
         _replace(newPrizeTier);
+    }
+
+    /**
+     * @notice Check that the Draw Percentage Rate (DPR) is not greater than 1e9 (100%).
+     * @param  _dpr DPR to check
+     */
+    function _checkDPR(uint32 _dpr) internal pure {
+        require(_dpr <= CEILING, "PTH/dpr-gt-100%");
     }
 
     /**
@@ -128,7 +136,7 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
             tiersTotalSum += _tiers[index];
         }
 
-        require(tiersTotalSum <= TIERS_CEILING, "PrizeTierHistoryV2/tiers-gt-100%");
+        require(tiersTotalSum <= CEILING, "PTH/tiers-gt-100%");
     }
 
     /**
@@ -142,9 +150,10 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
 
         if (_length > 0) {
             uint32 _id = history[_length - 1];
-            require(_prizeTier.drawId > _id, "PrizeTierHistoryV2/non-sequential-id");
+            require(_prizeTier.drawId > _id, "PTH/non-sequential-id");
         }
 
+        _checkDPR(_prizeTier.dpr);
         _checkTiersTotalSum(_prizeTier.tiers);
 
         history.push(_prizeTier.drawId);
@@ -160,14 +169,15 @@ contract PrizeTierHistoryV2 is IPrizeTierHistoryV2, Manageable {
      */
     function _replace(PrizeTierV2 calldata _prizeTier) internal {
         uint256 cardinality = history.length;
-        require(cardinality > 0, "PrizeTierHistoryV2/no-prize-tiers");
+        require(cardinality > 0, "PTH/no-prize-tiers");
 
         uint32 oldestDrawId = history[0];
-        require(_prizeTier.drawId >= oldestDrawId, "PrizeTierHistoryV2/draw-id-out-of-range");
+        require(_prizeTier.drawId >= oldestDrawId, "PTH/draw-id-out-of-range");
 
         uint32 index = history.binarySearch(_prizeTier.drawId);
-        require(history[index] == _prizeTier.drawId, "PrizeTierHistoryV2/draw-id-must-match");
+        require(history[index] == _prizeTier.drawId, "PTH/draw-id-must-match");
 
+        _checkDPR(_prizeTier.dpr);
         _checkTiersTotalSum(_prizeTier.tiers);
 
         prizeTiers[index] = _prizeTier;

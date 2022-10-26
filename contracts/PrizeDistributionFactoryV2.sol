@@ -213,9 +213,9 @@ contract PrizeDistributionFactoryV2 is Manageable {
      * @return cardinality and number of picks
      */
     function _calculateCardinalityAndNumberOfPicks(
-        uint32 _bitRangeSize,
+        uint8 _bitRangeSize,
         uint256 _prize,
-        uint256 _dpr,
+        uint32 _dpr,
         uint256 _minPickCost,
         uint256 _totalSupply
     ) internal pure returns (uint8 cardinality, uint104 numberOfPicks) {
@@ -262,7 +262,7 @@ contract PrizeDistributionFactoryV2 is Manageable {
      * @param _cardinality Cardinality
      * @return Total number of picks
      */
-    function _calculateTotalPicks(uint32 _bitRangeSize, uint8 _cardinality)
+    function _calculateTotalPicks(uint8 _bitRangeSize, uint8 _cardinality)
         internal
         pure
         returns (uint256)

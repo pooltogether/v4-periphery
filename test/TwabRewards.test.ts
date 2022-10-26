@@ -1,4 +1,3 @@
-// @ts-ignore
 import { ethers } from 'hardhat';
 import ERC20MintableInterface from '@pooltogether/v4-core/abis/ERC20Mintable.json';
 import TicketInterface from '@pooltogether/v4-core/abis/ITicket.json';

@@ -262,6 +262,14 @@ describe('PrizeTierHistory', () => {
             expect(prizeTierVal.bitRangeSize).to.equal(12);
         });
 
+        it('should fail to replace a PrizeTier if not owner', async () => {
+            await prizeTierHistory.setManager(wallet2.address);
+
+            await expect(
+                prizeTierHistory.connect(wallet2).replace(prizeTiers[1]),
+            ).to.be.revertedWith('Ownable/caller-not-owner');
+        });
+
         it('should fail to replace a PrizeTier because history is empty', async () => {
             await expect(prizeTierHistory.replace(prizeTiers[1])).to.be.revertedWith(
                 'PrizeTierHistory/no-prize-tiers',

@@ -97,7 +97,7 @@ contract PrizeDistributionFactoryV2 is Manageable {
 
     /**
      * @notice Allows the owner or manager to push a new prize distribution onto the buffer.
-     * The PrizeTier and Draw for the given draw id will be pulled in, and the total network ticket supply will be used to calculate cardinality.
+     * The PrizeTier and Draw for the given draw id will be pulled in, and the prize distribution will be computed.
      * @param _drawId The draw id to compute for
      * @return The resulting Prize Distribution
      */

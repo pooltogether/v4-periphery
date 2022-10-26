@@ -1,4 +1,4 @@
-import '@nomiclabs/hardhat-ethers'
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
@@ -17,7 +17,7 @@ import networks from './hardhat.network';
 
 const optimizerEnabled = !process.env.OPTIMIZER_DISABLED;
 
-const config: HardhatUserConfig | any = {
+const config: HardhatUserConfig = {
     abiExporter: {
         path: './abis',
         clear: true,
@@ -65,8 +65,7 @@ const config: HardhatUserConfig | any = {
                     'node_modules/@pooltogether/aave-yield-source/artifacts/contracts/yield-source/ATokenYieldSource.sol/',
             },
             {
-                artifacts:
-                    'node_modules/@pooltogether/v4-core/artifacts/contracts/prize-pool/YieldSourcePrizePool.sol',
+                artifacts: 'node_modules/@pooltogether/v4-core/artifacts/contracts/',
             },
         ],
     },

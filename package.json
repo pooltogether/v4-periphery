@@ -22,7 +22,7 @@
         "distribute": "hardhat --network localhost fork:distribute",
         "remove-logs": "yarn run hardhat remove-logs",
         "twab-rewards-fork": "wait-on tcp:8545 && yarn impersonate && yarn distribute && hardhat --network localhost fork:twab-rewards",
-        "run-twab-rewards-fork": "npm-run-all -p -r start-fork twab-rewards-fork",
+        "run-twab-rewards-fork": "OPTIMIZER_DISABLED=true rm -rf deployments/localhost/ && npm-run-all -p -r start-fork twab-rewards-fork",
         "test": "HIDE_DEPLOY_LOG=true OPTIMIZER_DISABLED=true hardhat test",
         "prepack": "yarn compile"
     },

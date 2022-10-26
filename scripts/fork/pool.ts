@@ -16,6 +16,7 @@ export default task("fork:create-pool", "Create pool").setAction(
 
         const {
             deployments: { deploy },
+            ethers: { getContractAt },
             getNamedAccounts,
         } = hre;
 
@@ -53,7 +54,7 @@ export default task("fork:create-pool", "Create pool").setAction(
             ],
         });
 
-        const yieldSourcePrizePool = await hre.ethers.getContractAt(
+        const yieldSourcePrizePool = await getContractAt(
             "YieldSourcePrizePool",
             yieldSourcePrizePoolAddress
         );

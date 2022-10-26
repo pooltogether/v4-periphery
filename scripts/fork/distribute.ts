@@ -1,4 +1,5 @@
 import { usdc } from "@studydefi/money-legos/erc20";
+import { Signer } from "ethers";
 
 import { task } from "hardhat/config";
 
@@ -12,7 +13,7 @@ import {
 import { action, success } from "../../helpers";
 
 export default task("fork:distribute", "Distribute Ether and USDC").setAction(
-    async (taskArguments, hre: any) => {
+    async (taskArguments, hre) => {
         action("Distributing Ether and USDC...");
 
         const { ethers } = hre;
@@ -20,8 +21,12 @@ export default task("fork:distribute", "Distribute Ether and USDC").setAction(
         const [deployer, attacker] = await getSigners();
 
         const ethHolder = provider.getUncheckedSigner(ETH_HOLDER_ADDRESS_MAINNET);
-        const poolHolder = provider.getUncheckedSigner(POOL_HOLDER_ADDRESS_MAINNET);
-        const usdcHolder = provider.getUncheckedSigner(USDC_HOLDER_ADDRESS_MAINNET);
+        const poolHolder = provider.getUncheckedSigner(
+            POOL_HOLDER_ADDRESS_MAINNET
+        ) as unknown as Signer;
+        const usdcHolder = provider.getUncheckedSigner(
+            USDC_HOLDER_ADDRESS_MAINNET
+        ) as unknown as Signer;
 
         const usdcContract = await getContractAt(usdc.abi, usdc.address, usdcHolder);
         const poolContract = await getContractAt(usdc.abi, POOL_TOKEN_ADDRESS_MAINNET, poolHolder);

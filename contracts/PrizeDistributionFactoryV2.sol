@@ -225,7 +225,12 @@ contract PrizeDistributionFactoryV2 is Manageable {
             return (cardinality = 1, numberOfPicks);
         }
 
-        uint256 _targetPicks = ((_totalSupply / _minPickCost) * RATE_NORMALIZATION) / _odds;
+        /**
+         * maxPicks = totalSupply / minPickCost
+         * targetPicks = maxPicks / odds = (totalSupply / minPickCost) / ((dpr * totalSupply) / prize)
+         * targetPicks = (1 / minPickCost) / ((dpr * 1) / prize) = prize / (dpr * minPickCost)
+        */
+        uint256 _targetPicks = (_prize * RATE_NORMALIZATION) / (_dpr * _minPickCost);
 
         do {
             cardinality++;

@@ -1,5 +1,7 @@
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
+import '@typechain/hardhat';
 import 'hardhat-abi-exporter';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
@@ -49,6 +51,8 @@ const config: HardhatUserConfig = {
             '@pooltogether/v4-core/contracts/prize-strategy/PrizeSplitStrategy.sol',
             '@pooltogether/v4-core/contracts/interfaces/IReserve.sol',
             '@pooltogether/v4-core/contracts/interfaces/IStrategy.sol',
+            '@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol',
+            '@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol',
             '@pooltogether/v4-core/contracts/test/ERC20Mintable.sol',
             '@pooltogether/v4-core/contracts/test/ReserveHarness.sol',
             '@pooltogether/v4-core/contracts/test/TicketHarness.sol',
@@ -61,8 +65,7 @@ const config: HardhatUserConfig = {
                     'node_modules/@pooltogether/aave-yield-source/artifacts/contracts/yield-source/ATokenYieldSource.sol/',
             },
             {
-                artifacts:
-                    'node_modules/@pooltogether/v4-core/artifacts/contracts/prize-pool/YieldSourcePrizePool.sol',
+                artifacts: 'node_modules/@pooltogether/v4-core/artifacts/contracts/',
             },
         ],
     },
@@ -89,6 +92,10 @@ const config: HardhatUserConfig = {
                 },
             },
         ],
+    },
+    typechain: {
+        outDir: './types',
+        target: 'ethers-v5',
     },
 };
 

@@ -133,7 +133,7 @@ subtask("create-promotion", "Create TWAB Rewards promotion")
 
             const createPromotionTxReceipt = await getTransactionReceipt(createPromotionTx.hash);
 
-            const createPromotionTxEvents = createPromotionTxReceipt.logs.map((log: any) => {
+            const createPromotionTxEvents = createPromotionTxReceipt.logs.map((log) => {
                 try {
                     return twabRewards.interface.parseLog(log);
                 } catch (e) {
@@ -142,7 +142,7 @@ subtask("create-promotion", "Create TWAB Rewards promotion")
             });
 
             const promotionCreatedEvent = createPromotionTxEvents.find(
-                (event: any) => event && event.name === "PromotionCreated"
+                (event) => event && event.name === "PromotionCreated"
             );
 
             success("TWAB Rewards promotion created!");
@@ -201,7 +201,7 @@ subtask("claim-rewards", "Claim rewards")
 
         const claimRewardsReceipt = await getTransactionReceipt(claimRewardsTx.hash);
 
-        const claimRewardsEvents = claimRewardsReceipt.logs.map((log: any) => {
+        const claimRewardsEvents = claimRewardsReceipt.logs.map((log) => {
             try {
                 return twabRewards.interface.parseLog(log);
             } catch (e) {
@@ -210,7 +210,7 @@ subtask("claim-rewards", "Claim rewards")
         });
 
         const rewardsClaimedEvent = claimRewardsEvents.find(
-            (event: any) => event && event.name === "RewardsClaimed"
+            (event) => event && event.name === "RewardsClaimed"
         );
 
         const rewardsClaimedAmount = formatEther(rewardsClaimedEvent?.args["amount"]);
@@ -235,7 +235,7 @@ subtask("destroy-promotion", "Destroy promotion")
 
         const destroyPromotionReceipt = await getTransactionReceipt(destroyPromotionTx.hash);
 
-        const destroyPromotionEvents = destroyPromotionReceipt.logs.map((log: any) => {
+        const destroyPromotionEvents = destroyPromotionReceipt.logs.map((log) => {
             try {
                 return twabRewards.interface.parseLog(log);
             } catch (e) {
@@ -244,7 +244,7 @@ subtask("destroy-promotion", "Destroy promotion")
         });
 
         const promotionDestroyedEvent = destroyPromotionEvents.find(
-            (event: any) => event && event.name === "PromotionDestroyed"
+            (event) => event && event.name === "PromotionDestroyed"
         );
 
         const promotionDestroyedAmount = formatEther(promotionDestroyedEvent?.args["amount"]);
@@ -270,7 +270,7 @@ subtask("end-promotion", "End promotion")
         const endPromotionTx = await twabRewards.endPromotion(promotionId, signer.address);
         const endPromotionReceipt = await getTransactionReceipt(endPromotionTx.hash);
 
-        const endPromotionEvents = endPromotionReceipt.logs.map((log: any) => {
+        const endPromotionEvents = endPromotionReceipt.logs.map((log) => {
             try {
                 return twabRewards.interface.parseLog(log);
             } catch (e) {
@@ -279,7 +279,7 @@ subtask("end-promotion", "End promotion")
         });
 
         const promotionEndedEvent = endPromotionEvents.find(
-            (event: any) => event && event.name === "PromotionEnded"
+            (event) => event && event.name === "PromotionEnded"
         );
 
         const promotionEndedAmount = formatEther(promotionEndedEvent?.args["amount"]);

@@ -21,6 +21,7 @@ const networks: HardhatUserConfig['networks'] = {
 
 if (alchemyUrl && Boolean(process.env.FORK_ENABLED) && mnemonic) {
     networks.hardhat = {
+        allowUnlimitedContractSize: true,
         chainId: 1,
         forking: {
             url: alchemyUrl,

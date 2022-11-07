@@ -35,7 +35,7 @@ describe('PrizeFlush', () => {
         prizeSplitStrategyFactory = await ethers.getContractFactory('PrizeSplitStrategy');
 
         let PrizeSplitStrategy = await artifacts.readArtifact('PrizeSplitStrategy');
-        strategy = await deployMockContract(wallet1 as unknown as Signer, PrizeSplitStrategy.abi);
+        strategy = await deployMockContract(wallet1, PrizeSplitStrategy.abi);
     });
 
     beforeEach(async () => {
@@ -121,17 +121,36 @@ describe('PrizeFlush', () => {
 
     describe('Core', () => {
         describe('flush()', () => {
-            it('should fail to call withdrawTo if zero balance on reserve', async () => {
-                await strategy.mock.distribute.returns(toWei('0'));
-                await expect(prizeFlush.flush()).to.not.emit(prizeFlush, 'Flushed');
-            });
-
-            it('should succeed to call withdrawTo prizes if positive balance on reserve.', async () => {
+            it('should succeed to flush prizes if positive balance on reserve.', async () => {
                 await strategy.mock.distribute.returns(toWei('100'));
                 await ticket.mint(reserve.address, toWei('100'));
                 await expect(prizeFlush.flush())
                     .to.emit(prizeFlush, 'Flushed')
                     .and.to.emit(reserve, 'Withdrawn');
+            });
+
+            it('should succeed to flush if manager', async () => {
+                await strategy.mock.distribute.returns(toWei('100'));
+                await ticket.mint(reserve.address, toWei('100'));
+
+                await prizeFlush.setManager(wallet2.address);
+
+                await expect(prizeFlush.connect(wallet2).flush())
+                    .to.emit(prizeFlush, 'Flushed')
+                    .and.to.emit(reserve, 'Withdrawn');
+            });
+
+            it('should fail to flush if not manager or owner', async () => {
+                await prizeFlush.setManager(wallet2.address);
+
+                await expect(prizeFlush.connect(wallet3).flush()).to.be.revertedWith(
+                    'Manageable/caller-not-manager-or-owner',
+                );
+            });
+
+            it('should fail to flush if zero balance on reserve', async () => {
+                await strategy.mock.distribute.returns(toWei('0'));
+                await expect(prizeFlush.flush()).to.not.emit(prizeFlush, 'Flushed');
             });
         });
     });

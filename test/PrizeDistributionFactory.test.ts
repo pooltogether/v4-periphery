@@ -1,12 +1,9 @@
 import { ethers, artifacts } from 'hardhat';
 import { deployMockContract, MockContract } from 'ethereum-waffle';
-import { Signer } from '@ethersproject/abstract-signer';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Contract, ContractFactory } from 'ethers';
 import { BigNumber } from '@ethersproject/bignumber';
 import { expect } from 'chai';
-
-const debug = require('debug')('v4-periphery:PrizeDistributionFactory.test.ts');
 
 const { getSigners, utils } = ethers;
 const { parseEther: toWei } = utils;
@@ -38,16 +35,10 @@ describe('PrizeDistributionFactory', () => {
         const IPrizeDistributionBuffer = await artifacts.readArtifact('IPrizeDistributionBuffer');
         const ITicket = await artifacts.readArtifact('ITicket');
 
-        prizeTierHistory = await deployMockContract(
-            wallet1 as unknown as Signer,
-            IPrizeTierHistory.abi,
-        );
-        drawBuffer = await deployMockContract(wallet1 as unknown as Signer, IDrawBuffer.abi);
-        prizeDistributionBuffer = await deployMockContract(
-            wallet1 as unknown as Signer,
-            IPrizeDistributionBuffer.abi,
-        );
-        ticket = await deployMockContract(wallet1 as unknown as Signer, ITicket.abi);
+        prizeTierHistory = await deployMockContract(wallet1, IPrizeTierHistory.abi);
+        drawBuffer = await deployMockContract(wallet1, IDrawBuffer.abi);
+        prizeDistributionBuffer = await deployMockContract(wallet1, IPrizeDistributionBuffer.abi);
+        ticket = await deployMockContract(wallet1, ITicket.abi);
 
         maxPickCost = toWei('1');
 

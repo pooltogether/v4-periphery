@@ -17,5 +17,6 @@
         "./test",
         "types/**/*",
         "Constants.ts"
-    ]
+    ],
+    "files": ["./hardhat.config.ts"]
 }

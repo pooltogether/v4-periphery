@@ -3,28 +3,23 @@ pragma solidity 0.8.6;
 
 import { IDrawBeacon } from "@pooltogether/v4-core/contracts/interfaces/IDrawBeacon.sol";
 import { IDrawBuffer } from "@pooltogether/v4-core/contracts/interfaces/IDrawBuffer.sol";
-import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
 
 import { ICrossChainRelayer } from "./interfaces/ICrossChainRelayer.sol";
 
-contract DrawRelayer is Manageable {
+contract DrawRelayer {
     event DrawBridged(ICrossChainRelayer relayer, address drawExecutor, IDrawBeacon.Draw draw);
 
     event DrawsBridged(ICrossChainRelayer relayer, address drawExecutor, IDrawBeacon.Draw[] draws);
 
     IDrawBuffer public immutable drawBuffer;
 
-    constructor(address _owner, IDrawBuffer _drawBuffer) Ownable(_owner) {
-        require(_owner != address(0), "DR/owner-not-zero-address");
+    constructor(IDrawBuffer _drawBuffer) {
         require(address(_drawBuffer) != address(0), "DR/drawBuffer-not-zero-address");
 
         drawBuffer = _drawBuffer;
     }
 
-    function bridgeNewestDraw(ICrossChainRelayer _relayer, address _drawExecutor)
-        external
-        onlyManager
-    {
+    function bridgeNewestDraw(ICrossChainRelayer _relayer, address _drawExecutor) external {
         IDrawBeacon.Draw memory _newestDraw = drawBuffer.getNewestDraw();
         _bridgeDraw(_newestDraw, _relayer, _drawExecutor);
     }
@@ -33,7 +28,7 @@ contract DrawRelayer is Manageable {
         uint32 _drawId,
         ICrossChainRelayer _relayer,
         address _drawExecutor
-    ) external onlyManager {
+    ) external {
         require(_drawId > 0, "DR/drawId-gt-zero");
 
         IDrawBeacon.Draw memory _draw = drawBuffer.getDraw(_drawId);
@@ -48,7 +43,7 @@ contract DrawRelayer is Manageable {
         ICrossChainRelayer _relayer,
         address _drawExecutor,
         uint256 _gasLimit
-    ) external onlyManager {
+    ) external {
         IDrawBeacon.Draw[] memory _draws = drawBuffer.getDraws(_drawIds);
 
         _relayCalls(

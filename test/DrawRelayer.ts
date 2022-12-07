@@ -37,48 +37,48 @@ describe("DrawRelayer", () => {
         winningRandomNumber: BigNumber.from(
             "40915453424841276066216659657882080769542951486300783855291357409493418239004"
         ),
-        drawId: 416,
+        drawId: 3,
         timestamp: BigNumber.from(1670267603),
         beaconPeriodStartedAt: BigNumber.from(1670180400),
         beaconPeriodSeconds,
     };
 
-    const DRAW_413 = {
+    const DRAW_2 = {
         winningRandomNumber: BigNumber.from(
             "64339088980103463139645995941327992265254002724697124345779657466504643646813"
         ),
-        drawId: 413,
+        drawId: 2,
         timestamp: BigNumber.from(1670008199),
         beaconPeriodStartedAt: BigNumber.from(1669921200),
         beaconPeriodSeconds,
     };
 
-    const DRAW_410 = {
+    const DRAW_1 = {
         winningRandomNumber: BigNumber.from(
             "80553736152766854578213568172612508909811630975130684656101794566871918526593"
         ),
-        drawId: 410,
+        drawId: 1,
         timestamp: BigNumber.from(1669748591),
         beaconPeriodStartedAt: BigNumber.from(1669662000),
         beaconPeriodSeconds,
     };
 
-    const drawIds = [DRAW_410.drawId, DRAW_413.drawId, NEWEST_DRAW.drawId];
+    const drawIds = [DRAW_1.drawId, DRAW_2.drawId, NEWEST_DRAW.drawId];
 
     const draws = [
         [
-            DRAW_410.winningRandomNumber,
-            DRAW_410.drawId,
-            DRAW_410.timestamp,
-            DRAW_410.beaconPeriodStartedAt,
-            DRAW_410.beaconPeriodSeconds,
+            DRAW_1.winningRandomNumber,
+            DRAW_1.drawId,
+            DRAW_1.timestamp,
+            DRAW_1.beaconPeriodStartedAt,
+            DRAW_1.beaconPeriodSeconds,
         ],
         [
-            DRAW_413.winningRandomNumber,
-            DRAW_413.drawId,
-            DRAW_413.timestamp,
-            DRAW_413.beaconPeriodStartedAt,
-            DRAW_413.beaconPeriodSeconds,
+            DRAW_2.winningRandomNumber,
+            DRAW_2.drawId,
+            DRAW_2.timestamp,
+            DRAW_2.beaconPeriodStartedAt,
+            DRAW_2.beaconPeriodSeconds,
         ],
         [
             NEWEST_DRAW.winningRandomNumber,
@@ -178,9 +178,9 @@ describe("DrawRelayer", () => {
                 timestamp,
                 beaconPeriodStartedAt,
                 beaconPeriodSeconds,
-            } = DRAW_413;
+            } = DRAW_2;
 
-            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_413);
+            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_2);
 
             const callData = new Interface([
                 "function pushDraw((uint256,uint32,uint64,uint64,uint32))",
@@ -283,9 +283,9 @@ describe("DrawRelayer", () => {
 
     describe("_relayCalls()", async () => {
         it("should fail to relay calls if relayer is address zero", async () => {
-            const { drawId } = DRAW_413;
+            const { drawId } = DRAW_2;
 
-            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_413);
+            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_2);
 
             await expect(
                 drawRelayer.bridgeDraw(drawId, AddressZero, drawExecutor.address)
@@ -293,9 +293,9 @@ describe("DrawRelayer", () => {
         });
 
         it("should fail to relay calls if drawExecutor is address zero", async () => {
-            const { drawId } = DRAW_413;
+            const { drawId } = DRAW_2;
 
-            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_413);
+            await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_2);
 
             await expect(
                 drawRelayer.bridgeDraw(drawId, crossChainRelayerMock.address, AddressZero)

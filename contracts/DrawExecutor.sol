@@ -7,6 +7,10 @@ import "@pooltogether/v4-core/contracts/interfaces/IDrawBuffer.sol";
 import { ExecutorAware } from "./abstract/ExecutorAware.sol";
 
 contract DrawExecutor is ExecutorAware {
+    event DrawPushed(IDrawBeacon.Draw draw);
+
+    event DrawsPushed(IDrawBeacon.Draw[] draws);
+
     address public immutable drawRelayer;
 
     IDrawBuffer public immutable drawBuffer;
@@ -27,6 +31,8 @@ contract DrawExecutor is ExecutorAware {
         _checkSender();
 
         drawBuffer.pushDraw(_draw);
+
+        emit DrawPushed(_draw);
     }
 
     function pushDraws(IDrawBeacon.Draw[] calldata _draws) external {
@@ -37,10 +43,12 @@ contract DrawExecutor is ExecutorAware {
         for (uint256 i; i < _drawsLength; i++) {
             drawBuffer.pushDraw(_draws[i]);
         }
+
+        emit DrawsPushed(_draws);
     }
 
     function _checkSender() internal view {
-      require(_msgSender() == address(drawRelayer), "DE/l1-sender-not-relayer");
-      require(isTrustedExecutor(msg.sender), "DE/l2-sender-not-executor");
+        require(isTrustedExecutor(msg.sender), "DE/l2-sender-not-executor");
+        require(_msgSender() == address(drawRelayer), "DE/l1-sender-not-relayer");
     }
 }

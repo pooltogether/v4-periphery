@@ -30,11 +30,11 @@ contract DrawRelayer {
      */
     event DrawsBridged(ICrossChainRelayer relayer, address drawExecutor, IDrawBeacon.Draw[] draws);
 
-    /// @notice DrawBuffer from which draws are retrieved
+    /// @notice DrawBuffer from which draws are retrieved.
     IDrawBuffer public immutable drawBuffer;
 
     /**
-     * @notice DrawRelayer constructor
+     * @notice DrawRelayer constructor.
      * @param _drawBuffer Address of the DrawBuffer from which draws are retrieved
      */
     constructor(IDrawBuffer _drawBuffer) {
@@ -73,7 +73,7 @@ contract DrawRelayer {
 
     /**
      * @notice Retrieves and bridge draws.
-     * @dev `_drawIds` must be sorted in ascending order.
+     * @dev `_drawIds` must be ordered in ascending and contiguous order.
      * @dev Will revert if one of the draw does not exist.
      * @param _drawIds Array of draw ids to bridge
      * @param _relayer Address of the relayer on Ethereum that will be used to bridge the draw

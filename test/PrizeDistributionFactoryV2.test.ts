@@ -447,24 +447,6 @@ describe('PrizeDistributionFactoryV2', () => {
                 .to.emit(prizeDistributionFactory, 'PrizeDistributionPushed')
                 .withArgs(1);
         });
-
-        it('should push the prize distribution if manager', async () => {
-            await prizeDistributionFactory.transferOwnership(wallet2.address);
-            await prizeDistributionFactory.connect(wallet2).claimOwnership();
-
-            await setupMocks();
-            await prizeDistributionBuffer.mock.pushPrizeDistribution.returns(true);
-
-            await expect(prizeDistributionFactory.connect(wallet2).pushPrizeDistribution(1))
-                .to.emit(prizeDistributionFactory, 'PrizeDistributionPushed')
-                .withArgs(1);
-        });
-
-        it('should fail to push if not manager or owner', async () => {
-            await expect(
-                prizeDistributionFactory.connect(wallet2).pushPrizeDistribution(1),
-            ).to.be.revertedWith('Manageable/caller-not-manager-or-owner');
-        });
     });
 
     describe('setPrizeDistribution()', () => {

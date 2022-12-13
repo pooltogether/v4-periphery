@@ -5,7 +5,7 @@ import "@pooltogether/v4-core/contracts/interfaces/ITicket.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionBuffer.sol";
 import "@pooltogether/v4-core/contracts/interfaces/IPrizeDistributionSource.sol";
 import "@pooltogether/v4-core/contracts/libraries/ExtendedSafeCastLib.sol";
-import "@pooltogether/owner-manager-contracts/contracts/Manageable.sol";
+import "@pooltogether/owner-manager-contracts/contracts/Ownable.sol";
 
 import "./interfaces/IPrizeTierHistoryV2.sol";
 
@@ -16,7 +16,7 @@ import "./interfaces/IPrizeTierHistoryV2.sol";
  * to compute the correct prize distribution.  It automatically sets the cardinality based on
  * the DPR (Draw Percentage Rate), prize, minPickCost and the total ticket supply.
  */
-contract PrizeDistributionFactoryV2 is Manageable {
+contract PrizeDistributionFactoryV2 is Ownable {
     using ExtendedSafeCastLib for uint256;
 
     /* ============ Events ============ */
@@ -96,14 +96,13 @@ contract PrizeDistributionFactoryV2 is Manageable {
     /* ============ External Functions ============ */
 
     /**
-     * @notice Allows the owner or manager to push a new prize distribution onto the buffer.
-     * The PrizeTier and Draw for the given draw id will be pulled in, and the prize distribution will be computed.
+     * @notice Push a new prize distribution onto the PrizeDistributionBuffer.
+     *         PrizeTier and Draw for the given draw id will be pulled in and the prize distribution will be computed.
      * @param _drawId The draw id to compute for
      * @return The resulting Prize Distribution
      */
     function pushPrizeDistribution(uint32 _drawId)
         external
-        onlyManagerOrOwner
         returns (IPrizeDistributionBuffer.PrizeDistribution memory)
     {
         IPrizeDistributionBuffer.PrizeDistribution
@@ -117,8 +116,8 @@ contract PrizeDistributionFactoryV2 is Manageable {
     }
 
     /**
-     * @notice Allows the owner or manager to override an existing prize distribution in the buffer.
-     * The PrizeTier and Draw for the given draw id will be pulled in, and the prize distribution will be computed.
+     * @notice Allows the owner to override an existing prize distribution in the buffer.
+     *         PrizeTier and Draw for the given draw id will be pulled in and the prize distribution will be computed.
      * @param _drawId The draw id to compute for
      * @return The resulting Prize Distribution
      */
@@ -229,7 +228,7 @@ contract PrizeDistributionFactoryV2 is Manageable {
          * maxPicks = totalSupply / minPickCost
          * targetPicks = maxPicks / odds = (totalSupply / minPickCost) / ((dpr * totalSupply) / prize)
          * targetPicks = (1 / minPickCost) / ((dpr * 1) / prize) = prize / (dpr * minPickCost)
-        */
+         */
         uint256 _targetPicks = (_prize * RATE_NORMALIZATION) / (_dpr * _minPickCost);
 
         do {

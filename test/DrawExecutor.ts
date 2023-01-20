@@ -9,15 +9,15 @@ import { IDrawBeacon } from "../types/@pooltogether/v4-core/contracts/interfaces
 
 const { constants, getContractFactory, getSigners, provider, utils, Wallet } = ethers;
 const { getTransactionReceipt } = provider;
-const { Interface, solidityPack } = utils;
-const { AddressZero } = constants;
+const { Interface, formatBytes32String, solidityPack } = utils;
+const { AddressZero, Zero } = constants;
 
 describe("DrawExecutor", () => {
     let wallet: SignerWithAddress;
     let stranger: SignerWithAddress;
 
-    let drawRelayerFactory: ContractFactory;
-    let drawRelayer: Contract;
+    let drawDispatcherFactory: ContractFactory;
+    let drawDispatcher: Contract;
 
     let drawExecutorFactory: ContractFactory;
     let drawExecutor: Contract;
@@ -28,6 +28,9 @@ describe("DrawExecutor", () => {
     let drawBuffer: Contract;
 
     const beaconPeriodSeconds = 86400;
+    const fromChainId = 1;
+
+    const mockedMessageId = formatBytes32String("");
 
     const NEWEST_DRAW = {
         winningRandomNumber: BigNumber.from(
@@ -89,20 +92,21 @@ describe("DrawExecutor", () => {
         IDrawBuffer = await artifacts.readArtifact("IDrawBuffer");
 
         drawBufferFactory = await getContractFactory("DrawBuffer");
-        drawRelayerFactory = await getContractFactory("DrawRelayer");
+        drawDispatcherFactory = await getContractFactory("DrawDispatcher");
         drawExecutorFactory = await getContractFactory("DrawExecutor");
     });
 
     beforeEach(async () => {
         drawBufferMock = await deployMockContract(wallet, IDrawBuffer.abi);
-        drawRelayer = await drawRelayerFactory.deploy(drawBufferMock.address);
+        drawDispatcher = await drawDispatcherFactory.deploy(drawBufferMock.address);
 
         drawBuffer = await drawBufferFactory.deploy(wallet.address, 255);
 
         // To be able to send tx to drawExecutor, wallet is set as trusted executor
         drawExecutor = await drawExecutorFactory.deploy(
+            fromChainId,
+            drawDispatcher.address,
             wallet.address,
-            drawRelayer.address,
             drawBuffer.address
         );
 
@@ -111,26 +115,53 @@ describe("DrawExecutor", () => {
 
     describe("constructor()", () => {
         it("should deploy contract", async () => {
+            expect(await drawExecutor.callStatic.originChainId()).to.equal(fromChainId);
+            expect(await drawExecutor.callStatic.drawDispatcher()).to.equal(drawDispatcher.address);
             expect(await drawExecutor.callStatic.trustedExecutor()).to.equal(wallet.address);
-            expect(await drawExecutor.callStatic.drawRelayer()).to.equal(drawRelayer.address);
             expect(await drawExecutor.callStatic.drawBuffer()).to.equal(drawBuffer.address);
+        });
+
+        it("should fail to deploy contract if originChainId is zero", async () => {
+            await expect(
+                drawExecutorFactory.deploy(
+                    Zero,
+                    drawDispatcher.address,
+                    wallet.address,
+                    drawBuffer.address
+                )
+            ).to.be.revertedWith("DE/originChainId-not-zero");
+        });
+
+        it("should fail to deploy contract if drawDispatcher is address zero", async () => {
+            await expect(
+                drawExecutorFactory.deploy(
+                    fromChainId,
+                    AddressZero,
+                    wallet.address,
+                    drawBuffer.address
+                )
+            ).to.be.revertedWith("DE/drawDispatcher-not-zero-adrs");
         });
 
         it("should fail to deploy contract if executor is address zero", async () => {
             await expect(
-                drawExecutorFactory.deploy(AddressZero, drawRelayer.address, drawBuffer.address)
+                drawExecutorFactory.deploy(
+                    fromChainId,
+                    drawDispatcher.address,
+                    AddressZero,
+                    drawBuffer.address
+                )
             ).to.be.revertedWith("executor-not-zero-address");
-        });
-
-        it("should fail to deploy contract if drawRelayer is address zero", async () => {
-            await expect(
-                drawExecutorFactory.deploy(wallet.address, AddressZero, drawBuffer.address)
-            ).to.be.revertedWith("DE/drawRelayer-not-zero-address");
         });
 
         it("should fail to deploy contract if drawBuffer is address zero", async () => {
             await expect(
-                drawExecutorFactory.deploy(wallet.address, drawRelayer.address, AddressZero)
+                drawExecutorFactory.deploy(
+                    fromChainId,
+                    drawDispatcher.address,
+                    wallet.address,
+                    AddressZero
+                )
             ).to.be.revertedWith("DE/drawBuffer-not-zero-address");
         });
     });
@@ -160,8 +191,8 @@ describe("DrawExecutor", () => {
             const pushDrawTx = await wallet.sendTransaction({
                 to: drawExecutor.address,
                 data: solidityPack(
-                    ["bytes", "uint256", "address"],
-                    [callData, 1, drawRelayer.address]
+                    ["bytes", "bytes32", "uint256", "address"],
+                    [callData, mockedMessageId, fromChainId, drawDispatcher.address]
                 ),
             });
 
@@ -194,7 +225,7 @@ describe("DrawExecutor", () => {
             }
         });
 
-        it("should fail to push draw if not relayed by drawRelayer", async () => {
+        it("should fail to push draw if not dispatched from originChainId", async () => {
             const {
                 winningRandomNumber,
                 drawId,
@@ -221,11 +252,45 @@ describe("DrawExecutor", () => {
                 wallet.sendTransaction({
                     to: drawExecutor.address,
                     data: solidityPack(
-                        ["bytes", "uint256", "address"],
-                        [callData, 1, randomWallet.address]
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, 5, randomWallet.address]
                     ),
                 })
-            ).to.be.revertedWith("DE/l1-sender-not-relayer");
+            ).to.be.revertedWith("DE/l1-chainId-not-supported");
+        });
+
+        it("should fail to push draw if not dispatched by drawDispatcher", async () => {
+            const {
+                winningRandomNumber,
+                drawId,
+                timestamp,
+                beaconPeriodStartedAt,
+                beaconPeriodSeconds,
+            } = NEWEST_DRAW;
+
+            const callData = new Interface([
+                "function pushDraw((uint256,uint32,uint64,uint64,uint32))",
+            ]).encodeFunctionData("pushDraw", [
+                [
+                    winningRandomNumber,
+                    drawId,
+                    timestamp,
+                    beaconPeriodStartedAt,
+                    beaconPeriodSeconds,
+                ],
+            ]);
+
+            const randomWallet = Wallet.createRandom();
+
+            await expect(
+                wallet.sendTransaction({
+                    to: drawExecutor.address,
+                    data: solidityPack(
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, fromChainId, randomWallet.address]
+                    ),
+                })
+            ).to.be.revertedWith("DE/l1-sender-not-dispatcher");
         });
 
         it("should fail to push draw if not executed by trustedExecutor", async () => {
@@ -253,8 +318,8 @@ describe("DrawExecutor", () => {
                 stranger.sendTransaction({
                     to: drawExecutor.address,
                     data: solidityPack(
-                        ["bytes", "uint256", "address"],
-                        [callData, 1, drawRelayer.address]
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, fromChainId, drawDispatcher.address]
                     ),
                 })
             ).to.be.revertedWith("DE/l2-sender-not-executor");
@@ -270,8 +335,8 @@ describe("DrawExecutor", () => {
             const pushDrawsTx = await wallet.sendTransaction({
                 to: drawExecutor.address,
                 data: solidityPack(
-                    ["bytes", "uint256", "address"],
-                    [callData, 1, drawRelayer.address]
+                    ["bytes", "bytes32", "uint256", "address"],
+                    [callData, mockedMessageId, fromChainId, drawDispatcher.address]
                 ),
             });
 
@@ -311,14 +376,14 @@ describe("DrawExecutor", () => {
                 wallet.sendTransaction({
                     to: drawExecutor.address,
                     data: solidityPack(
-                        ["bytes", "uint256", "address"],
-                        [callData, 1, drawRelayer.address]
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, fromChainId, drawDispatcher.address]
                     ),
                 })
             ).to.be.revertedWith("DRB/must-be-contig");
         });
 
-        it("should fail to push draws if not relayed by drawRelayer", async () => {
+        it("should fail to push draws if not dispatched from originChainId", async () => {
             const callData = new Interface([
                 "function pushDraws((uint256,uint32,uint64,uint64,uint32)[])",
             ]).encodeFunctionData("pushDraws", [draws]);
@@ -329,11 +394,29 @@ describe("DrawExecutor", () => {
                 wallet.sendTransaction({
                     to: drawExecutor.address,
                     data: solidityPack(
-                        ["bytes", "uint256", "address"],
-                        [callData, 1, randomWallet.address]
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, 5, randomWallet.address]
                     ),
                 })
-            ).to.be.revertedWith("DE/l1-sender-not-relayer");
+            ).to.be.revertedWith("DE/l1-chainId-not-supported");
+        });
+
+        it("should fail to push draws if not dispatched by drawDispatcher", async () => {
+            const callData = new Interface([
+                "function pushDraws((uint256,uint32,uint64,uint64,uint32)[])",
+            ]).encodeFunctionData("pushDraws", [draws]);
+
+            const randomWallet = Wallet.createRandom();
+
+            await expect(
+                wallet.sendTransaction({
+                    to: drawExecutor.address,
+                    data: solidityPack(
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, fromChainId, randomWallet.address]
+                    ),
+                })
+            ).to.be.revertedWith("DE/l1-sender-not-dispatcher");
         });
 
         it("should fail to push draws if not executed by trustedExecutor", async () => {
@@ -345,8 +428,8 @@ describe("DrawExecutor", () => {
                 stranger.sendTransaction({
                     to: drawExecutor.address,
                     data: solidityPack(
-                        ["bytes", "uint256", "address"],
-                        [callData, 1, drawRelayer.address]
+                        ["bytes", "bytes32", "uint256", "address"],
+                        [callData, mockedMessageId, fromChainId, drawDispatcher.address]
                     ),
                 })
             ).to.be.revertedWith("DE/l2-sender-not-executor");

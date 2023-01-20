@@ -5,33 +5,36 @@ import { BigNumber, Contract, ContractFactory } from "ethers";
 import { artifacts, ethers } from "hardhat";
 import { Artifact } from "hardhat/types";
 
-import { ICrossChainRelayer as ICrossChainRelayerType } from "../types";
 import { IDrawBeacon } from "../types/@pooltogether/v4-core/contracts/interfaces/IDrawBuffer";
 
 const { constants, getContractFactory, getSigners, provider, utils } = ethers;
 const { getTransactionReceipt } = provider;
-const { Interface } = utils;
+const { Interface, formatBytes32String } = utils;
 const { AddressZero, Zero } = constants;
 
-describe("DrawRelayer", () => {
+describe("DrawDispatcher", () => {
     let wallet: SignerWithAddress;
 
-    let drawRelayerFactory: ContractFactory;
-    let drawRelayer: Contract;
+    let drawDispatcherFactory: ContractFactory;
+    let drawDispatcher: Contract;
 
     let drawExecutorFactory: ContractFactory;
     let drawExecutor: Contract;
 
-    let ICrossChainExecutor: Artifact;
-    let crossChainExecutorMock: MockContract;
+    let IMessageExecutor: Artifact;
+    let messageExecutorMock: MockContract;
 
-    let ICrossChainRelayer: Artifact;
-    let crossChainRelayerMock: MockContract;
+    let ISingleMessageDispatcher: Artifact;
+    let messageDispatcherMock: MockContract;
 
     let IDrawBuffer: Artifact;
     let drawBufferMock: MockContract;
 
     const beaconPeriodSeconds = 86400;
+    const originChainId = 1;
+    const toChainId = 10;
+
+    const mockedMessageId = formatBytes32String("");
 
     const NEWEST_DRAW = {
         winningRandomNumber: BigNumber.from(
@@ -92,39 +95,40 @@ describe("DrawRelayer", () => {
     before(async () => {
         [wallet] = await getSigners();
 
-        ICrossChainExecutor = await artifacts.readArtifact("ICrossChainExecutor");
-        ICrossChainRelayer = await artifacts.readArtifact("ICrossChainRelayer");
+        IMessageExecutor = await artifacts.readArtifact("IMessageExecutor");
+        ISingleMessageDispatcher = await artifacts.readArtifact("ISingleMessageDispatcher");
         IDrawBuffer = await artifacts.readArtifact("IDrawBuffer");
-        drawRelayerFactory = await getContractFactory("DrawRelayer");
+        drawDispatcherFactory = await getContractFactory("DrawDispatcher");
         drawExecutorFactory = await getContractFactory("DrawExecutor");
     });
 
     beforeEach(async () => {
-        crossChainExecutorMock = await deployMockContract(wallet, ICrossChainExecutor.abi);
-        crossChainRelayerMock = await deployMockContract(wallet, ICrossChainRelayer.abi);
+        messageExecutorMock = await deployMockContract(wallet, IMessageExecutor.abi);
+        messageDispatcherMock = await deployMockContract(wallet, ISingleMessageDispatcher.abi);
         drawBufferMock = await deployMockContract(wallet, IDrawBuffer.abi);
-        drawRelayer = await drawRelayerFactory.deploy(drawBufferMock.address);
+        drawDispatcher = await drawDispatcherFactory.deploy(drawBufferMock.address);
         drawExecutor = await drawExecutorFactory.deploy(
-            crossChainExecutorMock.address,
-            drawRelayer.address,
+            originChainId,
+            drawDispatcher.address,
+            messageExecutorMock.address,
             drawBufferMock.address
         );
     });
 
     describe("constructor()", () => {
         it("should deploy contract", async () => {
-            expect(await drawRelayer.callStatic.drawBuffer()).to.equal(drawBufferMock.address);
+            expect(await drawDispatcher.callStatic.drawBuffer()).to.equal(drawBufferMock.address);
         });
 
         it("should fail to deploy contract if drawBuffer is address zero", async () => {
-            await expect(drawRelayerFactory.deploy(AddressZero)).to.be.revertedWith(
-                "DR/drawBuffer-not-zero-address"
+            await expect(drawDispatcherFactory.deploy(AddressZero)).to.be.revertedWith(
+                "DD/drawBuffer-not-zero-address"
             );
         });
     });
 
-    describe("bridgeNewestDraw()", async () => {
-        it("should bridge the newest recorded draw", async () => {
+    describe("dispatchNewestDraw()", async () => {
+        it("should dispatch the newest recorded draw", async () => {
             await drawBufferMock.mock.getNewestDraw.returns(NEWEST_DRAW);
 
             const {
@@ -147,20 +151,19 @@ describe("DrawRelayer", () => {
                 ],
             ]);
 
-            const calls: ICrossChainRelayerType.CallStruct[] = [
-                {
-                    target: drawExecutor.address,
-                    data: callData,
-                },
-            ];
-
-            await crossChainRelayerMock.mock.relayCalls.withArgs(calls, 500000).returns(1);
+            await messageDispatcherMock.mock.dispatchMessage
+                .withArgs(toChainId, drawExecutor.address, callData)
+                .returns(mockedMessageId);
 
             await expect(
-                drawRelayer.bridgeNewestDraw(crossChainRelayerMock.address, drawExecutor.address)
+                drawDispatcher.dispatchNewestDraw(
+                    messageDispatcherMock.address,
+                    toChainId,
+                    drawExecutor.address
+                )
             )
-                .to.emit(drawRelayer, "DrawBridged")
-                .withArgs(crossChainRelayerMock.address, drawExecutor.address, [
+                .to.emit(drawDispatcher, "DrawDispatched")
+                .withArgs(messageDispatcherMock.address, toChainId, drawExecutor.address, [
                     winningRandomNumber,
                     drawId,
                     timestamp,
@@ -170,8 +173,8 @@ describe("DrawRelayer", () => {
         });
     });
 
-    describe("bridgeDraw()", async () => {
-        it("should bridge draw", async () => {
+    describe("dispatchDraw()", async () => {
+        it("should dispatch draw", async () => {
             const {
                 winningRandomNumber,
                 drawId,
@@ -194,20 +197,20 @@ describe("DrawRelayer", () => {
                 ],
             ]);
 
-            const calls: ICrossChainRelayerType.CallStruct[] = [
-                {
-                    target: drawExecutor.address,
-                    data: callData,
-                },
-            ];
-
-            await crossChainRelayerMock.mock.relayCalls.withArgs(calls, 500000).returns(1);
+            await messageDispatcherMock.mock.dispatchMessage
+                .withArgs(toChainId, drawExecutor.address, callData)
+                .returns(mockedMessageId);
 
             await expect(
-                drawRelayer.bridgeDraw(drawId, crossChainRelayerMock.address, drawExecutor.address)
+                drawDispatcher.dispatchDraw(
+                    messageDispatcherMock.address,
+                    toChainId,
+                    drawExecutor.address,
+                    drawId
+                )
             )
-                .to.emit(drawRelayer, "DrawBridged")
-                .withArgs(crossChainRelayerMock.address, drawExecutor.address, [
+                .to.emit(drawDispatcher, "DrawDispatched")
+                .withArgs(messageDispatcherMock.address, toChainId, drawExecutor.address, [
                     winningRandomNumber,
                     drawId,
                     timestamp,
@@ -216,59 +219,58 @@ describe("DrawRelayer", () => {
                 ]);
         });
 
-        it("should fail to bridge draw if drawId is zero", async () => {
+        it("should fail to dispatch draw if drawId is zero", async () => {
             await expect(
-                drawRelayer.bridgeDraw(Zero, crossChainRelayerMock.address, drawExecutor.address)
-            ).to.be.revertedWith("DR/drawId-gt-zero");
+                drawDispatcher.dispatchDraw(
+                    messageDispatcherMock.address,
+                    toChainId,
+                    drawExecutor.address,
+                    Zero
+                )
+            ).to.be.revertedWith("DD/drawId-gt-zero");
         });
     });
 
-    describe("bridgeDraws()", async () => {
-        it("should bridge several draws", async () => {
+    describe("dispatchDraws()", async () => {
+        it("should dispatch several draws", async () => {
             await drawBufferMock.mock.getDraws.withArgs(drawIds).returns(draws);
 
             const callData = new Interface([
                 "function pushDraws((uint256,uint32,uint64,uint64,uint32)[])",
             ]).encodeFunctionData("pushDraws", [draws]);
 
-            const calls: ICrossChainRelayerType.CallStruct[] = [
-                {
-                    target: drawExecutor.address,
-                    data: callData,
-                },
-            ];
+            await messageDispatcherMock.mock.dispatchMessage
+                .withArgs(toChainId, drawExecutor.address, callData)
+                .returns(mockedMessageId);
 
-            const gasLimit = 1000000;
-
-            await crossChainRelayerMock.mock.relayCalls.withArgs(calls, gasLimit).returns(1);
-
-            const bridgeDrawsTx = await drawRelayer.bridgeDraws(
-                drawIds,
-                crossChainRelayerMock.address,
+            const dispatchDrawsTx = await drawDispatcher.dispatchDraws(
+                messageDispatcherMock.address,
+                toChainId,
                 drawExecutor.address,
-                gasLimit
+                drawIds
             );
 
-            await expect(bridgeDrawsTx).to.emit(drawRelayer, "DrawsBridged");
+            await expect(dispatchDrawsTx).to.emit(drawDispatcher, "DrawsDispatched");
 
-            const bridgeDrawsTxReceipt = await getTransactionReceipt(bridgeDrawsTx.hash);
+            const dispatchDrawsTxReceipt = await getTransactionReceipt(dispatchDrawsTx.hash);
 
-            const bridgeDrawsTxEvents = bridgeDrawsTxReceipt.logs.map((log) => {
+            const dispatchDrawsTxEvents = dispatchDrawsTxReceipt.logs.map((log) => {
                 try {
-                    return drawRelayer.interface.parseLog(log);
+                    return drawDispatcher.interface.parseLog(log);
                 } catch (e) {
                     return null;
                 }
             });
 
-            const drawsBridgedEvent = bridgeDrawsTxEvents.find(
-                (event) => event && event.name === "DrawsBridged"
+            const drawsBridgedEvent = dispatchDrawsTxEvents.find(
+                (event) => event && event.name === "DrawsDispatched"
             );
 
             if (drawsBridgedEvent) {
-                expect(drawsBridgedEvent.args[0]).to.equal(crossChainRelayerMock.address);
-                expect(drawsBridgedEvent.args[1]).to.equal(drawExecutor.address);
-                drawsBridgedEvent.args[2].map((draw: IDrawBeacon.DrawStruct, index: number) => {
+                expect(drawsBridgedEvent.args[0]).to.equal(messageDispatcherMock.address);
+                expect(drawsBridgedEvent.args[1]).to.equal(toChainId);
+                expect(drawsBridgedEvent.args[2]).to.equal(drawExecutor.address);
+                drawsBridgedEvent.args[3].map((draw: IDrawBeacon.DrawStruct, index: number) => {
                     const currentDraw = draws[index];
 
                     expect(draw.winningRandomNumber).to.equal(currentDraw[0]);
@@ -281,38 +283,30 @@ describe("DrawRelayer", () => {
         });
     });
 
-    describe("_relayCalls()", async () => {
-        it("should fail to relay calls if relayer is address zero", async () => {
+    describe("_dispatchMessage()", async () => {
+        it("should fail to dispatch message if dispatcher is address zero", async () => {
             const { drawId } = DRAW_2;
 
             await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_2);
 
             await expect(
-                drawRelayer.bridgeDraw(drawId, AddressZero, drawExecutor.address)
-            ).to.be.revertedWith("DR/relayer-not-zero-address");
+                drawDispatcher.dispatchDraw(AddressZero, toChainId, drawExecutor.address, drawId)
+            ).to.be.revertedWith("DD/dispatcher-not-zero-address");
         });
 
-        it("should fail to relay calls if drawExecutor is address zero", async () => {
+        it("should fail to dispatch message if drawExecutor is address zero", async () => {
             const { drawId } = DRAW_2;
 
             await drawBufferMock.mock.getDraw.withArgs(drawId).returns(DRAW_2);
 
             await expect(
-                drawRelayer.bridgeDraw(drawId, crossChainRelayerMock.address, AddressZero)
-            ).to.be.revertedWith("DR/drawExecutor-not-zero-address");
-        });
-
-        it("should fail to relay calls if gasLimit is not gt zero", async () => {
-            await drawBufferMock.mock.getDraws.withArgs(drawIds).returns(draws);
-
-            await expect(
-                drawRelayer.bridgeDraws(
-                    drawIds,
-                    crossChainRelayerMock.address,
-                    drawExecutor.address,
-                    Zero
+                drawDispatcher.dispatchDraw(
+                    messageDispatcherMock.address,
+                    toChainId,
+                    AddressZero,
+                    drawId
                 )
-            ).to.be.revertedWith("DR/gasLimit-gt-zero");
+            ).to.be.revertedWith("DD/drawExecutor-not-zero-address");
         });
     });
 });

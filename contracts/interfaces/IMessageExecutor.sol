@@ -22,26 +22,9 @@ interface IMessageExecutor {
     /**
      * @notice Emitted when a message has successfully been executed.
      * @param fromChainId ID of the chain that dispatched the message
-     * @param dispatcher Address of the contract that dispatched the message on the origin chain
-     * @param messageId ID uniquely identifying the message
+     * @param messageId ID uniquely identifying the message that was executed
      */
-    event ExecutedMessage(
-        uint256 indexed fromChainId,
-        ISingleMessageDispatcher indexed dispatcher,
-        bytes32 indexed messageId
-    );
-
-    /**
-     * @notice Emitted when messages have successfully been executed.
-     * @param fromChainId ID of the chain that dispatched the messages
-     * @param dispatcher Address of the contract that dispatched the messages on the origin chain
-     * @param messageId ID uniquely identifying the messages
-     */
-    event ExecutedMessageBatch(
-        uint256 indexed fromChainId,
-        ISingleMessageDispatcher indexed dispatcher,
-        bytes32 indexed messageId
-    );
+    event MessageIdExecuted(uint256 indexed fromChainId, bytes32 indexed messageId);
 
     /**
      * @notice Execute message from the origin chain.

@@ -11,7 +11,7 @@ import "@pooltogether/v4-core/contracts/DrawBeacon.sol";
 interface IPrizeTierHistoryV2 {
     /**
      * @notice PrizeTierV2 struct
-     * @dev    Adds Draw Percentage Rate (DPR) and minPickCost paramater to PrizeTier struct
+     * @dev    Adds Draw Percentage Rate (DPR) parameter to PrizeTier struct
      */
     struct PrizeTierV2 {
         uint8 bitRangeSize;
